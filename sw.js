@@ -1,4 +1,4 @@
-const CACHE = 'steady-hands-leads-v-dynamic-call-name-1';
+const CACHE = 'steady-hands-leads-v-history-detail-only-1';
 const APP_FILES = [
   './',
   './index.html',

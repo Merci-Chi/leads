@@ -646,8 +646,6 @@ async function removeQuickInfoTag(kind, raw) {
 
 function leadCard(lead) {
   const isNew = lead.status === 'new';
-  const latestHistory = latestLeadHistory(lead);
-  const meta = latestHistory ? historyText(latestHistory) : (!isNew && lead.lastCalled ? `Called on ${formatDateTime(lead.lastCalled)}` : '');
   const leadType = getLeadType(lead);
   const badges = [
     leadType && leadType !== 'Spanish?' ? `<span class="lead-type-badge">${escapeHTML(leadType)}</span>` : '',
@@ -662,7 +660,6 @@ function leadCard(lead) {
       <span class="lead-copy">
         <span class="lead-name-line"><strong>${escapeHTML(lead.company || 'No company')}</strong>${badges}</span>
         <span class="lead-company">${escapeHTML(lead.name || 'No contact name')}</span>
-        ${meta ? `<span class="lead-meta">${escapeHTML(meta)}</span>` : ''}
       </span>
       <i class="bi bi-chevron-right"></i>
     </button>`;
