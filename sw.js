@@ -1,4 +1,4 @@
-const CACHE = 'steady-leads-v1';
+const CACHE = 'steady-leads-v2';
 const APP_FILES = [
   './',
   './index.html',
@@ -25,6 +25,12 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+
+  // leads.json is intentionally never cached so replacing it updates the app on refresh.
+  if (new URL(event.request.url).pathname.endsWith('/leads.json')) {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
+    return;
+  }
   event.respondWith(
     fetch(event.request)
       .then(response => {

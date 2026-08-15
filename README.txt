@@ -20,3 +20,6 @@ Open the hosted site in Safari -> Share -> Add to Home Screen.
 
 On Android/Chrome/Desktop Chrome:
 Open the hosted site -> Install app / Add to Home Screen.
+
+AUTO-LOADING LEADS
+Edit or replace leads.json in this folder. When the app opens or refreshes, it automatically merges new leads from that file. Existing saved leads are not overwritten. Duplicate phone numbers (or matching name/company/site when no phone exists) are skipped.

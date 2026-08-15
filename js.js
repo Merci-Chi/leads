@@ -674,6 +674,77 @@ function makeLead(raw = {}) {
   };
 }
 
+function normalizeLeadPhone(value) {
+  return String(value ?? '').replace(/\D/g, '');
+}
+
+function normalizeLeadText(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function isDuplicateLeadRaw(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false;
+
+  const rawId = normalizeLeadText(raw.id);
+  if (rawId && state.leads.some(lead => normalizeLeadText(lead.id) === rawId)) return true;
+
+  const rawPhone = normalizeLeadPhone(raw.phone ?? raw.phoneNumber);
+  if (rawPhone && state.leads.some(lead => normalizeLeadPhone(lead.phone) === rawPhone)) return true;
+
+  const rawName = normalizeLeadText(raw.name);
+  const rawCompany = normalizeLeadText(raw.company ?? raw.companyName);
+  const rawSite = normalizeLeadText(raw.site ?? raw.website ?? raw.url);
+
+  if (rawName || rawCompany || rawSite) {
+    return state.leads.some(lead =>
+      normalizeLeadText(lead.name) === rawName &&
+      normalizeLeadText(lead.company) === rawCompany &&
+      normalizeLeadText(lead.site) === rawSite
+    );
+  }
+
+  return false;
+}
+
+function mergeLeadRows(rows) {
+  const imported = [];
+  let skipped = 0;
+
+  rows.forEach(row => {
+    const raw = row && typeof row === 'object' && !Array.isArray(row) ? row : {};
+    if (isDuplicateLeadRaw(raw)) {
+      skipped += 1;
+      return;
+    }
+
+    const lead = makeLead(raw);
+    state.leads.push(lead);
+    imported.push(lead);
+  });
+
+  if (imported.length) saveState();
+  return { imported, skipped };
+}
+
+async function loadLeadsJson() {
+  try {
+    const response = await fetch(`./leads.json?ts=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) return;
+
+    const parsed = await response.json();
+    const rows = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.leads) ? parsed.leads : null);
+    if (!rows) {
+      console.warn('leads.json must contain an array of leads, or an object with a leads array.');
+      return;
+    }
+
+    const { imported } = mergeLeadRows(rows);
+    if (imported.length) renderLists();
+  } catch (error) {
+    console.warn('Could not automatically load leads.json:', error);
+  }
+}
+
 
 const newPhoneInput = $('#newPhone');
 newPhoneInput.addEventListener('input', () => {
@@ -744,52 +815,8 @@ $('#importLeadsButton').addEventListener('click', () => {
   }
 
   // Import is append-only: existing leads are never replaced or modified.
-  // Skip rows that already match an existing lead, while still allowing blank fields.
-  const normalizePhone = value => String(value ?? '').replace(/\D/g, '');
-  const normalizeText = value => String(value ?? '').trim().toLowerCase();
+  const { imported, skipped } = mergeLeadRows(rows);
 
-  const isDuplicate = raw => {
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false;
-
-    const rawId = normalizeText(raw.id);
-    if (rawId && state.leads.some(lead => normalizeText(lead.id) === rawId)) return true;
-
-    const rawPhone = normalizePhone(raw.phone ?? raw.phoneNumber);
-    if (rawPhone && state.leads.some(lead => normalizePhone(lead.phone) === rawPhone)) return true;
-
-    const rawName = normalizeText(raw.name);
-    const rawCompany = normalizeText(raw.company ?? raw.companyName);
-    const rawSite = normalizeText(raw.site ?? raw.website ?? raw.url);
-
-    // If there is no phone/ID, use the identifying text that is actually present.
-    if (rawName || rawCompany || rawSite) {
-      return state.leads.some(lead =>
-        normalizeText(lead.name) === rawName &&
-        normalizeText(lead.company) === rawCompany &&
-        normalizeText(lead.site) === rawSite
-      );
-    }
-
-    // A completely blank row has no stable identity, so keep it importable as requested.
-    return false;
-  };
-
-  const imported = [];
-  let skipped = 0;
-
-  rows.forEach(row => {
-    const raw = row && typeof row === 'object' && !Array.isArray(row) ? row : {};
-    if (isDuplicate(raw)) {
-      skipped += 1;
-      return;
-    }
-
-    const lead = makeLead(raw);
-    state.leads.push(lead);
-    imported.push(lead);
-  });
-
-  saveState();
   renderLists();
   closeModal('newLeadModal');
 
@@ -809,3 +836,4 @@ $$('.modal-backdrop').forEach(backdrop => {
 });
 
 renderLists();
+loadLeadsJson();
