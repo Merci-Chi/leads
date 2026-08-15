@@ -1,1 +1,52 @@
-[]
+[
+  {
+    "name": "Maria Lopez",
+    "company": "Lopez Family Cleaning",
+    "phone": "5551234567",
+    "site": "https://lopezfamilycleaning.com",
+    "leadType": "Outdated Site",
+    "issue": "Old design, hard to use on mobile",
+    "spanishPossible": true
+  },
+  {
+    "name": "James Carter",
+    "company": "Carter Plumbing",
+    "phone": "5552345678",
+    "site": "",
+    "leadType": "No Site",
+    "issue": "Business has Google listing but no website",
+    "spanishPossible": false
+  },
+  {
+    "name": "Rosa Martinez",
+    "company": "Martinez Landscaping",
+    "phone": "5553456789",
+    "site": "https://martinezlandscaping.com",
+    "tags": ["Broken Site", "Spanish?"],
+    "issue": "Contact page gives an error and some images do not load"
+  },
+  {
+    "name": "Daniel Brooks",
+    "company": "Brooks Auto Repair",
+    "phone": "5554567890",
+    "site": "https://brooksautorepair.com",
+    "leadType": "Outdated Site",
+    "issue": "Looks very old and has no clear booking button"
+  },
+  {
+    "name": "Sofia Hernandez",
+    "company": "Sofia's Bakery",
+    "phone": "5555678901",
+    "site": "",
+    "tags": ["No Site", "Spanish?"],
+    "issue": "Only uses Instagram and Facebook"
+  },
+  {
+    "name": "Michael Green",
+    "company": "Green Roofing LLC",
+    "phone": "5556789012",
+    "site": "https://greenroofingllc.com",
+    "leadType": "Broken Site",
+    "issue": "Several links return 404 pages"
+  }
+]
