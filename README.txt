@@ -24,3 +24,8 @@ SYNC BEHAVIOR
 
 IMPORTANT ABOUT CLOSED-APP JSON IMPORTING
 A browser app cannot process a local/hosted leads.json while it is fully closed. To import leads.json while the app is closed, use a server-side importer (for example a GitHub Action or Supabase Edge Function). That is the next optional step after the Supabase connection is tested.
+
+
+TWO-TABLE DATABASE MODE
+This version reads/writes public.new_leads and public.follow_ups. It no longer uses public.leads.
+When Done is pressed, the lead is inserted/upserted into follow_ups and deleted from new_leads.

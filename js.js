@@ -47,15 +47,13 @@ function leadToSupabaseRow(lead) {
     preferred_days: Array.isArray(lead.days) ? lead.days : [],
     time_preference: lead.timePreference || '',
     specific_time: lead.specificTime || null,
-    status: lead.status || 'new',
-    sold: lead.tag === 'Sold',
     tag: lead.tag || '',
     last_called: lead.lastCalled || null,
     updated_at: new Date().toISOString()
   };
 }
 
-function supabaseRowToLead(row) {
+function supabaseRowToLead(row, status = 'new') {
   return {
     id: row.id,
     name: row.name || '',
@@ -67,9 +65,9 @@ function supabaseRowToLead(row) {
     leadType: row.lead_type || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     spanishPossible: Boolean(row.spanish_possible),
-    status: row.status || 'new',
+    status,
     lastCalled: row.last_called || '',
-    tag: row.tag || (row.sold ? 'Sold' : ''),
+    tag: row.tag || '',
     answerStatus: row.answer_status || '',
     mood: row.mood || '',
     outcome: row.outcome || '',
@@ -86,6 +84,14 @@ function supabaseRowToLead(row) {
   };
 }
 
+function tableForLead(lead) {
+  return lead?.status === 'followup' ? 'follow_ups' : 'new_leads';
+}
+
+function otherTableForLead(lead) {
+  return lead?.status === 'followup' ? 'new_leads' : 'follow_ups';
+}
+
 function showSyncStatus(text) {
   let pill = document.getElementById('syncPill');
   if (!pill) {
@@ -100,16 +106,33 @@ function showSyncStatus(text) {
   pill._timer = setTimeout(() => pill.classList.remove('show'), 1400);
 }
 
+async function upsertLeadsByTable(leads) {
+  const newRows = leads.filter(lead => lead.status !== 'followup').map(leadToSupabaseRow);
+  const followRows = leads.filter(lead => lead.status === 'followup').map(leadToSupabaseRow);
+
+  if (newRows.length) {
+    const { error } = await supabaseClient.from('new_leads').upsert(newRows, { onConflict: 'id' });
+    if (error) throw error;
+    const ids = newRows.map(row => row.id);
+    const { error: cleanupError } = await supabaseClient.from('follow_ups').delete().in('id', ids);
+    if (cleanupError) throw cleanupError;
+  }
+
+  if (followRows.length) {
+    const { error } = await supabaseClient.from('follow_ups').upsert(followRows, { onConflict: 'id' });
+    if (error) throw error;
+    const ids = followRows.map(row => row.id);
+    const { error: cleanupError } = await supabaseClient.from('new_leads').delete().in('id', ids);
+    if (cleanupError) throw cleanupError;
+  }
+}
+
 async function syncAllLeadsToSupabase() {
   if (!supabaseSession || syncInProgress) return;
   syncInProgress = true;
   try {
     ensureUuidIds();
-    if (state.leads.length) {
-      const rows = state.leads.map(leadToSupabaseRow);
-      const { error } = await supabaseClient.from('leads').upsert(rows, { onConflict: 'id' });
-      if (error) throw error;
-    }
+    if (state.leads.length) await upsertLeadsByTable(state.leads);
     showSyncStatus('Synced');
   } catch (error) {
     console.error('Supabase sync failed:', error);
@@ -125,11 +148,8 @@ async function syncPendingLeadsToSupabase() {
   const ids = [...pendingSyncIds];
   try {
     ensureUuidIds();
-    const rows = state.leads.filter(lead => ids.includes(lead.id)).map(leadToSupabaseRow);
-    if (rows.length) {
-      const { error } = await supabaseClient.from('leads').upsert(rows, { onConflict: 'id' });
-      if (error) throw error;
-    }
+    const leads = state.leads.filter(lead => ids.includes(lead.id));
+    if (leads.length) await upsertLeadsByTable(leads);
     ids.forEach(id => pendingSyncIds.delete(id));
     showSyncStatus('Synced');
   } catch (error) {
@@ -156,17 +176,22 @@ function queueAllLeadSync() {
 async function syncLeadNow(lead) {
   if (!supabaseSession || !lead) return;
   pendingSyncIds.delete(lead.id);
-  const { error } = await supabaseClient.from('leads').upsert(leadToSupabaseRow(lead), { onConflict: 'id' });
+  const table = tableForLead(lead);
+  const otherTable = otherTableForLead(lead);
+  const { error } = await supabaseClient.from(table).upsert(leadToSupabaseRow(lead), { onConflict: 'id' });
   if (error) throw error;
+  const { error: cleanupError } = await supabaseClient.from(otherTable).delete().eq('id', lead.id);
+  if (cleanupError) throw cleanupError;
 }
 
-function applyRealtimeLeadChange(payload) {
+function applyRealtimeLeadChange(payload, status) {
   if (!payload) return;
   if (payload.eventType === 'DELETE') {
     const deletedId = payload.old?.id;
-    if (deletedId) state.leads = state.leads.filter(lead => lead.id !== deletedId);
+    const index = state.leads.findIndex(lead => lead.id === deletedId);
+    if (index >= 0 && state.leads[index].status === status) state.leads.splice(index, 1);
   } else {
-    const incoming = supabaseRowToLead(payload.new || {});
+    const incoming = supabaseRowToLead(payload.new || {}, status);
     if (!incoming.id) return;
     const index = state.leads.findIndex(lead => lead.id === incoming.id);
     if (index >= 0) state.leads[index] = incoming;
@@ -186,8 +211,9 @@ function subscribeToLeadChanges() {
   if (!supabaseSession) return;
   if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
   realtimeChannel = supabaseClient
-    .channel('steady-hands-leads-live')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, applyRealtimeLeadChange)
+    .channel('steady-hands-leads-live-v2')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'new_leads' }, payload => applyRealtimeLeadChange(payload, 'new'))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'follow_ups' }, payload => applyRealtimeLeadChange(payload, 'followup'))
     .subscribe();
 }
 
@@ -201,15 +227,27 @@ async function hydrateFromSupabase() {
   if (!supabaseSession) return;
   ensureUuidIds();
 
-  // Upload any existing phone/browser leads first so switching to Supabase does not lose them.
-  if (state.leads.length) {
-    const { error: upsertError } = await supabaseClient.from('leads').upsert(state.leads.map(leadToSupabaseRow), { onConflict: 'id' });
-    if (upsertError) throw upsertError;
+  const [{ data: newData, error: newError }, { data: followData, error: followError }] = await Promise.all([
+    supabaseClient.from('new_leads').select('*').order('created_at', { ascending: true }),
+    supabaseClient.from('follow_ups').select('*').order('created_at', { ascending: true })
+  ]);
+
+  if (newError) throw newError;
+  if (followError) throw followError;
+
+  const remoteLeads = [
+    ...(newData || []).map(row => supabaseRowToLead(row, 'new')),
+    ...(followData || []).map(row => supabaseRowToLead(row, 'followup'))
+  ];
+
+  // The database is the source of truth once the two-table setup is in use.
+  // Only migrate browser-local leads if both database tables are completely empty.
+  if (!remoteLeads.length && state.leads.length) {
+    await upsertLeadsByTable(state.leads);
+    return hydrateFromSupabase();
   }
 
-  const { data, error } = await supabaseClient.from('leads').select('*').order('created_at', { ascending: true });
-  if (error) throw error;
-  state.leads = (data || []).map(supabaseRowToLead);
+  state.leads = remoteLeads;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   renderLists();
 }
@@ -228,7 +266,7 @@ async function initializeSupabaseAuth() {
   }
 }
 
-const STORAGE_KEY = 'steadyHandsLeadApp_v4';
+const STORAGE_KEY = 'steadyHandsLeadApp_v5_two_tables';
 
 const seedLeads = [];
 
