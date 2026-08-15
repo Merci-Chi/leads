@@ -117,12 +117,12 @@
       <section class="panel active" id="detailsPanel">
         <article class="card details-card">
           <div class="detail-row">
-            <span class="row-icon"><i class="bi bi-person"></i></span>
-            <div><span>Name</span><strong id="leadName"></strong></div>
-          </div>
-          <div class="detail-row">
             <span class="row-icon"><i class="bi bi-buildings"></i></span>
             <div><span>Company Name</span><strong id="leadCompany"></strong></div>
+          </div>
+          <div class="detail-row">
+            <span class="row-icon"><i class="bi bi-person"></i></span>
+            <div><span>Name</span><strong id="leadName"></strong></div>
           </div>
           <div class="detail-row">
             <span class="row-icon"><i class="bi bi-globe2"></i></span>
@@ -136,6 +136,30 @@
             <span class="row-icon"><i class="bi bi-exclamation-square"></i></span>
             <div><span>Main Issues</span><strong id="leadIssue"></strong></div>
           </div>
+        </article>
+
+        <article class="card form-card lead-notes-card">
+          <div class="card-heading"><span class="heading-icon"><i class="bi bi-journal-text"></i></span><h2>Lead Info</h2></div>
+
+          <section class="quick-tags-section" aria-labelledby="quickTagsTitle">
+            <div class="quick-tags-heading">
+              <div>
+                <span id="quickTagsTitle">Tags</span>
+                <small>Tap a tag to remove it</small>
+              </div>
+            </div>
+            <div class="quick-tags-list" id="quickTagsList"></div>
+          </section>
+
+          <label class="stacked-field">
+            <span>Main Issue / Concerns</span>
+            <textarea id="concernsField" data-save="concerns" rows="5" placeholder="Type concerns, objections, pain points, or anything important…"></textarea>
+          </label>
+
+          <label class="stacked-field">
+            <span>Notes</span>
+            <textarea id="notesField" data-save="notes" rows="6" placeholder="Type notes about this lead..."></textarea>
+          </label>
         </article>
 
         <article class="card status-card">
@@ -335,28 +359,62 @@
       </section>
 
       <section class="panel" id="quickPanel">
-        <article class="card form-card">
-          <div class="card-heading"><span class="heading-icon"><i class="bi bi-info-circle"></i></span><h2>Quick Info</h2></div>
+        <div class="business-quick-intro">
+          <span class="followup-kicker">STEADY HANDS OPERATIONS</span>
+          <h2>Call Reference</h2>
+          <p>Quick scripts and pricing reference while you are on a call.</p>
+        </div>
 
-          <section class="quick-tags-section" aria-labelledby="quickTagsTitle">
-            <div class="quick-tags-heading">
-              <div>
-                <span id="quickTagsTitle">Tags</span>
-                <small>Tap a tag to remove it</small>
-              </div>
+        <article class="business-script-card script-outdated">
+          <div class="business-script-title"><i class="bi bi-calendar3"></i><span>OUTDATED</span></div>
+          <p>“Hey — I was <mark>looking</mark> at your website earlier and <mark>noticed</mark> a couple things that seem pretty <mark>dated</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>redesign</mark> and <mark>upgrade</mark> older sites. I just wanted to see if that’s something you’d be <mark>open</mark> to talking about.”</p>
+        </article>
+
+        <article class="business-script-card script-nosite">
+          <div class="business-script-title"><i class="bi bi-globe2"></i><span>NO SITE</span></div>
+          <p>“Hey — my name is <mark>Elijah</mark>. I was looking into your business earlier and I <mark>couldn’t find</mark> a website. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with a <mark>professional site</mark>. I just wanted to see if that’s something <mark>you’re considering</mark>.”</p>
+        </article>
+
+        <article class="business-script-card script-broken">
+          <div class="business-script-title"><i class="bi bi-link-45deg"></i><span>BROKEN SITE</span></div>
+          <p>“Hey — my name is Elijah, I was looking at your website earlier and I <mark>noticed</mark> a couple parts <mark>weren’t working properly</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with <mark>professional sites</mark>; or if you’re just looking for a <mark>quick fix</mark> I can look to <mark>get you a quote</mark>. Is that something you’d be <mark>interested in getting fixed</mark>?”</p>
+        </article>
+
+        <article class="business-script-card script-spanish">
+          <div class="business-script-title"><i class="bi bi-chat-dots-fill"></i><span>SPANISH</span></div>
+          <p>“No hay problema. Un <mark>miembro de mi equipo habla español</mark>. Puedo pedirle que la llame?”</p>
+        </article>
+
+        <article class="card pricing-reference-card">
+          <div class="card-heading"><span class="heading-icon"><i class="bi bi-currency-dollar"></i></span><h2>Prices</h2></div>
+          <a class="business-site-link" href="http://steadyhandsop.com" target="_blank" rel="noreferrer"><i class="bi bi-globe2"></i> steadyhandsop.com</a>
+
+          <div class="pricing-group">
+            <div class="pricing-group-title">WEBSITE DEVELOPMENT</div>
+            <div class="price-reference-list">
+              <div class="price-reference-row"><div><strong>Personal Site</strong><span>Up to 3 pages</span></div><b>$349</b></div>
+              <div class="price-reference-row"><div><strong>Business Site</strong><span>Up to 5 pages</span></div><b>$549</b></div>
+              <div class="price-reference-row"><div><strong>Personal Site</strong><span>Statistics, Management, Users</span></div><b>$749</b></div>
+              <div class="price-reference-row extra-price"><div><strong>Additional Pages</strong><span>Added beyond the included page limit</span></div><b>+$50 / page</b></div>
             </div>
-            <div class="quick-tags-list" id="quickTagsList"></div>
-          </section>
+          </div>
 
-          <label class="stacked-field">
-            <span>Main Issue / Concerns</span>
-            <textarea id="concernsField" data-save="concerns" rows="5" placeholder="Type concerns, objections, pain points, or anything important…"></textarea>
-          </label>
+          <div class="pricing-group">
+            <div class="pricing-group-title">HOSTING</div>
+            <div class="price-reference-list">
+              <div class="price-reference-row"><div><strong>Standard Hosting</strong><span>Lowest plan</span></div><b>$10 / month</b></div>
+              <div class="price-reference-row"><div><strong>Backend Hosting</strong><span>Live database — lowest plan</span></div><b>$20 / month</b></div>
+            </div>
+          </div>
 
-          <label class="stacked-field">
-            <span>Notes</span>
-            <textarea id="notesField" data-save="notes" rows="6" placeholder="Type notes about this lead..."></textarea>
-          </label>
+          <div class="pricing-group">
+            <div class="pricing-group-title">SITE RENEWAL</div>
+            <div class="price-reference-list">
+              <div class="price-reference-row"><div><strong>Personal Site Renewal</strong><span>Up to 3 pages</span></div><b>$279</b></div>
+              <div class="price-reference-row"><div><strong>Business Site Renewal</strong><span>Up to 5 pages</span></div><b>$489</b></div>
+              <div class="price-reference-row extra-price"><div><strong>Additional Pages</strong><span>Added beyond the included page limit</span></div><b>+$50 / page</b></div>
+            </div>
+          </div>
         </article>
       </section>
 

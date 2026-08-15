@@ -447,8 +447,8 @@ function leadCard(lead) {
     <button class="lead-item" type="button" data-open-lead="${lead.id}">
       <span class="lead-avatar">${escapeHTML(initial)}</span>
       <span class="lead-copy">
-        <span class="lead-name-line"><strong>${escapeHTML(lead.name)}</strong>${badges}</span>
-        <span class="lead-company">${escapeHTML(lead.company || 'No company')}</span>
+        <span class="lead-name-line"><strong>${escapeHTML(lead.company || 'No company')}</strong>${badges}</span>
+        <span class="lead-company">${escapeHTML(lead.name || 'No contact name')}</span>
         ${meta ? `<span class="lead-meta">${escapeHTML(meta)}</span>` : ''}
       </span>
       <i class="bi bi-chevron-right"></i>
@@ -1027,7 +1027,7 @@ async function shareAllLeads() {
   toast('Exported all leads');
 }
 
-$('#shareLeadsButton').addEventListener('click', shareAllLeads);
+$('#shareLeadsButton')?.addEventListener('click', shareAllLeads);
 
 // New lead + bulk JSON import
 function setLeadEntryMode(mode) {

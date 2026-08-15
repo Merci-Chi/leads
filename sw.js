@@ -1,4 +1,4 @@
-const CACHE = 'steady-hands-leads-supabase-v4-quick-tags';
+const CACHE = 'steady-hands-leads-supabase-v5-business-prices';
 const APP_FILES = [
   './',
   './index.html',
