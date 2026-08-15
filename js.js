@@ -968,14 +968,18 @@ if (spanishTagChoice) {
     spanishTagChoice.classList.toggle('selected', selectedSpanishPossible);
   });
 }
-$('#finishLeadButton').addEventListener('click', async () => {
+async function finishLeadAndExit(tag = '') {
   const lead = currentLead();
-  if (!lead || !selectedDoneTag) return;
-  lead.tag = selectedDoneTag;
+  if (!lead) return;
+
+  // A tag is optional. Clicking the X in the Done modal finishes the call
+  // and moves the lead to Follow-ups without adding/changing a tag.
+  if (tag) lead.tag = tag;
   lead.spanishPossible = selectedSpanishPossible;
   lead.status = 'followup';
   lead.lastCalled = new Date().toISOString();
   saveState(lead.id);
+
   try {
     await syncLeadNow(lead);
     showSyncStatus('Follow-up synced');
@@ -983,51 +987,26 @@ $('#finishLeadButton').addEventListener('click', async () => {
     console.error('Could not move lead to Follow-ups in Supabase:', error);
     showSyncStatus('Sync failed');
   }
+
   closeModal('doneModal');
   renderLists();
   showScreen('leads');
-  toast(`Moved to Follow-ups · ${selectedDoneTag}`);
-});
-
-// Share / export every lead as JSON text.
-// macOS assigns .json files the icon of the app associated with JSON (Firefox on some Macs).
-// Using .txt avoids that app association while keeping the contents valid JSON.
-async function shareAllLeads() {
-  const exportData = {
-    leads: state.leads.map(lead => {
-      const { addedAt, AddedAt, addedat, ...cleanLead } = lead || {};
-      return cleanLead;
-    })
-  };
-  const json = JSON.stringify(exportData, null, 2);
-  const file = new File([json], 'all-leads.txt', { type: 'text/plain;charset=utf-8' });
-
-  try {
-    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-      await navigator.share({
-        title: 'All Leads',
-        text: 'Lead export',
-        files: [file]
-      });
-      return;
-    }
-  } catch (error) {
-    if (error?.name === 'AbortError') return;
-  }
-
-  // Desktop/browser fallback: export the exact same JSON content as a plain-text file.
-  const url = URL.createObjectURL(file);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = 'all-leads.txt';
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  toast('Exported all leads');
+  toast(tag ? `Moved to Follow-ups · ${tag}` : 'Moved to Follow-ups');
 }
 
-$('#shareLeadsButton')?.addEventListener('click', shareAllLeads);
+$('#finishLeadButton').addEventListener('click', async () => {
+  if (!selectedDoneTag) return;
+  await finishLeadAndExit(selectedDoneTag);
+});
+
+const doneModalCloseButton = $('#doneModal .modal-close');
+if (doneModalCloseButton) {
+  // Do not let the generic data-close handler also fire for this button.
+  doneModalCloseButton.removeAttribute('data-close');
+  doneModalCloseButton.addEventListener('click', async () => {
+    await finishLeadAndExit('');
+  });
+}
 
 // New lead + bulk JSON import
 function setLeadEntryMode(mode) {
