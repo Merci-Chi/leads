@@ -1,1 +1,35 @@
-[]
+[
+  {
+    "name": "",
+    "company": "New Horizon Landscapes",
+    "phone": "7025563823",
+    "site": "https://newhorizonlandscapeslv.com",
+    "leadType": "Broken Site",
+    "issue": "Website contains leftover template/demo content, incorrect placeholder contact information, generic business-agency sections, placeholder team members, and unfinished content.",
+    "concerns": "",
+    "notes": "Strong lead. Real business phone and address are present, but several parts of the website still appear unfinished.",
+    "spanishPossible": false
+  },
+  {
+    "name": "",
+    "company": "Vegas Valley Plumbing",
+    "phone": "7026258543",
+    "site": "https://vegasvalleyplumbing.com",
+    "leadType": "Outdated Site",
+    "issue": "Website has repetitive sections and displays multiple different phone numbers across pages, which may make the customer journey confusing.",
+    "concerns": "",
+    "notes": "Website explicitly says Hablamos Español.",
+    "spanishPossible": true
+  },
+  {
+    "name": "",
+    "company": "Envy Roofing",
+    "phone": "7025335293",
+    "site": "https://envyroof.com",
+    "leadType": "Outdated Site",
+    "issue": "Service pages contain repeated headings and could benefit from a cleaner, more polished presentation.",
+    "concerns": "",
+    "notes": "",
+    "spanishPossible": false
+  }
+]
