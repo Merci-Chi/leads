@@ -355,7 +355,18 @@ a { color: inherit; }
   cursor: pointer;
 }
 .mood-button i { font-size: 44px; }
-.mood-button.selected { color: #49e37c; filter: drop-shadow(0 0 7px rgba(73,227,124,.2)); }
+.mood-button.selected[data-value="Positive"] {
+  color: #49e37c;
+  filter: drop-shadow(0 0 7px rgba(73,227,124,.22));
+}
+.mood-button.selected[data-value="Neutral"] {
+  color: #ffd45f;
+  filter: drop-shadow(0 0 7px rgba(255,212,95,.22));
+}
+.mood-button.selected[data-value="Negative"] {
+  color: #ff6568;
+  filter: drop-shadow(0 0 7px rgba(255,101,104,.22));
+}
 
 .card-heading { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
 .card-heading h2 { margin: 0; font-size: 16px; }
@@ -1041,3 +1052,36 @@ html, body { overscroll-behavior-y: contain; }
 }
 .pull-refresh-indicator.refreshing i { animation: pull-refresh-spin .7s linear infinite; }
 @keyframes pull-refresh-spin { to { transform: rotate(360deg); } }
+
+
+/* QUICK INFO TAG MANAGEMENT */
+.quick-tags-section {
+  margin: 13px 0 2px;
+  padding: 12px;
+  border: 1px solid #1d3b56;
+  border-radius: 12px;
+  background: rgba(6, 18, 30, .62);
+}
+.quick-tags-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+.quick-tags-heading > div { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.quick-tags-heading span { color: #eef5fc; font-size: 12.5px; font-weight: 800; }
+.quick-tags-heading small { color: #6f879e; font-size: 9.5px; font-weight: 700; }
+.quick-tags-list { display: flex; flex-wrap: wrap; gap: 7px; min-height: 31px; align-items: center; }
+.quick-tag-chip {
+  min-height: 31px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 9px 0 10px;
+  border: 1px solid #2c6fae;
+  border-radius: 999px;
+  background: rgba(30, 91, 151, .15);
+  color: #a9d1ff;
+  font-size: 10.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.quick-tag-chip i { font-size: 10px; opacity: .72; }
+.quick-tag-chip:hover, .quick-tag-chip:active { border-color: #ff7175; color: #ff9a9d; background: rgba(255, 94, 97, .10); }
+.quick-tag-chip.spanish { border-color: #55799e; color: #c3dcfb; background: rgba(70, 111, 153, .13); }
+.quick-tags-empty { color: #637b91; font-size: 10.5px; font-weight: 700; }

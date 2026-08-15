@@ -307,11 +307,91 @@ function getLeadType(lead) {
   const tagType = Array.isArray(lead.tags)
     ? lead.tags.map(normalizeLeadType).find(value => value && value !== 'Spanish?')
     : '';
-  return normalizeLeadType(lead.leadType || lead.type || lead.reason || tagType || lead.issue);
+  return normalizeLeadType(lead.leadType || lead.type || lead.reason || tagType);
 }
 
 function hasPossibleSpanishTag(lead) {
   return Boolean(lead.spanishPossible) || (Array.isArray(lead.tags) && lead.tags.some(tag => normalizeLeadType(tag) === 'Spanish?'));
+}
+
+function quickInfoTags(lead) {
+  const items = [];
+  const seen = new Set();
+  const add = (label, kind, raw = '') => {
+    const clean = String(label || '').trim();
+    if (!clean) return;
+    const key = clean.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    items.push({ label: clean, kind, raw });
+  };
+
+  const leadType = getLeadType(lead);
+  if (leadType && leadType !== 'Spanish?') add(leadType, 'leadType');
+  if (hasPossibleSpanishTag(lead) || leadType === 'Spanish?') add('Spanish?', 'spanish');
+
+  if (Array.isArray(lead.tags)) {
+    lead.tags.forEach(raw => {
+      const normalized = normalizeLeadType(raw);
+      if (!normalized || normalized === 'Spanish?' || normalized === leadType) return;
+      add(raw, 'raw', raw);
+    });
+  }
+
+  if (lead.tag) add(lead.tag, 'followupTag');
+  return items;
+}
+
+function renderQuickInfoTags() {
+  const lead = currentLead();
+  const list = $('#quickTagsList');
+  if (!lead || !list) return;
+  const tags = quickInfoTags(lead);
+  if (!tags.length) {
+    list.innerHTML = '<span class="quick-tags-empty">No tags</span>';
+    return;
+  }
+  list.innerHTML = tags.map(tag => `
+    <button class="quick-tag-chip ${tag.kind === 'spanish' ? 'spanish' : ''}" type="button"
+      data-remove-tag-kind="${escapeHTML(tag.kind)}" data-remove-tag-raw="${escapeHTML(tag.raw)}"
+      aria-label="Remove ${escapeHTML(tag.label)} tag">
+      <span>${escapeHTML(tag.label)}</span><i class="bi bi-x-lg" aria-hidden="true"></i>
+    </button>`).join('');
+}
+
+async function removeQuickInfoTag(kind, raw) {
+  const lead = currentLead();
+  if (!lead) return;
+
+  if (kind === 'leadType') {
+    const oldType = getLeadType(lead);
+    lead.leadType = '';
+    lead.type = '';
+    lead.reason = '';
+    if (Array.isArray(lead.tags)) {
+      lead.tags = lead.tags.filter(tag => normalizeLeadType(tag) !== oldType);
+    }
+  } else if (kind === 'spanish') {
+    lead.spanishPossible = false;
+    if (Array.isArray(lead.tags)) {
+      lead.tags = lead.tags.filter(tag => normalizeLeadType(tag) !== 'Spanish?');
+    }
+  } else if (kind === 'followupTag') {
+    lead.tag = '';
+  } else if (kind === 'raw') {
+    lead.tags = (lead.tags || []).filter(tag => String(tag) !== String(raw));
+  }
+
+  saveState(lead.id);
+  renderQuickInfoTags();
+  renderLists();
+  try {
+    await syncLeadNow(lead);
+    showSyncStatus('Tag removed');
+  } catch (error) {
+    console.error('Could not remove tag in Supabase:', error);
+    showSyncStatus('Sync failed');
+  }
 }
 
 function leadCard(lead) {
@@ -384,6 +464,7 @@ function renderCurrentLead() {
   loadSpecificTime(lead.specificTime || '');
   $('#concernsField').value = lead.concerns || '';
   $('#notesField').value = lead.notes || '';
+  renderQuickInfoTags();
 
   $$('[data-field]').forEach(button => {
     button.classList.toggle('selected', lead[button.dataset.field] === button.dataset.value);
@@ -680,25 +761,34 @@ document.addEventListener('click', event => {
 // Tabs
 $$('.tab').forEach(tab => tab.addEventListener('click', () => setTab(tab.dataset.tab)));
 
-// Single-select controls: nothing is visually selected until clicked unless a saved value already exists.
+// Single-select controls are true toggles: tapping the selected option again clears it.
 $$('[data-field]').forEach(button => {
   button.addEventListener('click', () => {
     const lead = currentLead();
     if (!lead) return;
     const field = button.dataset.field;
     const value = button.dataset.value;
-    lead[field] = value;
-    $$(`[data-field="${field}"]`).forEach(item => item.classList.toggle('selected', item === button));
+    const isAlreadySelected = lead[field] === value;
+    const nextValue = isAlreadySelected ? '' : value;
+
+    lead[field] = nextValue;
+    $$(`[data-field="${field}"]`).forEach(item => {
+      item.classList.toggle('selected', nextValue !== '' && item.dataset.value === nextValue);
+    });
+
     if (field === 'timePreference') {
-      const specific = value === 'Specific Time';
+      const specific = nextValue === 'Specific Time';
       const control = $('#specificTimeControl');
       if (control) control.hidden = !specific;
       if (!specific) {
+        lead.specificTime = '';
+        loadSpecificTime('');
         const picker = $('#specificTimePicker');
         if (picker) picker.hidden = true;
         $('#specificTimeButton')?.setAttribute('aria-expanded', 'false');
       }
     }
+
     saveState();
   });
 });
@@ -787,6 +877,13 @@ $$('[data-save]').forEach(element => {
   element.addEventListener('change', () => autosaveField(element));
 });
 
+// Quick Info tags: tapping any tag removes it from this lead and syncs the change.
+$('#quickTagsList')?.addEventListener('click', event => {
+  const chip = event.target.closest('[data-remove-tag-kind]');
+  if (!chip) return;
+  removeQuickInfoTag(chip.dataset.removeTagKind, chip.dataset.removeTagRaw || '');
+});
+
 // Quick Notes popup
 $('#quickNotesButton').addEventListener('click', () => {
   $('#quickNotesInput').value = '';
@@ -817,9 +914,12 @@ $('#doneButton').addEventListener('click', () => {
 });
 $$('.tag-choice[data-tag]').forEach(button => {
   button.addEventListener('click', () => {
-    selectedDoneTag = button.dataset.tag;
-    $$('.tag-choice[data-tag]').forEach(btn => btn.classList.toggle('selected', btn === button));
-    $('#finishLeadButton').disabled = false;
+    const value = button.dataset.tag;
+    selectedDoneTag = selectedDoneTag === value ? '' : value;
+    $$('.tag-choice[data-tag]').forEach(btn => {
+      btn.classList.toggle('selected', selectedDoneTag !== '' && btn.dataset.tag === selectedDoneTag);
+    });
+    $('#finishLeadButton').disabled = !selectedDoneTag;
   });
 });
 
