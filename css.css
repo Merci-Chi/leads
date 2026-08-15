@@ -965,3 +965,19 @@ textarea::placeholder, input::placeholder { color: #60778d; }
   body { overscroll-behavior-y: none; }
   .app-shell { padding-top: max(16px, env(safe-area-inset-top)); }
 }
+
+
+/* POSSIBLE LANGUAGE TAG */
+.spanish-badge {
+  border-color: #4f6f96;
+  color: #b8d6ff;
+  background: rgba(55, 101, 158, .12);
+}
+.secondary-tag-choice {
+  border-style: dashed;
+}
+.secondary-tag-choice.selected {
+  border-color: #5b97dd;
+  background: #0b2543;
+  color: #d6e9ff;
+}

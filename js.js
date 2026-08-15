@@ -5,6 +5,7 @@ const seedLeads = [];
 let state = loadState();
 let currentLeadId = null;
 let selectedDoneTag = '';
+let selectedSpanishPossible = false;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -62,7 +63,7 @@ function leadCard(lead) {
   const meta = isNew ? '' : `Last called: ${formatDateTime(lead.lastCalled)}`;
   const badge = isNew
     ? '<span class="new-badge">NEW</span>'
-    : (lead.tag ? `<span class="tag-badge">${escapeHTML(lead.tag)}</span>` : '');
+    : `${lead.tag ? `<span class="tag-badge">${escapeHTML(lead.tag)}</span>` : ''}${lead.spanishPossible ? `<span class="tag-badge spanish-badge">Spanish?</span>` : ''}`;
   const initial = (lead.name || '?').trim().charAt(0).toUpperCase();
 
   return `
@@ -547,21 +548,33 @@ $('#saveQuickNote').addEventListener('click', () => {
 // Done -> choose label -> move to follow-ups
 $('#doneButton').addEventListener('click', () => {
   selectedDoneTag = '';
-  $$('.tag-choice').forEach(btn => btn.classList.remove('selected'));
+  selectedSpanishPossible = Boolean(lead?.spanishPossible);
+  $$('.tag-choice[data-tag]').forEach(btn => btn.classList.remove('selected'));
+  const spanishChoice = $('#spanishTagChoice');
+  if (spanishChoice) spanishChoice.classList.toggle('selected', selectedSpanishPossible);
   $('#finishLeadButton').disabled = true;
   openModal('doneModal');
 });
-$$('.tag-choice').forEach(button => {
+$$('.tag-choice[data-tag]').forEach(button => {
   button.addEventListener('click', () => {
     selectedDoneTag = button.dataset.tag;
-    $$('.tag-choice').forEach(btn => btn.classList.toggle('selected', btn === button));
+    $$('.tag-choice[data-tag]').forEach(btn => btn.classList.toggle('selected', btn === button));
     $('#finishLeadButton').disabled = false;
   });
 });
+
+const spanishTagChoice = $('#spanishTagChoice');
+if (spanishTagChoice) {
+  spanishTagChoice.addEventListener('click', () => {
+    selectedSpanishPossible = !selectedSpanishPossible;
+    spanishTagChoice.classList.toggle('selected', selectedSpanishPossible);
+  });
+}
 $('#finishLeadButton').addEventListener('click', () => {
   const lead = currentLead();
   if (!lead || !selectedDoneTag) return;
   lead.tag = selectedDoneTag;
+  lead.spanishPossible = selectedSpanishPossible;
   lead.status = 'followup';
   lead.lastCalled = new Date().toISOString();
   saveState();
@@ -644,6 +657,7 @@ function makeLead(raw = {}) {
     status: 'new',
     lastCalled: '',
     tag: '',
+    spanishPossible: Boolean(raw.spanishPossible ?? raw.spanish ?? false),
     answerStatus: '',
     mood: '',
     outcome: '',
