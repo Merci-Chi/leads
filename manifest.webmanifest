@@ -1,0 +1,18 @@
+{
+  "name": "Steady Leads",
+  "short_name": "Steady Leads",
+  "description": "Steady Hands Operations lead calling and follow-up app.",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "portrait-primary",
+  "background_color": "#02060c",
+  "theme_color": "#030711",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
