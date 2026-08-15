@@ -483,6 +483,7 @@ const seedLeads = [];
 
 let state = loadState();
 let currentLeadId = null;
+let editingLeadId = null;
 let selectedDoneTag = '';
 let selectedSpanishPossible = false;
 
@@ -515,7 +516,10 @@ function saveState(...leadIds) {
 
 
 function formatPhoneNumber(value) {
-  const digits = String(value ?? '').replace(/\D/g, '').slice(0, 10);
+  let digits = String(value ?? '').replace(/\D/g, '');
+  // If a US number is pasted with +1 / leading 1, keep the local 10-digit format.
+  if (digits.length === 11 && digits.startsWith('1')) digits = digits.slice(1);
+  digits = digits.slice(0, 10);
   if (!digits) return '';
   if (digits.length < 4) return `(${digits}`;
   if (digits.length < 7) return `(${digits.slice(0,3)})${digits.slice(3)}`;
@@ -1014,10 +1018,16 @@ function escapeHTML(text) {
 $('#backButton').addEventListener('click', () => { renderLists(); showScreen('leads'); });
 $('#leadSearch').addEventListener('input', renderLists);
 $('#addLeadBottomButton').addEventListener('click', openNewLeadModal);
+$('#editLeadButton')?.addEventListener('click', openEditLeadModal);
 document.addEventListener('click', event => {
   const leadButton = event.target.closest('[data-open-lead]');
   if (leadButton) openLead(leadButton.dataset.openLead);
 });
+
+document.querySelectorAll('[data-close="newLeadModal"]').forEach(button => button.addEventListener('click', () => {
+  editingLeadId = null;
+  setLeadModalMode('add');
+}));
 
 // Tabs
 $$('.tab').forEach(tab => tab.addEventListener('click', () => setTab(tab.dataset.tab)));
@@ -1284,15 +1294,52 @@ function setLeadEntryMode(mode) {
   $('#bulkLeadPanel').classList.toggle('active', !single);
 }
 
+function resetLeadForm() {
+  ['newName','newCompany','newPhone','newSite','newAge','newIssue'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.value = '';
+  });
+}
+
+function setLeadModalMode(mode) {
+  const editing = mode === 'edit';
+  const title = $('#newLeadTitle');
+  const kicker = $('#newLeadKicker');
+  const submit = $('#createLeadButton');
+  if (title) title.textContent = editing ? 'Edit Lead' : 'Add Leads';
+  if (kicker) kicker.textContent = editing ? 'UPDATE LEAD' : 'ADD TO INBOX';
+  if (submit) submit.innerHTML = editing ? '<i class="bi bi-check2"></i> Save Changes' : 'Add Lead';
+  $('#singleLeadTab').hidden = editing;
+  $('#bulkLeadTab').hidden = editing;
+  if (editing) setLeadEntryMode('single');
+}
+
 function openNewLeadModal() {
-  ['newName','newCompany','newPhone','newSite','newAge','newIssue'].forEach(id => document.getElementById(id).value = '');
+  editingLeadId = null;
+  resetLeadForm();
+  setLeadModalMode('add');
   $('#bulkLeadJson').value = '';
   $('#bulkLeadFile').value = '';
   $('#importStatus').textContent = '';
   $('#importStatus').className = 'import-status';
   setLeadEntryMode('single');
   openModal('newLeadModal');
-  setTimeout(() => $('#newName').focus(), 50);
+  setTimeout(() => $('#newCompany').focus(), 50);
+}
+
+function openEditLeadModal() {
+  const lead = currentLead();
+  if (!lead) return;
+  editingLeadId = lead.id;
+  setLeadModalMode('edit');
+  $('#newName').value = lead.name || '';
+  $('#newCompany').value = lead.company || '';
+  $('#newPhone').value = formatPhoneNumber(lead.phone || '');
+  $('#newSite').value = lead.site || '';
+  $('#newAge').value = lead.age || '';
+  $('#newIssue').value = lead.issue || '';
+  openModal('newLeadModal');
+  setTimeout(() => $('#newCompany').focus(), 50);
 }
 
 function makeLead(raw = {}) {
@@ -1406,8 +1453,13 @@ async function loadLeadsJson() {
 
 const newPhoneInput = $('#newPhone');
 newPhoneInput.addEventListener('input', () => {
-  const formatted = formatPhoneNumber(newPhoneInput.value);
-  newPhoneInput.value = formatted;
+  newPhoneInput.value = formatPhoneNumber(newPhoneInput.value);
+});
+newPhoneInput.addEventListener('paste', event => {
+  event.preventDefault();
+  const pasted = event.clipboardData?.getData('text') || '';
+  newPhoneInput.value = formatPhoneNumber(pasted);
+  newPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
 });
 newPhoneInput.addEventListener('keydown', event => {
   const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'];
@@ -1415,19 +1467,65 @@ newPhoneInput.addEventListener('keydown', event => {
   if (!/^\d$/.test(event.key)) event.preventDefault();
 });
 
+// Pasted values are trimmed before insertion so copied text never starts/ends with stray spaces.
+['newName','newCompany','newSite','newAge','newIssue'].forEach(id => {
+  const input = $(`#${id}`);
+  if (!input) return;
+  input.addEventListener('paste', event => {
+    event.preventDefault();
+    const pasted = (event.clipboardData?.getData('text') || '').trim();
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    const before = input.value.slice(0, start);
+    const after = input.value.slice(end);
+    input.value = `${before}${pasted}${after}`.replace(/^\s+/, '');
+    const caret = before.length + pasted.length;
+    requestAnimationFrame(() => input.setSelectionRange?.(caret, caret));
+  });
+  input.addEventListener('blur', () => {
+    input.value = input.value.trim();
+  });
+});
+
 $('#singleLeadTab').addEventListener('click', () => setLeadEntryMode('single'));
 $('#bulkLeadTab').addEventListener('click', () => setLeadEntryMode('bulk'));
 
-$('#createLeadButton').addEventListener('click', () => {
-  const lead = makeLead({
-    name: $('#newName').value,
-    company: $('#newCompany').value,
-    phone: $('#newPhone').value,
-    site: $('#newSite').value,
-    age: $('#newAge').value,
-    issue: $('#newIssue').value
-  });
-  if (!lead.name) return toast('Add a lead name');
+$('#createLeadButton').addEventListener('click', async () => {
+  const values = {
+    name: $('#newName').value.trim(),
+    company: $('#newCompany').value.trim(),
+    phone: formatPhoneNumber($('#newPhone').value),
+    site: $('#newSite').value.trim(),
+    age: $('#newAge').value.trim(),
+    issue: $('#newIssue').value.trim()
+  };
+
+  if (editingLeadId) {
+    const lead = state.leads.find(item => item.id === editingLeadId);
+    if (!lead) return toast('Lead not found');
+    lead.name = values.name;
+    lead.company = values.company;
+    lead.phone = values.phone;
+    lead.site = values.site;
+    lead.age = values.age;
+    lead.issue = values.issue;
+    saveState(lead.id);
+    closeModal('newLeadModal');
+    editingLeadId = null;
+    setLeadModalMode('add');
+    renderCurrentLead();
+    renderLists();
+    try {
+      await syncLeadNow(lead);
+      showSyncStatus('Lead updated');
+    } catch (error) {
+      console.error('Could not update lead:', error);
+      showSyncStatus('Sync failed');
+    }
+    return toast('Lead updated');
+  }
+
+  const lead = makeLead(values);
   addLeadHistory(lead, 'added');
   state.leads.push(lead);
   saveState(lead.id);

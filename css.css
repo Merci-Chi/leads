@@ -1268,3 +1268,28 @@ html, body { overscroll-behavior-y: contain; }
 .history-toggle-button.open .history-toggle-chevron { transform: rotate(180deg); }
 .history-list[hidden] { display: none !important; }
 .history-toggle-button.open + .history-list { margin-top: 4px; }
+
+
+/* EDITABLE LEAD DETAILS */
+.details-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 11px 0 2px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.edit-lead-button {
+  min-height: 38px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #2d5f8d;
+  border-radius: 10px;
+  background: #0a2139;
+  color: #8fc0ff;
+  font-weight: 800;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.edit-lead-button:active { transform: scale(.98); }
+.optional-fields-help { margin-bottom: 0; }

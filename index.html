@@ -113,6 +113,9 @@
 
       <section class="panel active" id="detailsPanel">
         <article class="card details-card">
+          <div class="details-card-actions">
+            <button class="edit-lead-button" id="editLeadButton" type="button"><i class="bi bi-pencil-square"></i> Edit Lead</button>
+          </div>
           <div class="detail-row">
             <span class="row-icon"><i class="bi bi-buildings"></i></span>
             <div><span>Company Name</span><strong id="leadCompany"></strong></div>
@@ -475,7 +478,7 @@
   <div class="modal-backdrop" id="newLeadModal" aria-hidden="true">
     <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="newLeadTitle">
       <div class="modal-heading">
-        <div><span class="section-kicker">ADD TO INBOX</span><h2 id="newLeadTitle">Add Leads</h2></div>
+        <div><span class="section-kicker" id="newLeadKicker">ADD TO INBOX</span><h2 id="newLeadTitle">Add Leads</h2></div>
         <button class="icon-button bare modal-close" data-close="newLeadModal" type="button" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
 
@@ -485,6 +488,7 @@
       </div>
 
       <div class="lead-entry-panel active" id="singleLeadPanel">
+        <p class="modal-help optional-fields-help">Every field is optional. Blank fields are saved as empty.</p>
         <div class="modal-form">
           <label><span>Name</span><input id="newName" type="text" placeholder="Lead name"></label>
           <label><span>Company</span><input id="newCompany" type="text" placeholder="Company name"></label>
