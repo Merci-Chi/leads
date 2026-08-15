@@ -2,7 +2,7 @@
 
 create table if not exists public.new_leads (
   id uuid primary key default gen_random_uuid(),
-  name text default '', company text default '', phone text default '', site text default '',
+  name text default '', company text default '', phone text default '', email text default '', site text default '',
   lead_type text default '', tags text[] default '{}', spanish_possible boolean default false,
   age text default '', issue text default '', concerns text default '', notes text default '',
   answer_status text default '', mood text default '', outcome text default '',
@@ -36,4 +36,18 @@ begin
   end if;
 end $$;
 
+notify pgrst, 'reload schema';
+
+
+-- Safe upgrade for existing projects
+alter table public.new_leads add column if not exists email text default '';
+alter table public.follow_ups add column if not exists email text default '';
+alter table public.new_leads add column if not exists history jsonb default '[]'::jsonb;
+alter table public.follow_ups add column if not exists history jsonb default '[]'::jsonb;
+notify pgrst, 'reload schema';
+
+
+-- Lead discovery/source platforms
+alter table public.new_leads add column if not exists source_tags text[] default '{}';
+alter table public.follow_ups add column if not exists source_tags text[] default '{}';
 notify pgrst, 'reload schema';

@@ -93,7 +93,12 @@
         <button class="icon-button bare" id="backButton" type="button" aria-label="Back to leads">
           <i class="bi bi-chevron-left"></i>
         </button>
-        <h1>Lead Details</h1>
+        <div class="detail-title-wrap">
+          <h1>Lead Details</h1>
+          <button class="edit-lead-icon" id="editLeadButton" type="button" aria-label="Edit lead" title="Edit lead">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+        </div>
         <a class="icon-button bare call-top" id="topCallButton" href="tel:" aria-label="Call lead">
           <i class="bi bi-telephone-fill"></i>
         </a>
@@ -113,9 +118,6 @@
 
       <section class="panel active" id="detailsPanel">
         <article class="card details-card">
-          <div class="details-card-actions">
-            <button class="edit-lead-button" id="editLeadButton" type="button"><i class="bi bi-pencil-square"></i> Edit Lead</button>
-          </div>
           <div class="detail-row">
             <span class="row-icon"><i class="bi bi-buildings"></i></span>
             <div><span>Company Name</span><strong id="leadCompany"></strong></div>
@@ -123,6 +125,10 @@
           <div class="detail-row">
             <span class="row-icon"><i class="bi bi-person"></i></span>
             <div><span>Name</span><strong id="leadName"></strong></div>
+          </div>
+          <div class="detail-row">
+            <span class="row-icon"><i class="bi bi-envelope"></i></span>
+            <div><span>Email</span><a id="leadEmail" href="#"></a></div>
           </div>
           <div class="detail-row">
             <span class="row-icon"><i class="bi bi-globe2"></i></span>
@@ -145,10 +151,20 @@
             <div class="quick-tags-heading">
               <div>
                 <span id="quickTagsTitle">Tags</span>
-                <small>Tap a tag to remove it</small>
+                <small>Tap any tag to toggle it</small>
               </div>
             </div>
             <div class="quick-tags-list" id="quickTagsList"></div>
+          </section>
+
+          <section class="quick-tags-section source-tags-section" aria-labelledby="sourceTagsTitle">
+            <div class="quick-tags-heading">
+              <div>
+                <span id="sourceTagsTitle">Found On</span>
+                <small>Where you found this lead</small>
+              </div>
+            </div>
+            <div class="quick-tags-list" id="sourceTagsList"></div>
           </section>
 
           <label class="stacked-field">
@@ -490,9 +506,10 @@
       <div class="lead-entry-panel active" id="singleLeadPanel">
         <p class="modal-help optional-fields-help">Every field is optional. Blank fields are saved as empty.</p>
         <div class="modal-form">
+          <label><span>Company Name</span><input id="newCompany" type="text" placeholder="Company name"></label>
+          <label><span>Phone Number</span><input id="newPhone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="13" placeholder="(000)000-0000"></label>
+          <label><span>Email</span><input id="newEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
           <label><span>Name</span><input id="newName" type="text" placeholder="Lead name"></label>
-          <label><span>Company</span><input id="newCompany" type="text" placeholder="Company name"></label>
-          <label><span>Phone</span><input id="newPhone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="13" placeholder="(000)000-0000"></label>
           <label><span>Website</span><input id="newSite" type="url" placeholder="https://example.com"></label>
           <label><span>Site Age</span><input id="newAge" type="text" placeholder="e.g. 7 years"></label>
           <label><span>Main Issue</span><input id="newIssue" type="text" placeholder="What needs improvement?"></label>

@@ -24,14 +24,17 @@ function ensureUuidIds() {
 }
 
 function leadToSupabaseRow(lead) {
+  ensureAutomaticTags(lead);
   return {
     id: lead.id,
     name: lead.name || '',
     company: lead.company || '',
     phone: lead.phone || '',
+    email: lead.email || '',
     site: lead.site || '',
     lead_type: getLeadType(lead) || '',
     tags: Array.isArray(lead.tags) ? lead.tags : [],
+    source_tags: Array.isArray(lead.sourceTags) ? lead.sourceTags : [],
     spanish_possible: Boolean(lead.spanishPossible),
     age: lead.age || '',
     issue: lead.issue || '',
@@ -56,16 +59,18 @@ function leadToSupabaseRow(lead) {
 }
 
 function supabaseRowToLead(row, status = 'new') {
-  return {
+  return ensureAutomaticTags({
     id: row.id,
     name: row.name || '',
     company: row.company || '',
     phone: row.phone || '',
+    email: row.email || '',
     site: row.site || '',
     age: row.age || '',
     issue: row.issue || '',
     leadType: row.lead_type || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
+    sourceTags: Array.isArray(row.source_tags) ? row.source_tags : [],
     spanishPossible: Boolean(row.spanish_possible),
     status,
     lastCalled: row.last_called || '',
@@ -85,7 +90,7 @@ function supabaseRowToLead(row, status = 'new') {
     specificTime: row.specific_time || '',
     concerns: row.concerns || '',
     notes: row.notes || ''
-  };
+  });
 }
 
 function tableForLead(lead) {
@@ -567,83 +572,218 @@ function hasPossibleSpanishTag(lead) {
   return Boolean(lead.spanishPossible) || (Array.isArray(lead.tags) && lead.tags.some(tag => normalizeLeadType(tag) === 'Spanish?'));
 }
 
-function quickInfoTags(lead) {
-  const items = [];
-  const seen = new Set();
-  const add = (label, kind, raw = '') => {
-    const clean = String(label || '').trim();
+const AVAILABLE_LEAD_TAGS = [
+  'Outdated Site',
+  'No Site',
+  'No Phone',
+  'Broken Site',
+  'Spanish?',
+  'Interested',
+  'Needs More Info',
+  'Skeptical',
+  'Call Back',
+  'No Answer',
+  'Not Interested',
+  'Sold'
+];
+
+const LEAD_TYPE_TAGS = new Set(['Outdated Site', 'No Site', 'Broken Site']);
+const FOLLOWUP_TAGS = new Set(['Interested', 'Needs More Info', 'Skeptical', 'Call Back', 'No Answer', 'Not Interested', 'Sold']);
+
+const AVAILABLE_SOURCE_TAGS = [
+  'Yelp',
+  'Google',
+  'Google Maps',
+  'Instagram',
+  'Facebook',
+  'Facebook Marketplace',
+  'Nextdoor',
+  'Reddit',
+  'TikTok',
+  'Booksy',
+  'Craigslist',
+  'Thumbtack',
+  'Angi',
+  'Yellow Pages',
+  'LinkedIn',
+  'X / Twitter',
+  'OfferUp',
+  'TaskRabbit',
+  'Bark',
+  'StyleSeat',
+  'Fresha',
+  'Vagaro',
+  'Square',
+  'Other'
+];
+
+function renderSourceTags() {
+  const lead = currentLead();
+  const list = $('#sourceTagsList');
+  if (!lead || !list) return;
+  lead.sourceTags = Array.isArray(lead.sourceTags) ? lead.sourceTags : [];
+  const selectedKeys = new Set(lead.sourceTags.map(tag => String(tag || '').trim().toLowerCase()).filter(Boolean));
+  const builtInKeys = new Set(AVAILABLE_SOURCE_TAGS.map(tag => tag.toLowerCase()));
+  const custom = lead.sourceTags.filter(tag => !builtInKeys.has(String(tag || '').trim().toLowerCase()));
+  const all = [...AVAILABLE_SOURCE_TAGS, ...custom];
+  list.innerHTML = all.map(label => {
+    const selected = selectedKeys.has(label.toLowerCase());
+    return `<button class="quick-tag-chip source-tag-chip${selected ? ' selected' : ''}" type="button" data-toggle-source-tag="${escapeHTML(label)}" aria-pressed="${selected ? 'true' : 'false'}"><i class="bi ${selected ? 'bi-check-lg' : 'bi-plus-lg'}" aria-hidden="true"></i><span>${escapeHTML(label)}</span></button>`;
+  }).join('');
+}
+
+async function toggleSourceTag(label) {
+  const lead = currentLead();
+  if (!lead) return;
+  const clean = String(label || '').trim();
+  if (!clean) return;
+  lead.sourceTags = Array.isArray(lead.sourceTags) ? lead.sourceTags : [];
+  const key = clean.toLowerCase();
+  const exists = lead.sourceTags.some(tag => String(tag || '').trim().toLowerCase() === key);
+  if (exists) lead.sourceTags = lead.sourceTags.filter(tag => String(tag || '').trim().toLowerCase() !== key);
+  else lead.sourceTags.push(clean);
+  saveState(lead.id);
+  renderSourceTags();
+  try {
+    await syncLeadNow(lead);
+    showSyncStatus(exists ? 'Source removed' : 'Source added');
+  } catch (error) {
+    console.error('Could not sync source tags:', error);
+    showSyncStatus('Sync failed');
+  }
+}
+
+function ensureNoSiteTag(lead) {
+  if (!lead) return lead;
+  lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
+  const hasSite = Boolean(String(lead.site || '').trim());
+  const hasNoSite = lead.tags.some(tag => normalizeLeadType(tag) === 'No Site') || normalizeLeadType(lead.leadType) === 'No Site';
+
+  if (!hasSite && !hasNoSite) {
+    lead.tags.push('No Site');
+    if (!normalizeLeadType(lead.leadType)) lead.leadType = 'No Site';
+  }
+  return lead;
+}
+
+function ensureNoPhoneTag(lead) {
+  if (!lead) return lead;
+  lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
+  const hasPhone = Boolean(String(lead.phone || '').replace(/\D/g, ''));
+  const hasNoPhone = lead.tags.some(tag => String(tag || '').trim().toLowerCase() === 'no phone');
+
+  if (!hasPhone && !hasNoPhone) lead.tags.push('No Phone');
+  if (hasPhone && hasNoPhone) lead.tags = lead.tags.filter(tag => String(tag || '').trim().toLowerCase() !== 'no phone');
+  return lead;
+}
+
+function ensureAutomaticTags(lead) {
+  ensureNoSiteTag(lead);
+  ensureNoPhoneTag(lead);
+  return lead;
+}
+
+function selectedLeadTags(lead) {
+  ensureAutomaticTags(lead);
+  const selected = new Map();
+  const add = value => {
+    const clean = String(value || '').trim();
     if (!clean) return;
-    const key = clean.toLowerCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    items.push({ label: clean, kind, raw });
+    selected.set(normalizeLeadType(clean).toLowerCase(), clean);
   };
 
+  if (Array.isArray(lead.tags)) lead.tags.forEach(add);
   const leadType = getLeadType(lead);
-  if (leadType && leadType !== 'Spanish?') add(leadType, 'leadType');
-  if (hasPossibleSpanishTag(lead) || leadType === 'Spanish?') add('Spanish?', 'spanish');
-
-  if (Array.isArray(lead.tags)) {
-    lead.tags.forEach(raw => {
-      const normalized = normalizeLeadType(raw);
-      if (!normalized || normalized === 'Spanish?' || normalized === leadType) return;
-      add(raw, 'raw', raw);
-    });
-  }
-
-  if (lead.tag) add(lead.tag, 'followupTag');
-  return items;
+  if (leadType) add(leadType);
+  if (hasPossibleSpanishTag(lead)) add('Spanish?');
+  if (lead.tag) add(lead.tag);
+  return selected;
 }
 
 function renderQuickInfoTags() {
   const lead = currentLead();
   const list = $('#quickTagsList');
   if (!lead || !list) return;
-  const tags = quickInfoTags(lead);
-  if (!tags.length) {
-    list.innerHTML = '<span class="quick-tags-empty">No tags</span>';
-    return;
-  }
-  list.innerHTML = tags.map(tag => `
-    <button class="quick-tag-chip ${tag.kind === 'spanish' ? 'spanish' : ''}" type="button"
-      data-remove-tag-kind="${escapeHTML(tag.kind)}" data-remove-tag-raw="${escapeHTML(tag.raw)}"
-      aria-label="Remove ${escapeHTML(tag.label)} tag">
-      <span>${escapeHTML(tag.label)}</span><i class="bi bi-x-lg" aria-hidden="true"></i>
-    </button>`).join('');
+
+  const selected = selectedLeadTags(lead);
+  const knownKeys = new Set(AVAILABLE_LEAD_TAGS.map(tag => normalizeLeadType(tag).toLowerCase()));
+  const customTags = Array.from(selected.values()).filter(tag => !knownKeys.has(normalizeLeadType(tag).toLowerCase()));
+  const allTags = [...AVAILABLE_LEAD_TAGS, ...customTags];
+
+  list.innerHTML = allTags.map(label => {
+    const key = normalizeLeadType(label).toLowerCase();
+    const isSelected = selected.has(key);
+    const spanishClass = normalizeLeadType(label) === 'Spanish?' ? ' spanish' : '';
+    return `
+      <button class="quick-tag-chip${isSelected ? ' selected' : ''}${spanishClass}" type="button"
+        data-toggle-lead-tag="${escapeHTML(label)}" aria-pressed="${isSelected ? 'true' : 'false'}"
+        aria-label="${isSelected ? 'Remove' : 'Add'} ${escapeHTML(label)} tag">
+        <i class="bi ${isSelected ? 'bi-check-lg' : 'bi-plus-lg'}" aria-hidden="true"></i>
+        <span>${escapeHTML(label)}</span>
+      </button>`;
+  }).join('');
 }
 
-async function removeQuickInfoTag(kind, raw) {
+async function toggleQuickInfoTag(label) {
   const lead = currentLead();
   if (!lead) return;
 
-  if (kind === 'leadType') {
-    const oldType = getLeadType(lead);
-    lead.leadType = '';
-    lead.type = '';
-    lead.reason = '';
-    if (Array.isArray(lead.tags)) {
-      lead.tags = lead.tags.filter(tag => normalizeLeadType(tag) !== oldType);
+  const cleanLabel = String(label || '').trim();
+  const normalized = normalizeLeadType(cleanLabel);
+  const key = normalized.toLowerCase();
+  const selected = selectedLeadTags(lead);
+  const isSelected = selected.has(key);
+  lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
+
+  const removeMatchingTag = () => {
+    lead.tags = lead.tags.filter(tag => normalizeLeadType(tag).toLowerCase() !== key);
+  };
+  const addTagIfMissing = () => {
+    if (!lead.tags.some(tag => normalizeLeadType(tag).toLowerCase() === key)) lead.tags.push(cleanLabel);
+  };
+
+  if (normalized === 'Spanish?') {
+    lead.spanishPossible = !isSelected;
+    if (isSelected) removeMatchingTag();
+    else addTagIfMissing();
+  } else if (LEAD_TYPE_TAGS.has(normalized)) {
+    if (isSelected) {
+      removeMatchingTag();
+      if (normalizeLeadType(lead.leadType) === normalized) {
+        const replacement = lead.tags.map(normalizeLeadType).find(tag => LEAD_TYPE_TAGS.has(tag)) || '';
+        lead.leadType = replacement;
+      }
+    } else {
+      // Preserve an existing lead-type selection before adding another one.
+      const existingType = normalizeLeadType(lead.leadType);
+      if (existingType && LEAD_TYPE_TAGS.has(existingType) && !lead.tags.some(tag => normalizeLeadType(tag) === existingType)) {
+        lead.tags.push(existingType);
+      }
+      addTagIfMissing();
+      if (!existingType) lead.leadType = normalized;
     }
-  } else if (kind === 'spanish') {
-    lead.spanishPossible = false;
-    if (Array.isArray(lead.tags)) {
-      lead.tags = lead.tags.filter(tag => normalizeLeadType(tag) !== 'Spanish?');
+  } else {
+    if (isSelected) {
+      removeMatchingTag();
+      if (normalizeLeadType(lead.tag).toLowerCase() === key) {
+        lead.tag = lead.tags.map(tag => String(tag).trim()).find(tag => FOLLOWUP_TAGS.has(tag)) || '';
+      }
+    } else {
+      addTagIfMissing();
+      if (FOLLOWUP_TAGS.has(cleanLabel) && !lead.tag) lead.tag = cleanLabel;
     }
-  } else if (kind === 'followupTag') {
-    lead.tag = '';
-  } else if (kind === 'raw') {
-    lead.tags = (lead.tags || []).filter(tag => String(tag) !== String(raw));
   }
 
   saveState(lead.id);
   renderQuickInfoTags();
+  renderSourceTags();
   renderLeadHistory();
   renderLists();
   try {
     await syncLeadNow(lead);
-    showSyncStatus('Tag removed');
+    showSyncStatus(isSelected ? 'Tag removed' : 'Tag added');
   } catch (error) {
-    console.error('Could not remove tag in Supabase:', error);
+    console.error('Could not update tag in Supabase:', error);
     showSyncStatus('Sync failed');
   }
 }
@@ -651,8 +791,11 @@ async function removeQuickInfoTag(kind, raw) {
 function leadCard(lead) {
   const isNew = lead.status === 'new';
   const leadType = getLeadType(lead);
+  ensureAutomaticTags(lead);
+  const hasNoPhone = Array.isArray(lead.tags) && lead.tags.some(tag => String(tag || '').trim().toLowerCase() === 'no phone');
   const badges = [
     leadType && leadType !== 'Spanish?' ? `<span class="lead-type-badge">${escapeHTML(leadType)}</span>` : '',
+    hasNoPhone ? '<span class="lead-type-badge no-phone-badge">No Phone</span>' : '',
     hasPossibleSpanishTag(lead) || leadType === 'Spanish?' ? '<span class="lead-type-badge spanish-badge">Spanish?</span>' : '',
     !isNew && lead.tag ? `<span class="tag-badge">${escapeHTML(lead.tag)}</span>` : ''
   ].filter(Boolean).join('');
@@ -671,7 +814,7 @@ function leadCard(lead) {
 
 function renderLists() {
   const query = ($('#leadSearch').value || '').trim().toLowerCase();
-  const matches = lead => !query || [lead.name, lead.company, lead.phone, lead.tag, getLeadType(lead), hasPossibleSpanishTag(lead) ? 'Spanish?' : ''].some(v => String(v || '').toLowerCase().includes(query));
+  const matches = lead => !query || [lead.name, lead.company, lead.phone, lead.email, lead.tag, getLeadType(lead), hasPossibleSpanishTag(lead) ? 'Spanish?' : ''].some(v => String(v || '').toLowerCase().includes(query));
   const fresh = state.leads.filter(l => l.status === 'new' && matches(l)).slice().reverse();
   const follow = state.leads.filter(l => l.status === 'followup' && matches(l)).sort((a,b) => new Date(b.lastCalled || 0) - new Date(a.lastCalled || 0));
 
@@ -702,8 +845,10 @@ function renderCurrentLead() {
 
   $('#leadPhone').textContent = lead.phone ? formatPhoneNumber(lead.phone) : 'No phone';
   $('#topCallButton').href = `tel:${String(lead.phone || '').replace(/[^\d+]/g, '')}`;
-  $('#leadName').textContent = lead.name || '—';
+  $('#leadName').textContent = lead.name || 'No contact name';
   $('#leadCompany').textContent = lead.company || '—';
+  $('#leadEmail').textContent = lead.email || 'No email';
+  $('#leadEmail').href = lead.email ? `mailto:${lead.email}` : '#';
   $('#leadSite').textContent = lead.site || '—';
   $('#leadSite').href = lead.site || '#';
   $('#leadAge').textContent = lead.age || '—';
@@ -1188,11 +1333,17 @@ $('#notesField')?.addEventListener('blur', event => {
   notesBeforeEdit = event.currentTarget.value || '';
 });
 
-// Quick Info tags: tapping any tag removes it from this lead and syncs the change.
+// Lead tags: every available tag is visible and can be toggled on/off.
 $('#quickTagsList')?.addEventListener('click', event => {
-  const chip = event.target.closest('[data-remove-tag-kind]');
+  const chip = event.target.closest('[data-toggle-lead-tag]');
   if (!chip) return;
-  removeQuickInfoTag(chip.dataset.removeTagKind, chip.dataset.removeTagRaw || '');
+  toggleQuickInfoTag(chip.dataset.toggleLeadTag || '');
+});
+
+$('#sourceTagsList')?.addEventListener('click', event => {
+  const chip = event.target.closest('[data-toggle-source-tag]');
+  if (!chip) return;
+  toggleSourceTag(chip.dataset.toggleSourceTag || '');
 });
 
 // Quick Notes popup
@@ -1295,7 +1446,7 @@ function setLeadEntryMode(mode) {
 }
 
 function resetLeadForm() {
-  ['newName','newCompany','newPhone','newSite','newAge','newIssue'].forEach(id => {
+  ['newName','newCompany','newPhone','newEmail','newSite','newAge','newIssue'].forEach(id => {
     const input = document.getElementById(id);
     if (input) input.value = '';
   });
@@ -1311,6 +1462,8 @@ function setLeadModalMode(mode) {
   if (submit) submit.innerHTML = editing ? '<i class="bi bi-check2"></i> Save Changes' : 'Add Lead';
   $('#singleLeadTab').hidden = editing;
   $('#bulkLeadTab').hidden = editing;
+  const importTabs = document.querySelector('.import-tabs');
+  if (importTabs) importTabs.hidden = editing;
   if (editing) setLeadEntryMode('single');
 }
 
@@ -1335,6 +1488,7 @@ function openEditLeadModal() {
   $('#newName').value = lead.name || '';
   $('#newCompany').value = lead.company || '';
   $('#newPhone').value = formatPhoneNumber(lead.phone || '');
+  $('#newEmail').value = lead.email || '';
   $('#newSite').value = lead.site || '';
   $('#newAge').value = lead.age || '';
   $('#newIssue').value = lead.issue || '';
@@ -1344,16 +1498,18 @@ function openEditLeadModal() {
 
 function makeLead(raw = {}) {
   const text = value => value == null ? '' : String(value).trim();
-  return {
+  return ensureAutomaticTags({
     id: crypto.randomUUID(),
     name: text(raw.name),
     company: text(raw.company ?? raw.companyName),
     phone: formatPhoneNumber(raw.phone ?? raw.phoneNumber),
+    email: text(raw.email ?? raw.emailAddress),
     site: text(raw.site ?? raw.website ?? raw.url),
     age: text(raw.age ?? raw.siteAge),
     issue: text(raw.issue ?? raw.mainIssue),
     leadType: normalizeLeadType(raw.leadType ?? raw.type ?? raw.reason ?? (Array.isArray(raw.tags) ? raw.tags.find(tag => normalizeLeadType(tag) !== 'Spanish?') : '') ?? raw.issue ?? raw.mainIssue),
     tags: Array.isArray(raw.tags) ? raw.tags.map(text).filter(Boolean) : [],
+    sourceTags: Array.isArray(raw.sourceTags ?? raw.source_tags ?? raw.foundOn ?? raw.found_on) ? (raw.sourceTags ?? raw.source_tags ?? raw.foundOn ?? raw.found_on).map(text).filter(Boolean) : [],
     status: 'new',
     lastCalled: '',
     history: Array.isArray(raw.history) ? raw.history : [],
@@ -1372,7 +1528,7 @@ function makeLead(raw = {}) {
     specificTime: '',
     concerns: text(raw.concerns),
     notes: text(raw.notes)
-  };
+  });
 }
 
 function normalizeLeadPhone(value) {
@@ -1391,6 +1547,9 @@ function isDuplicateLeadRaw(raw) {
 
   const rawPhone = normalizeLeadPhone(raw.phone ?? raw.phoneNumber);
   if (rawPhone && state.leads.some(lead => normalizeLeadPhone(lead.phone) === rawPhone)) return true;
+
+  const rawEmail = normalizeLeadText(raw.email ?? raw.emailAddress);
+  if (rawEmail && state.leads.some(lead => normalizeLeadText(lead.email) === rawEmail)) return true;
 
   const rawName = normalizeLeadText(raw.name);
   const rawCompany = normalizeLeadText(raw.company ?? raw.companyName);
@@ -1495,6 +1654,7 @@ $('#createLeadButton').addEventListener('click', async () => {
     name: $('#newName').value.trim(),
     company: $('#newCompany').value.trim(),
     phone: formatPhoneNumber($('#newPhone').value),
+    email: $('#newEmail').value.trim(),
     site: $('#newSite').value.trim(),
     age: $('#newAge').value.trim(),
     issue: $('#newIssue').value.trim()
@@ -1506,7 +1666,9 @@ $('#createLeadButton').addEventListener('click', async () => {
     lead.name = values.name;
     lead.company = values.company;
     lead.phone = values.phone;
+    lead.email = values.email;
     lead.site = values.site;
+    ensureAutomaticTags(lead);
     lead.age = values.age;
     lead.issue = values.issue;
     saveState(lead.id);
