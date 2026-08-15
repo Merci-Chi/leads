@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#030711">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Steady Leads">
+  <meta name="apple-mobile-web-app-title" content="Leads">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="application-name" content="Steady Leads">
+  <meta name="application-name" content="Leads">
   <meta name="description" content="Steady Hands Operations lead calling and follow-up app.">
-  <title>Steady Leads</title>
+  <title>Leads | Steady Hands Operations</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
@@ -19,7 +19,19 @@
   <link rel="stylesheet" href="css.css">
 </head>
 <body>
-  <main class="app-shell">
+  <section class="auth-gate" id="authGate" aria-label="Sign in">
+    <div class="auth-card">
+      <img class="auth-logo" src="icons/icon-192.png" alt="">
+      <span class="eyebrow">STEADY HANDS OPERATIONS</span>
+      <h1>Leads</h1>
+      <p>Sign in to sync your leads across devices.</p>
+      <label><span>Email</span><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></label>
+      <label><span>Password</span><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"></label>
+      <button class="auth-button" id="authSignIn" type="button">Sign In</button>
+      <div class="auth-status" id="authStatus" aria-live="polite"></div>
+    </div>
+  </section>
+  <main class="app-shell" id="appShell" hidden>
     <!-- LEADS SCREEN -->
     <section class="screen active" id="leadsScreen" aria-label="Leads">
       <header class="home-header">
@@ -27,7 +39,7 @@
           <img class="app-brand-icon" src="icons/icon-192.png" alt="" aria-hidden="true">
           <div>
             <span class="eyebrow">STEADY HANDS OPERATIONS</span>
-            <h1>Steady Leads</h1>
+            <h1>Leads</h1>
           </div>
         </div>
         <button class="icon-button accent" id="shareLeadsButton" type="button" aria-label="Share all leads">
@@ -427,6 +439,7 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js.js"></script>
   <script>
     if ('serviceWorker' in navigator) {

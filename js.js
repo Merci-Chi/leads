@@ -1,3 +1,159 @@
+const SUPABASE_URL = 'https://eucaziymnjjpkbwbxwfj.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ulLjvVJ81xRdSS_Wz9Qh4Q_nMSAlSfO';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let supabaseSession = null;
+let syncTimer = null;
+let syncInProgress = false;
+
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+}
+
+function ensureUuidIds() {
+  let changed = false;
+  state.leads.forEach(lead => {
+    if (!isUuid(lead.id)) {
+      lead.id = crypto.randomUUID();
+      changed = true;
+    }
+  });
+  if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function leadToSupabaseRow(lead) {
+  return {
+    id: lead.id,
+    name: lead.name || '',
+    company: lead.company || '',
+    phone: lead.phone || '',
+    site: lead.site || '',
+    lead_type: getLeadType(lead) || '',
+    tags: Array.isArray(lead.tags) ? lead.tags : [],
+    spanish_possible: Boolean(lead.spanishPossible),
+    age: lead.age || '',
+    issue: lead.issue || '',
+    concerns: lead.concerns || '',
+    notes: lead.notes || '',
+    answer_status: lead.answerStatus || '',
+    mood: lead.mood || '',
+    outcome: lead.outcome || '',
+    callback_date: lead.callbackDate || null,
+    callback_time: lead.callbackTime || null,
+    preferred_contact: lead.preferredContact || '',
+    preferred_date: lead.preferredDate || null,
+    preferred_time: lead.preferredTime || null,
+    preferred_days: Array.isArray(lead.days) ? lead.days : [],
+    time_preference: lead.timePreference || '',
+    specific_time: lead.specificTime || null,
+    status: lead.status || 'new',
+    sold: lead.tag === 'Sold',
+    tag: lead.tag || '',
+    last_called: lead.lastCalled || null,
+    updated_at: new Date().toISOString()
+  };
+}
+
+function supabaseRowToLead(row) {
+  return {
+    id: row.id,
+    name: row.name || '',
+    company: row.company || '',
+    phone: row.phone || '',
+    site: row.site || '',
+    age: row.age || '',
+    issue: row.issue || '',
+    leadType: row.lead_type || '',
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    spanishPossible: Boolean(row.spanish_possible),
+    status: row.status || 'new',
+    lastCalled: row.last_called || '',
+    tag: row.tag || (row.sold ? 'Sold' : ''),
+    answerStatus: row.answer_status || '',
+    mood: row.mood || '',
+    outcome: row.outcome || '',
+    callbackDate: row.callback_date || '',
+    callbackTime: row.callback_time || '',
+    preferredContact: row.preferred_contact || '',
+    preferredDate: row.preferred_date || '',
+    preferredTime: row.preferred_time || '',
+    days: Array.isArray(row.preferred_days) ? row.preferred_days : [],
+    timePreference: row.time_preference || '',
+    specificTime: row.specific_time || '',
+    concerns: row.concerns || '',
+    notes: row.notes || ''
+  };
+}
+
+function showSyncStatus(text) {
+  let pill = document.getElementById('syncPill');
+  if (!pill) {
+    pill = document.createElement('div');
+    pill.id = 'syncPill';
+    pill.className = 'sync-pill';
+    document.body.appendChild(pill);
+  }
+  pill.textContent = text;
+  pill.classList.add('show');
+  clearTimeout(pill._timer);
+  pill._timer = setTimeout(() => pill.classList.remove('show'), 1400);
+}
+
+async function syncAllLeadsToSupabase() {
+  if (!supabaseSession || syncInProgress) return;
+  syncInProgress = true;
+  try {
+    ensureUuidIds();
+    if (state.leads.length) {
+      const rows = state.leads.map(leadToSupabaseRow);
+      const { error } = await supabaseClient.from('leads').upsert(rows, { onConflict: 'id' });
+      if (error) throw error;
+    }
+    showSyncStatus('Synced');
+  } catch (error) {
+    console.error('Supabase sync failed:', error);
+    showSyncStatus('Sync failed');
+  } finally {
+    syncInProgress = false;
+  }
+}
+
+function queueSupabaseSync() {
+  if (!supabaseSession) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncAllLeadsToSupabase, 450);
+}
+
+async function hydrateFromSupabase() {
+  if (!supabaseSession) return;
+  ensureUuidIds();
+
+  // Upload any existing phone/browser leads first so switching to Supabase does not lose them.
+  if (state.leads.length) {
+    const { error: upsertError } = await supabaseClient.from('leads').upsert(state.leads.map(leadToSupabaseRow), { onConflict: 'id' });
+    if (upsertError) throw upsertError;
+  }
+
+  const { data, error } = await supabaseClient.from('leads').select('*').order('created_at', { ascending: true });
+  if (error) throw error;
+  state.leads = (data || []).map(supabaseRowToLead);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  renderLists();
+}
+
+function setAuthenticatedUi(isAuthenticated) {
+  document.getElementById('authGate').hidden = isAuthenticated;
+  document.getElementById('appShell').hidden = !isAuthenticated;
+}
+
+async function initializeSupabaseAuth() {
+  const { data } = await supabaseClient.auth.getSession();
+  supabaseSession = data.session || null;
+  setAuthenticatedUi(Boolean(supabaseSession));
+  if (supabaseSession) {
+    try { await hydrateFromSupabase(); } catch (error) { console.error(error); showSyncStatus('Sync failed'); }
+  }
+}
+
 const STORAGE_KEY = 'steadyHandsLeadApp_v4';
 
 const seedLeads = [];
@@ -28,6 +184,7 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  queueSupabaseSync();
 }
 
 
@@ -672,7 +829,7 @@ function openNewLeadModal() {
 function makeLead(raw = {}) {
   const text = value => value == null ? '' : String(value).trim();
   return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2,9)}`,
+    id: crypto.randomUUID(),
     name: text(raw.name),
     company: text(raw.company ?? raw.companyName),
     phone: formatPhoneNumber(raw.phone ?? raw.phoneNumber),
@@ -863,4 +1020,41 @@ $$('.modal-backdrop').forEach(backdrop => {
 });
 
 renderLists();
-loadLeadsJson();
+
+$('#authSignIn').addEventListener('click', async () => {
+  const email = $('#authEmail').value.trim();
+  const password = $('#authPassword').value;
+  const status = $('#authStatus');
+  status.textContent = '';
+  if (!email || !password) {
+    status.textContent = 'Enter your email and password.';
+    return;
+  }
+  $('#authSignIn').disabled = true;
+  $('#authSignIn').textContent = 'Signing In…';
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  $('#authSignIn').disabled = false;
+  $('#authSignIn').textContent = 'Sign In';
+  if (error) {
+    status.textContent = error.message;
+    return;
+  }
+  supabaseSession = data.session;
+  setAuthenticatedUi(true);
+  try {
+    await hydrateFromSupabase();
+    await loadLeadsJson();
+  } catch (syncError) {
+    console.error(syncError);
+    showSyncStatus('Sync failed');
+  }
+});
+
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  supabaseSession = session;
+  setAuthenticatedUi(Boolean(session));
+});
+
+initializeSupabaseAuth().then(async () => {
+  if (supabaseSession) await loadLeadsJson();
+});

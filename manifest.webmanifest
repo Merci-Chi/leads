@@ -1,6 +1,6 @@
 {
-  "name": "Steady Leads",
-  "short_name": "Steady Leads",
+  "name": "Steady Hands Operations — Leads",
+  "short_name": "Leads",
   "description": "Steady Hands Operations lead calling and follow-up app.",
   "id": "./",
   "start_url": "./index.html",

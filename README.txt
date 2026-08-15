@@ -1,25 +1,26 @@
-STEADY LEADS
+STEADY HANDS OPERATIONS — LEADS
 
-This version is set up as an installable Progressive Web App (PWA).
+This build connects the lead app to Supabase while keeping localStorage as an offline/local cache.
 
-Files:
-- index.html
-- css.css
-- js.js
-- manifest.webmanifest
-- sw.js
-- icons/
-- clients-empty.json
+SUPABASE PROJECT
+Project URL is already configured in js.js.
+The browser-safe publishable key is already configured in js.js.
+Never put an sb_secret_ or service_role key in js.js.
 
-Important:
-The app must be served over HTTPS (or localhost) for installation/service-worker features to work.
-Opening index.html directly with file:// will still show the site, but it will not install as an app.
+ONE-TIME DATABASE UPDATE
+Open Supabase -> SQL Editor and run the contents of supabase-migration.sql.
+This adds the tag and last_called columns used by the existing app.
 
-On iPhone/iPad:
-Open the hosted site in Safari -> Share -> Add to Home Screen.
+LOGIN
+Create your app user in Supabase -> Authentication -> Users.
+Open the app and sign in with that user's email/password.
+Do not hard-code the user's password into the app.
 
-On Android/Chrome/Desktop Chrome:
-Open the hosted site -> Install app / Add to Home Screen.
+SYNC BEHAVIOR
+- Existing leads already saved on the phone/browser are uploaded to Supabase after the first successful login.
+- Supabase then becomes the shared source of lead data across devices.
+- Changes made in the app are saved locally immediately and synced to Supabase.
+- leads.json can still be used for import when the app opens.
 
-AUTO-LOADING LEADS
-Edit or replace leads.json in this folder. When the app opens or refreshes, it automatically merges new leads from that file. Existing saved leads are not overwritten. Duplicate phone numbers (or matching name/company/site when no phone exists) are skipped.
+IMPORTANT ABOUT CLOSED-APP JSON IMPORTING
+A browser app cannot process a local/hosted leads.json while it is fully closed. To import leads.json while the app is closed, use a server-side importer (for example a GitHub Action or Supabase Edge Function). That is the next optional step after the Supabase connection is tested.
