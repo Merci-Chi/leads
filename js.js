@@ -686,7 +686,7 @@ function renderLists() {
 
 function openLead(id) {
   currentLeadId = id;
-  historyExpanded = false;
+  historyExpanded = true;
   updateHistoryVisibility();
   renderCurrentLead();
   showScreen('detail');
@@ -741,7 +741,7 @@ function autosaveField(element) {
 }
 
 let notesBeforeEdit = '';
-let historyExpanded = false;
+let historyExpanded = true;
 function noteAddedText(before, after) {
   const previous = String(before || '').trim();
   const current = String(after || '').trim();
@@ -1149,7 +1149,7 @@ $('#topCallButton')?.addEventListener('click', () => {
   renderLists();
 });
 
-// History stays collapsed until the user taps the History button.
+// History is expanded by default; the user can still collapse it with the History button.
 $('#historyToggleButton')?.addEventListener('click', () => {
   historyExpanded = !historyExpanded;
   renderLeadHistory();

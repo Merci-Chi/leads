@@ -1,4 +1,4 @@
-const CACHE = 'steady-hands-leads-v-history-detail-only-1';
+const CACHE = 'steady-hands-leads-v-lead-board-header-1';
 const APP_FILES = [
   './',
   './index.html',
