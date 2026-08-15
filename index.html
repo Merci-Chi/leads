@@ -28,6 +28,7 @@
       <label><span>Email</span><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></label>
       <label><span>Password</span><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"></label>
       <button class="auth-button" id="authSignIn" type="button">Sign In</button>
+      <button class="auth-link-button" id="forgotPasswordButton" type="button">Forgot password?</button>
       <div class="auth-status" id="authStatus" aria-live="polite"></div>
     </div>
   </section>
@@ -42,9 +43,14 @@
             <h1>Leads</h1>
           </div>
         </div>
-        <button class="icon-button accent" id="shareLeadsButton" type="button" aria-label="Share all leads">
-          <i class="bi bi-share-fill"></i>
-        </button>
+        <div class="header-actions">
+          <button class="icon-button" id="accountButton" type="button" aria-label="Account settings">
+            <i class="bi bi-person-gear"></i>
+          </button>
+          <button class="icon-button accent" id="shareLeadsButton" type="button" aria-label="Share all leads">
+            <i class="bi bi-share-fill"></i>
+          </button>
+        </div>
       </header>
 
       <label class="search-field">
@@ -435,6 +441,53 @@
           <button class="modal-primary" id="importLeadsButton" type="button">Import Leads</button>
         </div>
       </div>
+    </section>
+  </div>
+
+
+  <!-- ACCOUNT / PASSWORD MODAL -->
+  <div class="modal-backdrop" id="accountModal" aria-hidden="true">
+    <section class="modal-card account-modal-card" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle">
+      <div class="modal-heading">
+        <div><span class="section-kicker">ACCOUNT</span><h2 id="accountModalTitle">Account Settings</h2></div>
+        <button class="icon-button bare modal-close" data-close="accountModal" type="button" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <p class="modal-help" id="accountEmailDisplay"></p>
+      <label class="stacked-field">
+        <span>New password</span>
+        <input id="accountNewPassword" type="password" autocomplete="new-password" placeholder="New password">
+      </label>
+      <label class="stacked-field">
+        <span>Confirm new password</span>
+        <input id="accountConfirmPassword" type="password" autocomplete="new-password" placeholder="Confirm new password">
+      </label>
+      <div class="password-requirement">Use at least 8 characters.</div>
+      <div class="auth-status account-auth-status" id="accountPasswordStatus" aria-live="polite"></div>
+      <div class="modal-actions">
+        <button class="modal-secondary" id="signOutButton" type="button">Sign Out</button>
+        <button class="modal-primary" id="changePasswordButton" type="button">Change Password</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- PASSWORD RESET MODAL -->
+  <div class="modal-backdrop" id="passwordResetModal" aria-hidden="true">
+    <section class="modal-card account-modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordResetTitle">
+      <div class="modal-heading">
+        <div><span class="section-kicker">PASSWORD RECOVERY</span><h2 id="passwordResetTitle">Set a New Password</h2></div>
+      </div>
+      <p class="modal-help">Enter a new password for your account.</p>
+      <label class="stacked-field">
+        <span>New password</span>
+        <input id="recoveryNewPassword" type="password" autocomplete="new-password" placeholder="New password">
+      </label>
+      <label class="stacked-field">
+        <span>Confirm new password</span>
+        <input id="recoveryConfirmPassword" type="password" autocomplete="new-password" placeholder="Confirm new password">
+      </label>
+      <div class="password-requirement">Use at least 8 characters.</div>
+      <div class="auth-status account-auth-status" id="recoveryPasswordStatus" aria-live="polite"></div>
+      <button class="auth-button" id="saveRecoveryPassword" type="button">Save New Password</button>
     </section>
   </div>
 

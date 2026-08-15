@@ -1001,3 +1001,13 @@ textarea::placeholder, input::placeholder { color: #60778d; }
 .auth-status { min-height: 18px; margin-top: 10px; color: #ff9295; font-size: 12px; text-align: center; }
 .sync-pill { position: fixed; right: 12px; top: max(10px, env(safe-area-inset-top)); z-index: 90; padding: 6px 9px; border: 1px solid #274864; border-radius: 999px; background: rgba(5,15,25,.9); color: #8eabc5; font-size: 10px; opacity: 0; pointer-events: none; transition: .18s ease; }
 .sync-pill.show { opacity: 1; }
+
+
+/* ACCOUNT / PASSWORD */
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.auth-link-button { display: block; margin: 11px auto 0; padding: 6px 9px; border: 0; background: transparent; color: #78aeff; font-size: 12px; font-weight: 750; cursor: pointer; }
+.auth-link-button:hover { color: #a6c9ff; }
+.account-modal-card { width: min(100%, 410px); }
+.password-requirement { margin-top: 7px; color: #7089a1; font-size: 10.5px; }
+.account-auth-status { min-height: 18px; margin-top: 9px; }
+.account-auth-status.success { color: #75e99b; }

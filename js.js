@@ -1050,9 +1050,134 @@ $('#authSignIn').addEventListener('click', async () => {
   }
 });
 
-supabaseClient.auth.onAuthStateChange((_event, session) => {
+function passwordIsValid(password) {
+  return typeof password === 'string' && password.length >= 8;
+}
+
+function currentRedirectUrl() {
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
+$('#forgotPasswordButton').addEventListener('click', async () => {
+  const email = $('#authEmail').value.trim();
+  const status = $('#authStatus');
+  status.textContent = '';
+  status.classList.remove('success');
+  if (!email) {
+    status.textContent = 'Enter your email first, then tap Forgot password.';
+    return;
+  }
+
+  $('#forgotPasswordButton').disabled = true;
+  $('#forgotPasswordButton').textContent = 'Sending…';
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: currentRedirectUrl()
+  });
+  $('#forgotPasswordButton').disabled = false;
+  $('#forgotPasswordButton').textContent = 'Forgot password?';
+
+  if (error) {
+    status.textContent = error.message;
+    return;
+  }
+  status.classList.add('success');
+  status.textContent = 'Password reset email sent. Check your inbox.';
+});
+
+$('#accountButton').addEventListener('click', async () => {
+  const { data } = await supabaseClient.auth.getUser();
+  $('#accountEmailDisplay').textContent = data.user?.email ? `Signed in as ${data.user.email}` : 'Signed in account';
+  $('#accountNewPassword').value = '';
+  $('#accountConfirmPassword').value = '';
+  $('#accountPasswordStatus').textContent = '';
+  $('#accountPasswordStatus').classList.remove('success');
+  openModal('accountModal');
+});
+
+$('#changePasswordButton').addEventListener('click', async () => {
+  const password = $('#accountNewPassword').value;
+  const confirm = $('#accountConfirmPassword').value;
+  const status = $('#accountPasswordStatus');
+  status.textContent = '';
+  status.classList.remove('success');
+
+  if (!passwordIsValid(password)) {
+    status.textContent = 'Password must be at least 8 characters.';
+    return;
+  }
+  if (password !== confirm) {
+    status.textContent = 'Passwords do not match.';
+    return;
+  }
+
+  $('#changePasswordButton').disabled = true;
+  $('#changePasswordButton').textContent = 'Saving…';
+  const { error } = await supabaseClient.auth.updateUser({ password });
+  $('#changePasswordButton').disabled = false;
+  $('#changePasswordButton').textContent = 'Change Password';
+
+  if (error) {
+    status.textContent = error.message;
+    return;
+  }
+  status.classList.add('success');
+  status.textContent = 'Password changed successfully.';
+  $('#accountNewPassword').value = '';
+  $('#accountConfirmPassword').value = '';
+});
+
+$('#saveRecoveryPassword').addEventListener('click', async () => {
+  const password = $('#recoveryNewPassword').value;
+  const confirm = $('#recoveryConfirmPassword').value;
+  const status = $('#recoveryPasswordStatus');
+  status.textContent = '';
+  status.classList.remove('success');
+
+  if (!passwordIsValid(password)) {
+    status.textContent = 'Password must be at least 8 characters.';
+    return;
+  }
+  if (password !== confirm) {
+    status.textContent = 'Passwords do not match.';
+    return;
+  }
+
+  $('#saveRecoveryPassword').disabled = true;
+  $('#saveRecoveryPassword').textContent = 'Saving…';
+  const { error } = await supabaseClient.auth.updateUser({ password });
+  $('#saveRecoveryPassword').disabled = false;
+  $('#saveRecoveryPassword').textContent = 'Save New Password';
+
+  if (error) {
+    status.textContent = error.message;
+    return;
+  }
+
+  status.classList.add('success');
+  status.textContent = 'Password updated. Opening your leads…';
+  setTimeout(() => {
+    closeModal('passwordResetModal');
+    setAuthenticatedUi(true);
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }, 700);
+});
+
+$('#signOutButton').addEventListener('click', async () => {
+  $('#signOutButton').disabled = true;
+  await supabaseClient.auth.signOut();
+  $('#signOutButton').disabled = false;
+  closeModal('accountModal');
+});
+
+supabaseClient.auth.onAuthStateChange((event, session) => {
   supabaseSession = session;
   setAuthenticatedUi(Boolean(session));
+  if (event === 'PASSWORD_RECOVERY') {
+    $('#recoveryNewPassword').value = '';
+    $('#recoveryConfirmPassword').value = '';
+    $('#recoveryPasswordStatus').textContent = '';
+    openModal('passwordResetModal');
+  }
 });
 
 initializeSupabaseAuth().then(async () => {

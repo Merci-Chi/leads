@@ -1,4 +1,4 @@
-const CACHE = 'steady-hands-leads-supabase-v1';
+const CACHE = 'steady-hands-leads-supabase-v2';
 const APP_FILES = [
   './',
   './index.html',
