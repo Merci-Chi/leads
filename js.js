@@ -34,7 +34,7 @@ function leadToSupabaseRow(lead) {
     site: lead.site || '',
     lead_type: getLeadType(lead) || '',
     tags: Array.isArray(lead.tags) ? lead.tags : [],
-    source_tags: Array.isArray(lead.sourceTags) ? lead.sourceTags : [],
+    source_tags: Array.isArray(lead.sourceTags) ? lead.sourceTags.filter(tag => String(tag || '').trim().toLowerCase() !== 'other') : [],
     spanish_possible: Boolean(lead.spanishPossible),
     age: lead.age || '',
     issue: lead.issue || '',
@@ -70,7 +70,7 @@ function supabaseRowToLead(row, status = 'new') {
     issue: row.issue || '',
     leadType: row.lead_type || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
-    sourceTags: Array.isArray(row.source_tags) ? row.source_tags : [],
+    sourceTags: Array.isArray(row.source_tags) ? row.source_tags.filter(tag => String(tag || '').trim().toLowerCase() !== 'other') : [],
     spanishPossible: Boolean(row.spanish_possible),
     status,
     lastCalled: row.last_called || '',
@@ -502,6 +502,7 @@ function loadState() {
       // Remove the old addedAt field from previously saved leads.
       saved.leads = saved.leads.map(lead => {
         const { addedAt, AddedAt, addedat, ...cleanLead } = lead || {};
+        cleanLead.sourceTags = Array.isArray(cleanLead.sourceTags) ? cleanLead.sourceTags.filter(tag => String(tag || '').trim().toLowerCase() !== 'other') : [];
         return cleanLead;
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
@@ -619,6 +620,14 @@ const SOURCE_TAG_META = {
   'Other': { icon: 'bi-three-dots', className: 'source-other' }
 };
 
+
+function getSourceTagMeta(label) {
+  const clean = String(label || '').trim();
+  // Built-in sources use their brand-inspired style. Anything entered through
+  // “Other” is a lead-specific custom source and MUST keep its exact label.
+  return SOURCE_TAG_META[clean] || { icon: 'bi-link-45deg', className: 'source-custom' };
+}
+
 const LEAD_TYPE_TAGS = new Set(['Outdated Site', 'No Site', 'Broken Site']);
 const FOLLOWUP_TAGS = new Set(['Interested', 'Needs More Info', 'Skeptical', 'Call Back', 'No Answer', 'Not Interested', 'Sold']);
 
@@ -660,25 +669,35 @@ function renderSourceTags() {
 
   lead.sourceTags = Array.isArray(lead.sourceTags) ? lead.sourceTags : [];
   // Removed options stay hidden even if an older database row still contains them.
+  // Literal "Other" is never a saved/selected source. It is only the button that opens custom source entry.
+  lead.sourceTags = lead.sourceTags.filter(tag => String(tag || '').trim().toLowerCase() !== 'other');
   const visibleStoredTags = lead.sourceTags.filter(tag => !REMOVED_SOURCE_TAGS.has(String(tag || '').trim().toLowerCase()));
   const selectedKeys = new Set(visibleStoredTags.map(tag => String(tag || '').trim().toLowerCase()).filter(Boolean));
   const builtInKeys = new Set(AVAILABLE_SOURCE_TAGS.map(tag => tag.toLowerCase()));
   const custom = visibleStoredTags.filter(tag => !builtInKeys.has(String(tag || '').trim().toLowerCase()));
 
+  // Custom sources created through “Other” belong only to this lead. They are
+  // read from lead.sourceTags and are never added to AVAILABLE_SOURCE_TAGS.
+  // Selected/checkmarked sources always render first.
   let all;
   if (sourceTagsExpanded) {
     all = [...AVAILABLE_SOURCE_TAGS, ...custom];
   } else {
-    // Keep the popular choices visible, plus any currently-selected less-common/custom source.
+    // Keep popular choices visible while always surfacing every selected extra/custom source.
     const selectedExtras = [...MORE_SOURCE_TAGS, ...custom].filter(tag => selectedKeys.has(tag.toLowerCase()));
     all = [...POPULAR_SOURCE_TAGS, ...selectedExtras];
   }
   all = [...new Set(all)];
+  all.sort((a, b) => {
+    const aSelected = selectedKeys.has(String(a).toLowerCase()) ? 1 : 0;
+    const bSelected = selectedKeys.has(String(b).toLowerCase()) ? 1 : 0;
+    return bSelected - aSelected;
+  });
 
   list.innerHTML = all.map(label => {
     const selected = selectedKeys.has(label.toLowerCase());
-    const meta = SOURCE_TAG_META[label] || { icon: 'bi-link-45deg', className: 'source-other' };
-    return `<button class="quick-tag-chip source-tag-chip ${meta.className}${selected ? ' selected' : ''}" type="button" data-toggle-source-tag="${escapeHTML(label)}" aria-pressed="${selected ? 'true' : 'false'}"><i class="bi ${meta.icon}" aria-hidden="true"></i><span>${escapeHTML(label)}</span>${selected ? '<i class="bi bi-check-lg source-check" aria-hidden="true"></i>' : ''}</button>`;
+    const meta = getSourceTagMeta(label);
+    return `<button class="quick-tag-chip source-tag-chip ${meta.className}${selected ? ' selected' : ''}" type="button" data-toggle-source-tag="${escapeHTML(label)}" aria-pressed="${selected ? 'true' : 'false'}"><i class="bi ${meta.icon}" aria-hidden="true"></i><span>${escapeHTML(label === 'Other' ? 'Other…' : label)}</span>${selected ? '<i class="bi bi-check-lg source-check" aria-hidden="true"></i>' : ''}</button>`;
   }).join('');
 
   if (expandButton) {
@@ -696,6 +715,7 @@ async function toggleSourceTag(label) {
   if (!clean) return;
   lead.sourceTags = Array.isArray(lead.sourceTags) ? lead.sourceTags : [];
   const key = clean.toLowerCase();
+  if (key === 'other') return; // “Other” is an entry action, never a saved source value.
   const exists = lead.sourceTags.some(tag => String(tag || '').trim().toLowerCase() === key);
   if (exists) lead.sourceTags = lead.sourceTags.filter(tag => String(tag || '').trim().toLowerCase() !== key);
   else lead.sourceTags.push(clean);
@@ -765,7 +785,14 @@ function renderQuickInfoTags() {
   const selected = selectedLeadTags(lead);
   const knownKeys = new Set(AVAILABLE_LEAD_TAGS.map(tag => normalizeLeadType(tag).toLowerCase()));
   const customTags = Array.from(selected.values()).filter(tag => !knownKeys.has(normalizeLeadType(tag).toLowerCase()));
+  // Keep the requested built-in order, but move every selected/checkmarked tag
+  // to the front while preserving relative order within each group.
   const allTags = [...AVAILABLE_LEAD_TAGS, ...customTags];
+  allTags.sort((a, b) => {
+    const aSelected = selected.has(normalizeLeadType(a).toLowerCase()) ? 1 : 0;
+    const bSelected = selected.has(normalizeLeadType(b).toLowerCase()) ? 1 : 0;
+    return bSelected - aSelected;
+  });
 
   list.innerHTML = allTags.map(label => {
     const key = normalizeLeadType(label).toLowerCase();
@@ -860,6 +887,15 @@ function leadCard(lead) {
     !isNew && lead.tag ? `<span class="tag-badge">${escapeHTML(lead.tag)}</span>` : ''
   ].filter(Boolean).join('');
   const initial = (lead.name || '?').trim().charAt(0).toUpperCase();
+  const visibleSourceTags = (Array.isArray(lead.sourceTags) ? lead.sourceTags : [])
+    .filter(tag => String(tag || '').trim().toLowerCase() !== 'other')
+    .filter(tag => !REMOVED_SOURCE_TAGS.has(String(tag || '').trim().toLowerCase()))
+    .filter(tag => String(tag || '').trim());
+  const sourceBadges = visibleSourceTags.map(label => {
+    const clean = String(label || '').trim();
+    const meta = getSourceTagMeta(clean);
+    return `<span class="lead-source-chip ${meta.className}"><i class="bi ${meta.icon}" aria-hidden="true"></i><span>${escapeHTML(clean)}</span></span>`;
+  }).join('');
 
   return `
     <button class="lead-item" type="button" data-open-lead="${lead.id}">
@@ -867,6 +903,7 @@ function leadCard(lead) {
       <span class="lead-copy">
         <span class="lead-name-line"><strong>${escapeHTML(lead.company || 'No company')}</strong>${badges}</span>
         <span class="lead-company">${escapeHTML(lead.name || 'No contact name')}</span>
+        ${sourceBadges ? `<span class="lead-source-tags">${sourceBadges}</span>` : ''}
       </span>
       <i class="bi bi-chevron-right"></i>
     </button>`;
@@ -874,7 +911,7 @@ function leadCard(lead) {
 
 function renderLists() {
   const query = ($('#leadSearch').value || '').trim().toLowerCase();
-  const matches = lead => !query || [lead.name, lead.company, lead.phone, lead.email, lead.tag, getLeadType(lead), hasPossibleSpanishTag(lead) ? 'Spanish?' : ''].some(v => String(v || '').toLowerCase().includes(query));
+  const matches = lead => !query || [lead.name, lead.company, lead.phone, lead.email, lead.tag, getLeadType(lead), hasPossibleSpanishTag(lead) ? 'Spanish?' : '', ...(Array.isArray(lead.sourceTags) ? lead.sourceTags : [])].some(v => String(v || '').toLowerCase().includes(query));
   const fresh = state.leads.filter(l => l.status === 'new' && matches(l)).slice().reverse();
   const follow = state.leads.filter(l => l.status === 'followup' && matches(l)).sort((a,b) => new Date(b.lastCalled || 0) - new Date(a.lastCalled || 0));
 
@@ -1617,7 +1654,7 @@ function makeLead(raw = {}) {
     issue: text(raw.issue ?? raw.mainIssue),
     leadType: normalizeLeadType(raw.leadType ?? raw.type ?? raw.reason ?? (Array.isArray(raw.tags) ? raw.tags.find(tag => normalizeLeadType(tag) !== 'Spanish?') : '') ?? raw.issue ?? raw.mainIssue),
     tags: Array.isArray(raw.tags) ? raw.tags.map(text).filter(Boolean) : [],
-    sourceTags: Array.isArray(raw.sourceTags ?? raw.source_tags ?? raw.foundOn ?? raw.found_on) ? (raw.sourceTags ?? raw.source_tags ?? raw.foundOn ?? raw.found_on).map(text).filter(Boolean) : [],
+    sourceTags: Array.isArray(raw.sourceTags ?? raw.source_tags ?? raw.foundOn ?? raw.found_on) ? (raw.sourceTags ?? raw.source_tags ?? raw.foundOn ?? raw.found_on).map(text).filter(Boolean).filter(tag => tag.toLowerCase() !== 'other') : [],
     status: 'new',
     lastCalled: '',
     history: Array.isArray(raw.history) ? raw.history : [],

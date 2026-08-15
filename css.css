@@ -1397,7 +1397,39 @@ html, body { overscroll-behavior-y: contain; }
 .source-x { --source-rgb: 210,210,210; --source-text: #eeeeee; }
 .source-offerup { --source-rgb: 42,191,174; --source-text: #9af0e6; }
 .source-other { --source-rgb: 137,116,168; --source-text: #cab9e1; }
+.source-custom { --source-rgb: 137,116,168; --source-text: #cab9e1; }
 
 /* Custom Found On source entry */
 .custom-source-field { margin-top: 12px; }
 .custom-source-field input { min-height: 48px; }
+
+
+/* Selected Found On sources shown on main lead cards.
+   Match the exact selected-source treatment used inside the lead itself. */
+.lead-source-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+.lead-source-chip {
+  --source-rgb: 126, 145, 164;
+  --source-text: #b8c7d5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  min-height: 23px;
+  padding: 3px 7px;
+  border: 1px solid rgba(var(--source-rgb), .92);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(var(--source-rgb), .24), rgba(var(--source-rgb), .12));
+  color: #f7fbff;
+  box-shadow: inset 0 0 12px rgba(var(--source-rgb), .09), 0 0 10px rgba(var(--source-rgb), .07);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.lead-source-chip > i { color: #fff; font-size: 10px; }
+.lead-source-chip > span { overflow: hidden; text-overflow: ellipsis; }
