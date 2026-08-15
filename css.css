@@ -1397,3 +1397,7 @@ html, body { overscroll-behavior-y: contain; }
 .source-x { --source-rgb: 210,210,210; --source-text: #eeeeee; }
 .source-offerup { --source-rgb: 42,191,174; --source-text: #9af0e6; }
 .source-other { --source-rgb: 137,116,168; --source-text: #cab9e1; }
+
+/* Custom Found On source entry */
+.custom-source-field { margin-top: 12px; }
+.custom-source-field input { min-height: 48px; }

@@ -925,6 +925,7 @@ function renderCurrentLead() {
   $('#concernsField').value = lead.concerns || '';
   $('#notesField').value = lead.notes || '';
   renderQuickInfoTags();
+  renderSourceTags();
   renderLeadHistory();
 
   $$('[data-field]').forEach(button => {
@@ -1409,7 +1410,48 @@ $('#sourceTagsExpandButton')?.addEventListener('click', () => {
 $('#sourceTagsList')?.addEventListener('click', event => {
   const chip = event.target.closest('[data-toggle-source-tag]');
   if (!chip) return;
-  toggleSourceTag(chip.dataset.toggleSourceTag || '');
+  const label = chip.dataset.toggleSourceTag || '';
+  if (String(label).trim().toLowerCase() === 'other') {
+    $('#customSourceInput').value = '';
+    openModal('customSourceModal');
+    setTimeout(() => $('#customSourceInput')?.focus(), 50);
+    return;
+  }
+  toggleSourceTag(label);
+});
+
+async function saveCustomSource() {
+  const lead = currentLead();
+  const input = $('#customSourceInput');
+  if (!lead || !input) return;
+  const custom = String(input.value || '').trim().replace(/\s+/g, ' ');
+  if (!custom) return toast('Type a source first');
+
+  lead.sourceTags = Array.isArray(lead.sourceTags) ? lead.sourceTags : [];
+  // "Other" is only an entry action now, not a stored source.
+  lead.sourceTags = lead.sourceTags.filter(tag => String(tag || '').trim().toLowerCase() !== 'other');
+  const exists = lead.sourceTags.some(tag => String(tag || '').trim().toLowerCase() === custom.toLowerCase());
+  if (!exists) lead.sourceTags.push(custom);
+
+  saveState(lead.id);
+  closeModal('customSourceModal');
+  sourceTagsExpanded = true;
+  renderSourceTags();
+  try {
+    await syncLeadNow(lead);
+    showSyncStatus(exists ? 'Source already added' : 'Source added');
+  } catch (error) {
+    console.error('Could not sync custom source:', error);
+    showSyncStatus('Sync failed');
+  }
+}
+
+$('#saveCustomSourceButton')?.addEventListener('click', saveCustomSource);
+$('#customSourceInput')?.addEventListener('keydown', event => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    saveCustomSource();
+  }
 });
 
 // Quick Notes popup

@@ -452,6 +452,25 @@
     </section>
   </main>
 
+  <!-- CUSTOM SOURCE MODAL -->
+  <div class="modal-backdrop" id="customSourceModal" aria-hidden="true">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="customSourceTitle">
+      <div class="modal-heading">
+        <div><span class="section-kicker">FOUND ON</span><h2 id="customSourceTitle">Add Other Source</h2></div>
+        <button class="icon-button bare modal-close" data-close="customSourceModal" type="button" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <p class="modal-help">Type where you found this lead.</p>
+      <label class="stacked-field custom-source-field">
+        <span>Source</span>
+        <input id="customSourceInput" type="text" autocomplete="off" placeholder="e.g. Local Facebook Group">
+      </label>
+      <div class="modal-actions">
+        <button class="modal-secondary" data-close="customSourceModal" type="button">Cancel</button>
+        <button class="modal-primary" id="saveCustomSourceButton" type="button">Add Source</button>
+      </div>
+    </section>
+  </div>
+
   <!-- QUICK NOTES MODAL -->
   <div class="modal-backdrop" id="quickNotesModal" aria-hidden="true">
     <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="quickNotesTitle">

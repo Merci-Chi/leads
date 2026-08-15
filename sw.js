@@ -1,4 +1,4 @@
-const CACHE = 'steady-hands-leads-v-source-tags-1';
+const CACHE = 'steady-hands-leads-v-source-tags-visible-1';
 const APP_FILES = [
   './',
   './index.html',
