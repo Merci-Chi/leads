@@ -1332,3 +1332,68 @@ html, body { overscroll-behavior-y: contain; }
   box-shadow: inset 0 0 12px rgba(125,91,255,.12);
 }
 .source-tag-chip.selected i { color: #b7a4ff; }
+
+
+/* Compact Found On source selector */
+.source-tags-expand {
+  width: 100%;
+  min-height: 36px;
+  margin-top: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #29445e;
+  border-radius: 10px;
+  background: rgba(8, 24, 39, .68);
+  color: #8ea7be;
+  font-size: 10.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.source-tags-expand:hover { border-color: #4a6682; color: #c1d2e2; }
+.source-tags-expand i { font-size: 10px; }
+
+/* Tag icon + ordering polish */
+.lead-tag-option > .bi:first-child { font-size: 12px; opacity: .95; }
+.tag-state-check { margin-left: 1px; font-size: 9px !important; opacity: .9; }
+
+/* Found On: source-specific brand-inspired colors */
+.source-tag-chip {
+  --source-rgb: 126, 145, 164;
+  --source-border: #40556a;
+  --source-text: #b8c7d5;
+  border-color: rgba(var(--source-rgb), .34);
+  color: var(--source-text);
+  background: rgba(var(--source-rgb), .055);
+}
+.source-tag-chip:hover,
+.source-tag-chip:active {
+  border-color: rgba(var(--source-rgb), .72);
+  color: #fff;
+  background: rgba(var(--source-rgb), .10);
+}
+.source-tag-chip.selected {
+  border-color: rgba(var(--source-rgb), .92);
+  background: linear-gradient(180deg, rgba(var(--source-rgb), .24), rgba(var(--source-rgb), .12));
+  color: #fff;
+  box-shadow: inset 0 0 12px rgba(var(--source-rgb), .09), 0 0 10px rgba(var(--source-rgb), .07);
+}
+.source-tag-chip > .bi:first-child { font-size: 12px; color: rgb(var(--source-rgb)); opacity: 1; }
+.source-tag-chip.selected > .bi:first-child { color: #fff; }
+.source-tag-chip .source-check { margin-left: 1px; font-size: 9px; color: currentColor; }
+
+.source-google { --source-rgb: 66,133,244; --source-text: #9fc2ff; }
+.source-google-maps { --source-rgb: 52,168,83; --source-text: #9be5af; }
+.source-yelp { --source-rgb: 211,35,35; --source-text: #ffaaaa; }
+.source-facebook,
+.source-facebook-marketplace { --source-rgb: 24,119,242; --source-text: #9bc9ff; }
+.source-instagram { --source-rgb: 214,41,118; --source-text: #ffabd0; }
+.source-nextdoor { --source-rgb: 0,168,89; --source-text: #8de9bc; }
+.source-tiktok { --source-rgb: 37,244,238; --source-text: #a5fbf8; }
+.source-reddit { --source-rgb: 255,69,0; --source-text: #ffb093; }
+.source-threads { --source-rgb: 220,220,220; --source-text: #f0f0f0; }
+.source-linkedin { --source-rgb: 10,102,194; --source-text: #9bc9f5; }
+.source-x { --source-rgb: 210,210,210; --source-text: #eeeeee; }
+.source-offerup { --source-rgb: 42,191,174; --source-text: #9af0e6; }
+.source-other { --source-rgb: 137,116,168; --source-text: #cab9e1; }

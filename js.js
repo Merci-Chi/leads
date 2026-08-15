@@ -573,63 +573,120 @@ function hasPossibleSpanishTag(lead) {
 }
 
 const AVAILABLE_LEAD_TAGS = [
-  'Outdated Site',
   'No Site',
-  'No Phone',
+  'Outdated Site',
   'Broken Site',
   'Spanish?',
+  'No Phone',
   'Interested',
-  'Needs More Info',
-  'Skeptical',
   'Call Back',
+  'Needs More Info',
   'No Answer',
+  'Skeptical',
   'Not Interested',
   'Sold'
 ];
 
+const LEAD_TAG_ICONS = {
+  'No Site': 'bi-globe2',
+  'Outdated Site': 'bi-clock-history',
+  'Broken Site': 'bi-exclamation-triangle',
+  'Spanish?': 'bi-translate',
+  'No Phone': 'bi-telephone-x',
+  'Interested': 'bi-star',
+  'Call Back': 'bi-telephone-forward',
+  'Needs More Info': 'bi-info-circle',
+  'No Answer': 'bi-phone-vibrate',
+  'Skeptical': 'bi-question-circle',
+  'Not Interested': 'bi-slash-circle',
+  'Sold': 'bi-trophy'
+};
+
+const SOURCE_TAG_META = {
+  'Google': { icon: 'bi-google', className: 'source-google' },
+  'Google Maps': { icon: 'bi-geo-alt-fill', className: 'source-google-maps' },
+  'Yelp': { icon: 'bi-star-fill', className: 'source-yelp' },
+  'Facebook': { icon: 'bi-facebook', className: 'source-facebook' },
+  'Instagram': { icon: 'bi-instagram', className: 'source-instagram' },
+  'Nextdoor': { icon: 'bi-houses-fill', className: 'source-nextdoor' },
+  'Facebook Marketplace': { icon: 'bi-shop', className: 'source-facebook-marketplace' },
+  'TikTok': { icon: 'bi-tiktok', className: 'source-tiktok' },
+  'Reddit': { icon: 'bi-reddit', className: 'source-reddit' },
+  'Threads': { icon: 'bi-at', className: 'source-threads' },
+  'LinkedIn': { icon: 'bi-linkedin', className: 'source-linkedin' },
+  'X / Twitter': { icon: 'bi-twitter-x', className: 'source-x' },
+  'OfferUp': { icon: 'bi-bag-fill', className: 'source-offerup' },
+  'Other': { icon: 'bi-three-dots', className: 'source-other' }
+};
+
 const LEAD_TYPE_TAGS = new Set(['Outdated Site', 'No Site', 'Broken Site']);
 const FOLLOWUP_TAGS = new Set(['Interested', 'Needs More Info', 'Skeptical', 'Call Back', 'No Answer', 'Not Interested', 'Sold']);
 
-const AVAILABLE_SOURCE_TAGS = [
-  'Yelp',
+const POPULAR_SOURCE_TAGS = [
   'Google',
   'Google Maps',
-  'Instagram',
+  'Yelp',
   'Facebook',
+  'Instagram',
+  'Nextdoor'
+];
+
+const MORE_SOURCE_TAGS = [
   'Facebook Marketplace',
-  'Nextdoor',
-  'Reddit',
   'TikTok',
-  'Booksy',
-  'Craigslist',
-  'Thumbtack',
-  'Angi',
-  'Yellow Pages',
+  'Reddit',
+  'Threads',
   'LinkedIn',
   'X / Twitter',
   'OfferUp',
-  'TaskRabbit',
-  'Bark',
-  'StyleSeat',
-  'Fresha',
-  'Vagaro',
-  'Square',
   'Other'
 ];
+
+const AVAILABLE_SOURCE_TAGS = [...POPULAR_SOURCE_TAGS, ...MORE_SOURCE_TAGS];
+const REMOVED_SOURCE_TAGS = new Set([
+  'booksy', 'books', 'craigslist', 'thumbtack', 'angi', 'yellow pages',
+  'taskrabbit', 'task rabbit', 'bark', 'styleseat', 'style seat', 'fresha',
+  'fresh', 'vagaro', 'vagary', 'square', 'business license', 'news listing',
+  'directory', 'salon directory', 'bbb', 'simpletire', 'simple tire',
+  'roadtrippers', 'road trippers', 'fmcsa', 'website'
+]);
+let sourceTagsExpanded = false;
 
 function renderSourceTags() {
   const lead = currentLead();
   const list = $('#sourceTagsList');
+  const expandButton = $('#sourceTagsExpandButton');
   if (!lead || !list) return;
+
   lead.sourceTags = Array.isArray(lead.sourceTags) ? lead.sourceTags : [];
-  const selectedKeys = new Set(lead.sourceTags.map(tag => String(tag || '').trim().toLowerCase()).filter(Boolean));
+  // Removed options stay hidden even if an older database row still contains them.
+  const visibleStoredTags = lead.sourceTags.filter(tag => !REMOVED_SOURCE_TAGS.has(String(tag || '').trim().toLowerCase()));
+  const selectedKeys = new Set(visibleStoredTags.map(tag => String(tag || '').trim().toLowerCase()).filter(Boolean));
   const builtInKeys = new Set(AVAILABLE_SOURCE_TAGS.map(tag => tag.toLowerCase()));
-  const custom = lead.sourceTags.filter(tag => !builtInKeys.has(String(tag || '').trim().toLowerCase()));
-  const all = [...AVAILABLE_SOURCE_TAGS, ...custom];
+  const custom = visibleStoredTags.filter(tag => !builtInKeys.has(String(tag || '').trim().toLowerCase()));
+
+  let all;
+  if (sourceTagsExpanded) {
+    all = [...AVAILABLE_SOURCE_TAGS, ...custom];
+  } else {
+    // Keep the popular choices visible, plus any currently-selected less-common/custom source.
+    const selectedExtras = [...MORE_SOURCE_TAGS, ...custom].filter(tag => selectedKeys.has(tag.toLowerCase()));
+    all = [...POPULAR_SOURCE_TAGS, ...selectedExtras];
+  }
+  all = [...new Set(all)];
+
   list.innerHTML = all.map(label => {
     const selected = selectedKeys.has(label.toLowerCase());
-    return `<button class="quick-tag-chip source-tag-chip${selected ? ' selected' : ''}" type="button" data-toggle-source-tag="${escapeHTML(label)}" aria-pressed="${selected ? 'true' : 'false'}"><i class="bi ${selected ? 'bi-check-lg' : 'bi-plus-lg'}" aria-hidden="true"></i><span>${escapeHTML(label)}</span></button>`;
+    const meta = SOURCE_TAG_META[label] || { icon: 'bi-link-45deg', className: 'source-other' };
+    return `<button class="quick-tag-chip source-tag-chip ${meta.className}${selected ? ' selected' : ''}" type="button" data-toggle-source-tag="${escapeHTML(label)}" aria-pressed="${selected ? 'true' : 'false'}"><i class="bi ${meta.icon}" aria-hidden="true"></i><span>${escapeHTML(label)}</span>${selected ? '<i class="bi bi-check-lg source-check" aria-hidden="true"></i>' : ''}</button>`;
   }).join('');
+
+  if (expandButton) {
+    expandButton.innerHTML = sourceTagsExpanded
+      ? '<span>Show Less</span><i class="bi bi-chevron-up"></i>'
+      : `<span>More Sources</span><i class="bi bi-chevron-down"></i>`;
+    expandButton.setAttribute('aria-expanded', sourceTagsExpanded ? 'true' : 'false');
+  }
 }
 
 async function toggleSourceTag(label) {
@@ -713,13 +770,16 @@ function renderQuickInfoTags() {
   list.innerHTML = allTags.map(label => {
     const key = normalizeLeadType(label).toLowerCase();
     const isSelected = selected.has(key);
-    const spanishClass = normalizeLeadType(label) === 'Spanish?' ? ' spanish' : '';
+    const normalizedLabel = normalizeLeadType(label);
+    const spanishClass = normalizedLabel === 'Spanish?' ? ' spanish' : '';
+    const icon = LEAD_TAG_ICONS[normalizedLabel] || 'bi-tag';
     return `
-      <button class="quick-tag-chip${isSelected ? ' selected' : ''}${spanishClass}" type="button"
+      <button class="quick-tag-chip lead-tag-option${isSelected ? ' selected' : ''}${spanishClass}" type="button"
         data-toggle-lead-tag="${escapeHTML(label)}" aria-pressed="${isSelected ? 'true' : 'false'}"
         aria-label="${isSelected ? 'Remove' : 'Add'} ${escapeHTML(label)} tag">
-        <i class="bi ${isSelected ? 'bi-check-lg' : 'bi-plus-lg'}" aria-hidden="true"></i>
+        <i class="bi ${icon}" aria-hidden="true"></i>
         <span>${escapeHTML(label)}</span>
+        ${isSelected ? '<i class="bi bi-check-lg tag-state-check" aria-hidden="true"></i>' : ''}
       </button>`;
   }).join('');
 }
@@ -833,6 +893,7 @@ function renderLists() {
 
 function openLead(id) {
   currentLeadId = id;
+  sourceTagsExpanded = false;
   historyExpanded = true;
   updateHistoryVisibility();
   renderCurrentLead();
@@ -1338,6 +1399,11 @@ $('#quickTagsList')?.addEventListener('click', event => {
   const chip = event.target.closest('[data-toggle-lead-tag]');
   if (!chip) return;
   toggleQuickInfoTag(chip.dataset.toggleLeadTag || '');
+});
+
+$('#sourceTagsExpandButton')?.addEventListener('click', () => {
+  sourceTagsExpanded = !sourceTagsExpanded;
+  renderSourceTags();
 });
 
 $('#sourceTagsList')?.addEventListener('click', event => {
