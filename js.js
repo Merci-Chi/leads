@@ -4,6 +4,8 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLI
 let supabaseSession = null;
 let syncTimer = null;
 let syncInProgress = false;
+let realtimeChannel = null;
+const pendingSyncIds = new Set();
 
 function isUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
@@ -117,10 +119,82 @@ async function syncAllLeadsToSupabase() {
   }
 }
 
-function queueSupabaseSync() {
+async function syncPendingLeadsToSupabase() {
+  if (!supabaseSession || syncInProgress || !pendingSyncIds.size) return;
+  syncInProgress = true;
+  const ids = [...pendingSyncIds];
+  try {
+    ensureUuidIds();
+    const rows = state.leads.filter(lead => ids.includes(lead.id)).map(leadToSupabaseRow);
+    if (rows.length) {
+      const { error } = await supabaseClient.from('leads').upsert(rows, { onConflict: 'id' });
+      if (error) throw error;
+    }
+    ids.forEach(id => pendingSyncIds.delete(id));
+    showSyncStatus('Synced');
+  } catch (error) {
+    console.error('Supabase sync failed:', error);
+    showSyncStatus('Sync failed');
+  } finally {
+    syncInProgress = false;
+    if (pendingSyncIds.size) queueLeadSync();
+  }
+}
+
+function queueLeadSync(...ids) {
   if (!supabaseSession) return;
+  ids.filter(Boolean).forEach(id => pendingSyncIds.add(id));
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(syncAllLeadsToSupabase, 450);
+  syncTimer = setTimeout(syncPendingLeadsToSupabase, 300);
+}
+
+function queueAllLeadSync() {
+  state.leads.forEach(lead => pendingSyncIds.add(lead.id));
+  queueLeadSync();
+}
+
+async function syncLeadNow(lead) {
+  if (!supabaseSession || !lead) return;
+  pendingSyncIds.delete(lead.id);
+  const { error } = await supabaseClient.from('leads').upsert(leadToSupabaseRow(lead), { onConflict: 'id' });
+  if (error) throw error;
+}
+
+function applyRealtimeLeadChange(payload) {
+  if (!payload) return;
+  if (payload.eventType === 'DELETE') {
+    const deletedId = payload.old?.id;
+    if (deletedId) state.leads = state.leads.filter(lead => lead.id !== deletedId);
+  } else {
+    const incoming = supabaseRowToLead(payload.new || {});
+    if (!incoming.id) return;
+    const index = state.leads.findIndex(lead => lead.id === incoming.id);
+    if (index >= 0) state.leads[index] = incoming;
+    else state.leads.push(incoming);
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  renderLists();
+  if (currentLeadId && state.leads.some(lead => lead.id === currentLeadId)) renderCurrentLead();
+  else if (currentLeadId) {
+    currentLeadId = null;
+    showScreen('leads');
+  }
+}
+
+function subscribeToLeadChanges() {
+  if (!supabaseSession) return;
+  if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
+  realtimeChannel = supabaseClient
+    .channel('steady-hands-leads-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, applyRealtimeLeadChange)
+    .subscribe();
+}
+
+function unsubscribeFromLeadChanges() {
+  if (!realtimeChannel) return;
+  supabaseClient.removeChannel(realtimeChannel);
+  realtimeChannel = null;
 }
 
 async function hydrateFromSupabase() {
@@ -150,7 +224,7 @@ async function initializeSupabaseAuth() {
   supabaseSession = data.session || null;
   setAuthenticatedUi(Boolean(supabaseSession));
   if (supabaseSession) {
-    try { await hydrateFromSupabase(); } catch (error) { console.error(error); showSyncStatus('Sync failed'); }
+    try { await hydrateFromSupabase(); subscribeToLeadChanges(); } catch (error) { console.error(error); showSyncStatus('Sync failed'); }
   }
 }
 
@@ -182,9 +256,12 @@ function loadState() {
   return { leads: structuredClone(seedLeads) };
 }
 
-function saveState() {
+function saveState(...leadIds) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  queueSupabaseSync();
+  const ids = leadIds.filter(Boolean);
+  if (ids.length) queueLeadSync(...ids);
+  else if (currentLeadId) queueLeadSync(currentLeadId);
+  else queueAllLeadSync();
 }
 
 
@@ -729,6 +806,7 @@ $('#saveQuickNote').addEventListener('click', () => {
 
 // Done -> choose label -> move to follow-ups
 $('#doneButton').addEventListener('click', () => {
+  const lead = currentLead();
   selectedDoneTag = '';
   selectedSpanishPossible = Boolean(lead?.spanishPossible);
   $$('.tag-choice[data-tag]').forEach(btn => btn.classList.remove('selected'));
@@ -752,14 +830,21 @@ if (spanishTagChoice) {
     spanishTagChoice.classList.toggle('selected', selectedSpanishPossible);
   });
 }
-$('#finishLeadButton').addEventListener('click', () => {
+$('#finishLeadButton').addEventListener('click', async () => {
   const lead = currentLead();
   if (!lead || !selectedDoneTag) return;
   lead.tag = selectedDoneTag;
   lead.spanishPossible = selectedSpanishPossible;
   lead.status = 'followup';
   lead.lastCalled = new Date().toISOString();
-  saveState();
+  saveState(lead.id);
+  try {
+    await syncLeadNow(lead);
+    showSyncStatus('Follow-up synced');
+  } catch (error) {
+    console.error('Could not move lead to Follow-ups in Supabase:', error);
+    showSyncStatus('Sync failed');
+  }
   closeModal('doneModal');
   renderLists();
   showScreen('leads');
@@ -906,7 +991,7 @@ function mergeLeadRows(rows) {
     imported.push(lead);
   });
 
-  if (imported.length) saveState();
+  if (imported.length) saveState(...imported.map(lead => lead.id));
   return { imported, skipped };
 }
 
@@ -955,7 +1040,7 @@ $('#createLeadButton').addEventListener('click', () => {
   });
   if (!lead.name) return toast('Add a lead name');
   state.leads.push(lead);
-  saveState();
+  saveState(lead.id);
   closeModal('newLeadModal');
   renderLists();
   toast('New lead added');
@@ -1164,6 +1249,7 @@ $('#saveRecoveryPassword').addEventListener('click', async () => {
 
 $('#signOutButton').addEventListener('click', async () => {
   $('#signOutButton').disabled = true;
+  unsubscribeFromLeadChanges();
   await supabaseClient.auth.signOut();
   $('#signOutButton').disabled = false;
   closeModal('accountModal');
@@ -1171,6 +1257,8 @@ $('#signOutButton').addEventListener('click', async () => {
 
 supabaseClient.auth.onAuthStateChange((event, session) => {
   supabaseSession = session;
+  if (!session) unsubscribeFromLeadChanges();
+  else if (event === 'SIGNED_IN') subscribeToLeadChanges();
   setAuthenticatedUi(Boolean(session));
   if (event === 'PASSWORD_RECOVERY') {
     $('#recoveryNewPassword').value = '';
@@ -1183,3 +1271,87 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 initializeSupabaseAuth().then(async () => {
   if (supabaseSession) await loadLeadsJson();
 });
+
+/* PULL TO REFRESH --------------------------------------------------------- */
+(function setupPullToRefresh() {
+  const threshold = 82;
+  const maxPull = 126;
+  let startY = 0;
+  let pulling = false;
+  let distance = 0;
+  let refreshing = false;
+
+  const indicator = document.createElement('div');
+  indicator.className = 'pull-refresh-indicator';
+  indicator.setAttribute('aria-hidden', 'true');
+  indicator.innerHTML = '<i class="bi bi-arrow-down"></i>';
+  document.body.appendChild(indicator);
+
+  const icon = indicator.querySelector('i');
+
+  function resetIndicator() {
+    pulling = false;
+    distance = 0;
+    indicator.classList.remove('visible', 'ready');
+    indicator.style.transform = 'translate(-50%, -58px) scale(.86)';
+    icon.className = 'bi bi-arrow-down';
+  }
+
+  document.addEventListener('touchstart', event => {
+    if (refreshing || event.touches.length !== 1) return;
+    if (window.scrollY > 0 || document.documentElement.scrollTop > 0) return;
+    if (document.querySelector('.modal-backdrop.open')) return;
+
+    const target = event.target;
+    if (target && target.closest('input, textarea, select, [contenteditable="true"]')) return;
+
+    startY = event.touches[0].clientY;
+    pulling = true;
+    distance = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', event => {
+    if (!pulling || refreshing || event.touches.length !== 1) return;
+    const rawDistance = event.touches[0].clientY - startY;
+
+    if (rawDistance <= 0) {
+      resetIndicator();
+      return;
+    }
+
+    // Rubber-band the movement so the indicator feels native instead of following 1:1.
+    distance = Math.min(maxPull, rawDistance * .62);
+    if (distance < 8) return;
+
+    event.preventDefault();
+    indicator.classList.add('visible');
+    const y = Math.max(-42, Math.min(20, -42 + distance * .55));
+    const scale = Math.min(1, .86 + distance / 520);
+    indicator.style.transform = `translate(-50%, ${y}px) scale(${scale})`;
+
+    const ready = distance >= threshold;
+    indicator.classList.toggle('ready', ready);
+    icon.className = ready ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (!pulling || refreshing) return;
+    const shouldRefresh = distance >= threshold;
+    pulling = false;
+
+    if (!shouldRefresh) {
+      resetIndicator();
+      return;
+    }
+
+    refreshing = true;
+    indicator.classList.remove('ready');
+    indicator.classList.add('visible', 'refreshing');
+    icon.className = 'bi bi-arrow-clockwise';
+
+    // Give the refresh animation a moment to appear, then perform a real page reload.
+    setTimeout(() => window.location.reload(), 180);
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', resetIndicator, { passive: true });
+})();
