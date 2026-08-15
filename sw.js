@@ -1,4 +1,4 @@
-const CACHE = 'steady-hands-leads-supabase-v5-business-prices';
+const CACHE = 'steady-hands-leads-v-dynamic-call-name-1';
 const APP_FILES = [
   './',
   './index.html',
@@ -41,3 +41,5 @@ self.addEventListener('fetch', event => {
       .catch(() => caches.match(event.request).then(hit => hit || caches.match('./index.html')))
   );
 });
+
+// history-toggle-system-notes

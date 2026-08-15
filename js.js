@@ -2,6 +2,7 @@ const SUPABASE_URL = 'https://eucaziymnjjpkbwbxwfj.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ulLjvVJ81xRdSS_Wz9Qh4Q_nMSAlSfO';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 let supabaseSession = null;
+let currentUserName = 'User';
 let syncTimer = null;
 let syncInProgress = false;
 let realtimeChannel = null;
@@ -49,6 +50,7 @@ function leadToSupabaseRow(lead) {
     specific_time: lead.specificTime || null,
     tag: lead.tag || '',
     last_called: lead.lastCalled || null,
+    history: Array.isArray(lead.history) ? lead.history : [],
     updated_at: new Date().toISOString()
   };
 }
@@ -67,6 +69,8 @@ function supabaseRowToLead(row, status = 'new') {
     spanishPossible: Boolean(row.spanish_possible),
     status,
     lastCalled: row.last_called || '',
+    createdAt: row.created_at || '',
+    history: Array.isArray(row.history) ? row.history : [],
     tag: row.tag || '',
     answerStatus: row.answer_status || '',
     mood: row.mood || '',
@@ -240,6 +244,14 @@ async function hydrateFromSupabase() {
     ...(followData || []).map(row => supabaseRowToLead(row, 'followup'))
   ];
 
+  // A note that arrived with the original database/import record belongs to
+  // System, not whichever user happened to open the lead first. Persist that
+  // attribution so every device sees the same history.
+  const systemNoteLeads = remoteLeads.filter(addInitialSystemNoteHistory);
+  if (systemNoteLeads.length) {
+    await upsertLeadsByTable(systemNoteLeads);
+  }
+
   // The database is the source of truth once the two-table setup is in use.
   // Only migrate browser-local leads if both database tables are completely empty.
   if (!remoteLeads.length && state.leads.length) {
@@ -252,9 +264,208 @@ async function hydrateFromSupabase() {
   renderLists();
 }
 
+function getUserDisplayName(session = supabaseSession) {
+  const user = session?.user;
+  if (!user) return 'User';
+  const meta = user.user_metadata || {};
+  const candidate = meta.display_name || meta.full_name || meta.name || meta.user_name || meta.username;
+  if (candidate && String(candidate).trim()) return String(candidate).trim();
+  if (user.email) return String(user.email).split('@')[0];
+  return 'User';
+}
+
+function updateSignedInUserUi() {
+  currentUserName = getUserDisplayName();
+  const el = document.getElementById('signedInUserName');
+  if (el) el.textContent = currentUserName;
+  const accountName = document.getElementById('accountUserName');
+  if (accountName) accountName.textContent = currentUserName;
+  document.querySelectorAll('.script-user-name').forEach(el => {
+    el.textContent = currentUserName;
+  });
+}
+
+function currentUserIsKiara() {
+  const displayName = String(currentUserName || '').trim().toLowerCase();
+  const emailName = String(supabaseSession?.user?.email || '').split('@')[0].trim().toLowerCase();
+  return displayName === 'kiara' || emailName === 'kiara';
+}
+
+function addLeadHistory(lead, type, actor = currentUserName, at = new Date().toISOString(), details = {}) {
+  if (!lead) return;
+  if (!Array.isArray(lead.history)) lead.history = [];
+  lead.history.push({
+    id: crypto.randomUUID(),
+    type,
+    actor: String(actor || 'User').trim() || 'User',
+    at,
+    ...details
+  });
+}
+
+function addInitialSystemNoteHistory(lead) {
+  if (!lead || !String(lead.notes || '').trim()) return false;
+  if (!Array.isArray(lead.history)) lead.history = [];
+
+  let changed = false;
+  const currentNotes = String(lead.notes || '').trim();
+  const existingSystemEntry = lead.history.find(item =>
+    item?.type === 'note' && item?.initial === true && String(item?.actor || '').toLowerCase() === 'system'
+  );
+
+  // Notes that arrive with the original Supabase/import row are system notes.
+  // Prefix the Notes field itself so the attribution is visible even before
+  // opening History. Do this only once.
+  if (existingSystemEntry) {
+    if (!/^System:\s*/i.test(currentNotes)) {
+      lead.notes = `System: ${currentNotes}`;
+      changed = true;
+    }
+    return changed;
+  }
+
+  // Only create an initial System history event when there is no other history.
+  if (lead.history.length) return changed;
+
+  const rawNote = currentNotes.replace(/^System:\s*/i, '').trim();
+  lead.notes = `System: ${rawNote}`;
+  addLeadHistory(
+    lead,
+    'note',
+    'System',
+    lead.createdAt || new Date().toISOString(),
+    { note: rawNote, initial: true }
+  );
+  return true;
+}
+
+function formatHistoryMoment(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  const datePart = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+  const timePart = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date);
+  return `${datePart} at ${timePart}`;
+}
+
+function historyText(item) {
+  if (!item) return '';
+  const actor = item.actor || 'User';
+  const when = formatHistoryMoment(item.at);
+  if (item.type === 'called') return `Called by ${actor}${when ? ` on ${when}` : ''}`;
+  if (item.type === 'added') return `Lead added by ${actor}${when ? ` on ${when}` : ''}`;
+  if (item.type === 'note') return `Note added by ${actor}${when ? ` on ${when}` : ''}${item.note ? ` — \"${item.note}\"` : ''}`;
+  return `${item.label || 'Updated'} by ${actor}${when ? ` on ${when}` : ''}`;
+}
+
+function latestLeadHistory(lead) {
+  const items = Array.isArray(lead?.history) ? lead.history : [];
+  return items.length ? items[items.length - 1] : null;
+}
+
+function updateHistoryVisibility() {
+  const list = document.getElementById('leadHistoryList');
+  const button = document.getElementById('historyToggleButton');
+  if (!list || !button) return;
+  list.hidden = !historyExpanded;
+  button.setAttribute('aria-expanded', String(historyExpanded));
+  button.classList.toggle('open', historyExpanded);
+}
+
+function renderLeadHistory() {
+  updateHistoryVisibility();
+  const lead = currentLead();
+  const list = document.getElementById('leadHistoryList');
+  if (!lead || !list) return;
+  const items = Array.isArray(lead.history) ? lead.history.slice().reverse() : [];
+  if (!items.length) {
+    list.innerHTML = '<div class="history-empty">No history available.</div>';
+    return;
+  }
+  const canDeleteHistory = currentUserIsKiara();
+  list.innerHTML = items.map(item => {
+    const dotClass = item.type === 'called' ? 'called' : item.type === 'note' ? 'note' : 'added';
+    const iconClass = item.type === 'called' ? 'bi-telephone-fill' : item.type === 'note' ? 'bi-journal-text' : 'bi-person-plus-fill';
+    const title = item.type === 'called' ? 'Called' : item.type === 'added' ? 'Lead added' : item.type === 'note' ? 'Note added' : (item.label || 'Updated');
+    const noteText = item.type === 'note' && item.note ? `<p class="history-note-text">${escapeHTML(item.note)}</p>` : '';
+    const deleteButton = canDeleteHistory && (item.type === 'note' || item.type === 'called')
+      ? `<button class="history-note-delete" type="button" data-delete-history="${escapeHTML(item.id || '')}" aria-label="Delete ${item.type === 'called' ? 'call log' : 'note'}" title="Delete ${item.type === 'called' ? 'call log' : 'note'}"><i class="bi bi-x-lg"></i></button>`
+      : '';
+    return `
+      <div class="history-item">
+        <span class="history-dot ${dotClass}"><i class="bi ${iconClass}"></i></span>
+        <div class="history-item-content"><strong>${escapeHTML(title)}</strong>
+        <span>${escapeHTML(item.actor || 'User')} · ${escapeHTML(formatHistoryMoment(item.at))}</span>${noteText}</div>
+        ${deleteButton}
+      </div>`;
+  }).join('');
+}
+
+function removeNoteTextFromLead(lead, noteText) {
+  const note = String(noteText || '').trim();
+  if (!lead || !note) return;
+  const current = String(lead.notes || '');
+  if (!current.trim()) return;
+
+  const lines = current.split('\n');
+  const possibleNotes = [note, `System: ${note}`];
+  const exactIndex = lines.findIndex(line => possibleNotes.some(candidate => line.trim() === candidate));
+  if (exactIndex >= 0) {
+    lines.splice(exactIndex, 1);
+    lead.notes = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    return;
+  }
+
+  const systemNote = `System: ${note}`;
+  const target = current.includes(systemNote) ? systemNote : note;
+  const index = current.indexOf(target);
+  if (index >= 0) {
+    lead.notes = (current.slice(0, index) + current.slice(index + target.length))
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/^\s*\n|\n\s*$/g, '')
+      .trim();
+  }
+}
+
+async function deleteHistoryEntry(historyId) {
+  if (!currentUserIsKiara()) return toast('Only Kiara can delete history entries');
+  const lead = currentLead();
+  if (!lead || !historyId) return;
+  const item = (lead.history || []).find(entry => entry.id === historyId);
+  if (!item || !['note', 'called'].includes(item.type)) return;
+
+  if (item.type === 'note') {
+    removeNoteTextFromLead(lead, item.note || '');
+    $('#notesField').value = lead.notes || '';
+  }
+
+  lead.history = (lead.history || []).filter(entry => entry.id !== historyId);
+
+  // If a call log was removed, keep lastCalled consistent with the newest
+  // remaining call history entry. If no call logs remain, clear it.
+  if (item.type === 'called') {
+    const remainingCalls = (lead.history || [])
+      .filter(entry => entry.type === 'called' && entry.at)
+      .sort((a, b) => new Date(a.at) - new Date(b.at));
+    lead.lastCalled = remainingCalls.length ? remainingCalls[remainingCalls.length - 1].at : '';
+  }
+
+  saveState(lead.id);
+  renderLeadHistory();
+  renderLists();
+  try {
+    await syncLeadNow(lead);
+    showSyncStatus(item.type === 'called' ? 'Call log deleted' : 'Note deleted');
+  } catch (error) {
+    console.error('Could not delete history entry in Supabase:', error);
+    showSyncStatus('Sync failed');
+  }
+}
+
 function setAuthenticatedUi(isAuthenticated) {
   document.getElementById('authGate').hidden = isAuthenticated;
   document.getElementById('appShell').hidden = !isAuthenticated;
+  if (isAuthenticated) updateSignedInUserUi();
 }
 
 async function initializeSupabaseAuth() {
@@ -422,6 +633,7 @@ async function removeQuickInfoTag(kind, raw) {
 
   saveState(lead.id);
   renderQuickInfoTags();
+  renderLeadHistory();
   renderLists();
   try {
     await syncLeadNow(lead);
@@ -434,7 +646,8 @@ async function removeQuickInfoTag(kind, raw) {
 
 function leadCard(lead) {
   const isNew = lead.status === 'new';
-  const meta = isNew ? '' : `Last called: ${formatDateTime(lead.lastCalled)}`;
+  const latestHistory = latestLeadHistory(lead);
+  const meta = latestHistory ? historyText(latestHistory) : (!isNew && lead.lastCalled ? `Called on ${formatDateTime(lead.lastCalled)}` : '');
   const leadType = getLeadType(lead);
   const badges = [
     leadType && leadType !== 'Spanish?' ? `<span class="lead-type-badge">${escapeHTML(leadType)}</span>` : '',
@@ -476,6 +689,8 @@ function renderLists() {
 
 function openLead(id) {
   currentLeadId = id;
+  historyExpanded = false;
+  updateHistoryVisibility();
   renderCurrentLead();
   showScreen('detail');
 }
@@ -503,6 +718,7 @@ function renderCurrentLead() {
   $('#concernsField').value = lead.concerns || '';
   $('#notesField').value = lead.notes || '';
   renderQuickInfoTags();
+  renderLeadHistory();
 
   $$('[data-field]').forEach(button => {
     button.classList.toggle('selected', lead[button.dataset.field] === button.dataset.value);
@@ -525,6 +741,16 @@ function autosaveField(element) {
   if (!lead) return;
   lead[element.dataset.save] = element.value;
   saveState();
+}
+
+let notesBeforeEdit = '';
+let historyExpanded = false;
+function noteAddedText(before, after) {
+  const previous = String(before || '').trim();
+  const current = String(after || '').trim();
+  if (!current || current === previous) return '';
+  if (previous && current.startsWith(previous)) return current.slice(previous.length).trim();
+  return current;
 }
 
 
@@ -915,6 +1141,46 @@ $$('[data-save]').forEach(element => {
   element.addEventListener('change', () => autosaveField(element));
 });
 
+// Record a call only when the actual phone button is clicked.
+$('#topCallButton')?.addEventListener('click', () => {
+  const lead = currentLead();
+  if (!lead || !lead.phone) return;
+  lead.lastCalled = new Date().toISOString();
+  addLeadHistory(lead, 'called', currentUserName, lead.lastCalled);
+  saveState(lead.id);
+  renderLeadHistory();
+  renderLists();
+});
+
+// History stays collapsed until the user taps the History button.
+$('#historyToggleButton')?.addEventListener('click', () => {
+  historyExpanded = !historyExpanded;
+  renderLeadHistory();
+});
+
+// Only Kiara gets X buttons for removable note and call history entries.
+$('#leadHistoryList')?.addEventListener('click', event => {
+  const button = event.target.closest('[data-delete-history]');
+  if (!button) return;
+  deleteHistoryEntry(button.dataset.deleteHistory);
+});
+
+// Record meaningful Notes edits once when the user leaves the field, not on every keystroke.
+$('#notesField')?.addEventListener('focus', event => {
+  notesBeforeEdit = event.currentTarget.value || '';
+});
+$('#notesField')?.addEventListener('blur', event => {
+  const lead = currentLead();
+  if (!lead) return;
+  const addedText = noteAddedText(notesBeforeEdit, event.currentTarget.value);
+  if (!addedText) return;
+  addLeadHistory(lead, 'note', currentUserName, new Date().toISOString(), { note: addedText });
+  saveState(lead.id);
+  renderLeadHistory();
+  renderLists();
+  notesBeforeEdit = event.currentTarget.value || '';
+});
+
 // Quick Info tags: tapping any tag removes it from this lead and syncs the change.
 $('#quickTagsList')?.addEventListener('click', event => {
   const chip = event.target.closest('[data-remove-tag-kind]');
@@ -934,7 +1200,10 @@ $('#saveQuickNote').addEventListener('click', () => {
   if (!lead || !note) return toast('Type a note first');
   lead.notes = lead.notes ? `${lead.notes}\n${note}` : note;
   $('#notesField').value = lead.notes;
-  saveState();
+  addLeadHistory(lead, 'note', currentUserName, new Date().toISOString(), { note });
+  saveState(lead.id);
+  renderLeadHistory();
+  renderLists();
   closeModal('quickNotesModal');
   toast('Quick note added');
 });
@@ -977,7 +1246,8 @@ async function finishLeadAndExit(tag = '') {
   if (tag) lead.tag = tag;
   lead.spanishPossible = selectedSpanishPossible;
   lead.status = 'followup';
-  lead.lastCalled = new Date().toISOString();
+  // Moving a lead to Follow-ups does not count as a call.
+  // Call history is recorded only when the phone/call button itself is clicked.
   saveState(lead.id);
 
   try {
@@ -1042,6 +1312,7 @@ function makeLead(raw = {}) {
     tags: Array.isArray(raw.tags) ? raw.tags.map(text).filter(Boolean) : [],
     status: 'new',
     lastCalled: '',
+    history: Array.isArray(raw.history) ? raw.history : [],
     tag: '',
     spanishPossible: Boolean(raw.spanishPossible ?? raw.spanish ?? (Array.isArray(raw.tags) && raw.tags.some(tag => normalizeLeadType(tag) === 'Spanish?')) ?? false),
     answerStatus: '',
@@ -1104,6 +1375,10 @@ function mergeLeadRows(rows) {
     }
 
     const lead = makeLead(raw);
+    if (!lead.history.length) {
+      addInitialSystemNoteHistory(lead);
+      addLeadHistory(lead, 'added');
+    }
     state.leads.push(lead);
     imported.push(lead);
   });
@@ -1156,6 +1431,7 @@ $('#createLeadButton').addEventListener('click', () => {
     issue: $('#newIssue').value
   });
   if (!lead.name) return toast('Add a lead name');
+  addLeadHistory(lead, 'added');
   state.leads.push(lead);
   saveState(lead.id);
   closeModal('newLeadModal');
@@ -1242,6 +1518,7 @@ $('#authSignIn').addEventListener('click', async () => {
     return;
   }
   supabaseSession = data.session;
+  updateSignedInUserUi();
   setAuthenticatedUi(true);
   try {
     await hydrateFromSupabase();
@@ -1374,6 +1651,7 @@ $('#signOutButton').addEventListener('click', async () => {
 
 supabaseClient.auth.onAuthStateChange((event, session) => {
   supabaseSession = session;
+  if (session) updateSignedInUserUi();
   if (!session) unsubscribeFromLeadChanges();
   else if (event === 'SIGNED_IN') subscribeToLeadChanges();
   setAuthenticatedUi(Boolean(session));

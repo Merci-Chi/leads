@@ -41,6 +41,7 @@
           <div>
             <span class="eyebrow">STEADY HANDS OPERATIONS</span>
             <h1>Leads</h1>
+            <span class="signed-in-user">Signed in as <strong id="signedInUserName">User</strong></span>
           </div>
         </div>
         <div class="header-actions">
@@ -180,6 +181,14 @@
               <button class="mood-button" data-field="mood" data-value="Negative" type="button" aria-label="Negative mood"><i class="bi bi-emoji-frown"></i></button>
             </div>
           </div>
+        </article>
+
+        <article class="card history-card">
+          <button class="history-toggle-button" id="historyToggleButton" type="button" aria-expanded="false">
+            <span class="history-toggle-left"><span class="heading-icon"><i class="bi bi-clock-history"></i></span><span>History</span></span>
+            <i class="bi bi-chevron-down history-toggle-chevron"></i>
+          </button>
+          <div class="history-list" id="leadHistoryList" hidden></div>
         </article>
       </section>
 
@@ -364,17 +373,17 @@
 
         <article class="business-script-card script-outdated">
           <div class="business-script-title"><i class="bi bi-calendar3"></i><span>OUTDATED</span></div>
-          <p>“Hey — I was <mark>looking</mark> at your website earlier and <mark>noticed</mark> a couple things that seem pretty <mark>dated</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>redesign</mark> and <mark>upgrade</mark> older sites. I just wanted to see if that’s something you’d be <mark>open</mark> to talking about.”</p>
+          <p>“Hey — my name is <mark class="script-user-name">User</mark>. I was <mark>looking</mark> at your website earlier and <mark>noticed</mark> a couple things that seem pretty <mark>dated</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>redesign</mark> and <mark>upgrade</mark> older sites. I just wanted to see if that’s something you’d be <mark>open</mark> to talking about.”</p>
         </article>
 
         <article class="business-script-card script-nosite">
           <div class="business-script-title"><i class="bi bi-globe2"></i><span>NO SITE</span></div>
-          <p>“Hey — my name is <mark>Elijah</mark>. I was looking into your business earlier and I <mark>couldn’t find</mark> a website. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with a <mark>professional site</mark>. I just wanted to see if that’s something <mark>you’re considering</mark>.”</p>
+          <p>“Hey — my name is <mark class="script-user-name">User</mark>. I was looking into your business earlier and I <mark>couldn’t find</mark> a website. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with a <mark>professional site</mark>. I just wanted to see if that’s something <mark>you’re considering</mark>.”</p>
         </article>
 
         <article class="business-script-card script-broken">
           <div class="business-script-title"><i class="bi bi-link-45deg"></i><span>BROKEN SITE</span></div>
-          <p>“Hey — my name is Elijah, I was looking at your website earlier and I <mark>noticed</mark> a couple parts <mark>weren’t working properly</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with <mark>professional sites</mark>; or if you’re just looking for a <mark>quick fix</mark> I can look to <mark>get you a quote</mark>. Is that something you’d be <mark>interested in getting fixed</mark>?”</p>
+          <p>“Hey — my name is <mark class="script-user-name">User</mark>, I was looking at your website earlier and I <mark>noticed</mark> a couple parts <mark>weren’t working properly</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with <mark>professional sites</mark>; or if you’re just looking for a <mark>quick fix</mark> I can look to <mark>get you a quote</mark>. Is that something you’d be <mark>interested in getting fixed</mark>?”</p>
         </article>
 
         <article class="business-script-card script-spanish">

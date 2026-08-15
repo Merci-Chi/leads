@@ -29,3 +29,5 @@ A browser app cannot process a local/hosted leads.json while it is fully closed.
 TWO-TABLE DATABASE MODE
 This version reads/writes public.new_leads and public.follow_ups. It no longer uses public.leads.
 When Done is pressed, the lead is inserted/upserted into follow_ups and deleted from new_leads.
+
+History now records notes with the signed-in user, timestamp, and note text.
