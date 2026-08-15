@@ -1,4 +1,4 @@
-const CACHE = 'steady-leads-v2';
+const CACHE = 'steady-leads-v3';
 const APP_FILES = [
   './',
   './index.html',

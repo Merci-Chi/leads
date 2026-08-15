@@ -58,19 +58,44 @@ function showScreen(name) {
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
+function normalizeLeadType(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  const key = text.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (/outdated|old (site|website)|dated (site|website)/.test(key)) return 'Outdated Site';
+  if (/no (site|website)|without (a )?(site|website)|needs? (a )?website/.test(key)) return 'No Site';
+  if (/broken|not working|404|dead link|error/.test(key)) return 'Broken Site';
+  if (/spanish/.test(key)) return 'Spanish?';
+  return text;
+}
+
+function getLeadType(lead) {
+  const tagType = Array.isArray(lead.tags)
+    ? lead.tags.map(normalizeLeadType).find(value => value && value !== 'Spanish?')
+    : '';
+  return normalizeLeadType(lead.leadType || lead.type || lead.reason || tagType || lead.issue);
+}
+
+function hasPossibleSpanishTag(lead) {
+  return Boolean(lead.spanishPossible) || (Array.isArray(lead.tags) && lead.tags.some(tag => normalizeLeadType(tag) === 'Spanish?'));
+}
+
 function leadCard(lead) {
   const isNew = lead.status === 'new';
   const meta = isNew ? '' : `Last called: ${formatDateTime(lead.lastCalled)}`;
-  const badge = isNew
-    ? '<span class="new-badge">NEW</span>'
-    : `${lead.tag ? `<span class="tag-badge">${escapeHTML(lead.tag)}</span>` : ''}${lead.spanishPossible ? `<span class="tag-badge spanish-badge">Spanish?</span>` : ''}`;
+  const leadType = getLeadType(lead);
+  const badges = [
+    leadType && leadType !== 'Spanish?' ? `<span class="lead-type-badge">${escapeHTML(leadType)}</span>` : '',
+    hasPossibleSpanishTag(lead) || leadType === 'Spanish?' ? '<span class="lead-type-badge spanish-badge">Spanish?</span>' : '',
+    !isNew && lead.tag ? `<span class="tag-badge">${escapeHTML(lead.tag)}</span>` : ''
+  ].filter(Boolean).join('');
   const initial = (lead.name || '?').trim().charAt(0).toUpperCase();
 
   return `
     <button class="lead-item" type="button" data-open-lead="${lead.id}">
       <span class="lead-avatar">${escapeHTML(initial)}</span>
       <span class="lead-copy">
-        <span class="lead-name-line"><strong>${escapeHTML(lead.name)}</strong>${badge}</span>
+        <span class="lead-name-line"><strong>${escapeHTML(lead.name)}</strong>${badges}</span>
         <span class="lead-company">${escapeHTML(lead.company || 'No company')}</span>
         ${meta ? `<span class="lead-meta">${escapeHTML(meta)}</span>` : ''}
       </span>
@@ -80,7 +105,7 @@ function leadCard(lead) {
 
 function renderLists() {
   const query = ($('#leadSearch').value || '').trim().toLowerCase();
-  const matches = lead => !query || [lead.name, lead.company, lead.phone, lead.tag].some(v => String(v || '').toLowerCase().includes(query));
+  const matches = lead => !query || [lead.name, lead.company, lead.phone, lead.tag, getLeadType(lead), hasPossibleSpanishTag(lead) ? 'Spanish?' : ''].some(v => String(v || '').toLowerCase().includes(query));
   const fresh = state.leads.filter(l => l.status === 'new' && matches(l)).slice().reverse();
   const follow = state.leads.filter(l => l.status === 'followup' && matches(l)).sort((a,b) => new Date(b.lastCalled || 0) - new Date(a.lastCalled || 0));
 
@@ -654,10 +679,12 @@ function makeLead(raw = {}) {
     site: text(raw.site ?? raw.website ?? raw.url),
     age: text(raw.age ?? raw.siteAge),
     issue: text(raw.issue ?? raw.mainIssue),
+    leadType: normalizeLeadType(raw.leadType ?? raw.type ?? raw.reason ?? (Array.isArray(raw.tags) ? raw.tags.find(tag => normalizeLeadType(tag) !== 'Spanish?') : '') ?? raw.issue ?? raw.mainIssue),
+    tags: Array.isArray(raw.tags) ? raw.tags.map(text).filter(Boolean) : [],
     status: 'new',
     lastCalled: '',
     tag: '',
-    spanishPossible: Boolean(raw.spanishPossible ?? raw.spanish ?? false),
+    spanishPossible: Boolean(raw.spanishPossible ?? raw.spanish ?? (Array.isArray(raw.tags) && raw.tags.some(tag => normalizeLeadType(tag) === 'Spanish?')) ?? false),
     answerStatus: '',
     mood: '',
     outcome: '',
