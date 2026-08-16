@@ -1431,3 +1431,24 @@ html, body { overscroll-behavior-y: contain; }
 }
 .lead-source-chip > i { color: rgb(var(--source-rgb, 126, 145, 164)); font-size: 10px; }
 .lead-source-chip > span { overflow: hidden; text-overflow: ellipsis; }
+
+
+/* Caller attribution */
+.lead-called-by {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  color: #647d94;
+  font-size: 10.5px;
+  font-weight: 650;
+}
+.lead-called-by.has-call { color: #8fb5d8; }
+.lead-called-by i { font-size: 9px; }
+.phone-called-by {
+  margin-top: 5px;
+  color: #627f99;
+  font-size: 11px;
+  font-weight: 700;
+}
+.phone-called-by.has-call { color: #8fc3f4; }

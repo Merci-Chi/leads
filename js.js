@@ -368,6 +368,22 @@ function latestLeadHistory(lead) {
   return items.length ? items[items.length - 1] : null;
 }
 
+function latestCallHistory(lead) {
+  const items = Array.isArray(lead?.history) ? lead.history : [];
+  const calls = items.filter(item => item?.type === 'called');
+  if (!calls.length) return null;
+  return calls.slice().sort((a, b) => new Date(a.at || 0) - new Date(b.at || 0)).pop();
+}
+
+function callerSummary(lead, includeTime = false) {
+  const call = latestCallHistory(lead);
+  if (!call) return 'Not called yet';
+  const actor = String(call.actor || 'User').trim() || 'User';
+  if (!includeTime) return `Called by ${actor}`;
+  const when = formatHistoryMoment(call.at);
+  return `Called by ${actor}${when ? ` · ${when}` : ''}`;
+}
+
 function updateHistoryVisibility() {
   const list = document.getElementById('leadHistoryList');
   const button = document.getElementById('historyToggleButton');
@@ -903,6 +919,7 @@ function leadCard(lead) {
       <span class="lead-copy">
         <span class="lead-name-line"><strong>${escapeHTML(lead.company || 'No company')}</strong>${badges}</span>
         <span class="lead-company">${escapeHTML(lead.name || 'No contact name')}</span>
+        <span class="lead-called-by ${latestCallHistory(lead) ? 'has-call' : 'no-call'}"><i class="bi bi-telephone-fill" aria-hidden="true"></i>${escapeHTML(callerSummary(lead, false))}</span>
         ${sourceBadges ? `<span class="lead-source-tags">${sourceBadges}</span>` : ''}
       </span>
       <i class="bi bi-chevron-right"></i>
@@ -942,6 +959,11 @@ function renderCurrentLead() {
   if (!lead) return;
 
   $('#leadPhone').textContent = lead.phone ? formatPhoneNumber(lead.phone) : 'No phone';
+  const calledByEl = $('#leadCalledBy');
+  if (calledByEl) {
+    calledByEl.textContent = callerSummary(lead, true);
+    calledByEl.classList.toggle('has-call', Boolean(latestCallHistory(lead)));
+  }
   $('#topCallButton').href = `tel:${String(lead.phone || '').replace(/[^\d+]/g, '')}`;
   $('#leadName').textContent = lead.name || 'No contact name';
   $('#leadCompany').textContent = lead.company || '—';
@@ -1399,7 +1421,7 @@ $('#topCallButton')?.addEventListener('click', () => {
   lead.lastCalled = new Date().toISOString();
   addLeadHistory(lead, 'called', currentUserName, lead.lastCalled);
   saveState(lead.id);
-  renderLeadHistory();
+  renderCurrentLead();
   renderLists();
 });
 
