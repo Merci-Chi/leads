@@ -1512,8 +1512,19 @@ $('#saveQuickNote').addEventListener('click', () => {
 });
 
 // Done -> choose label -> move to follow-ups
+// A prospect can only enter Follow-ups after an actual call has been logged.
+function leadHasBeenCalled(lead) {
+  if (!lead) return false;
+  if (lead.lastCalled) return true;
+  return Array.isArray(lead.history) && lead.history.some(item => item?.type === 'called');
+}
+
 $('#doneButton').addEventListener('click', () => {
   const lead = currentLead();
+  if (!leadHasBeenCalled(lead)) {
+    toast('Call this prospect before moving to Follow-ups');
+    return;
+  }
   selectedDoneTag = '';
   selectedSpanishPossible = Boolean(lead?.spanishPossible);
   $$('.tag-choice[data-tag]').forEach(btn => btn.classList.remove('selected'));
@@ -1543,6 +1554,14 @@ if (spanishTagChoice) {
 async function finishLeadAndExit(tag = '') {
   const lead = currentLead();
   if (!lead) return;
+
+  // Guard this path too so no alternate Done-modal action can move an
+  // uncalled prospect into Follow-ups.
+  if (!leadHasBeenCalled(lead)) {
+    closeModal('doneModal');
+    toast('Call this prospect before moving to Follow-ups');
+    return;
+  }
 
   // A tag is optional. Clicking the X in the Done modal finishes the call
   // and moves the lead to Follow-ups without adding/changing a tag.
