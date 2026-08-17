@@ -4791,3 +4791,86 @@ html, body { overscroll-behavior-y: contain; }
     gap: 16px;
   }
 }
+
+
+/* MOBILE CARD POLISH — inline Hot Lead + edit beside chevron */
+@media (max-width: 700px) {
+  /* Hot Lead belongs on the company row on mobile, not in a separate row above. */
+  .lead-item-wrap.has-hot-priority .desktop-hot-lead-tag {
+    display: none !important;
+  }
+
+  .lead-item-wrap.has-hot-priority:not(.has-wrong-priority) .lead-priority-tags {
+    display: none !important;
+  }
+
+  .lead-item-wrap.has-hot-priority:not(.has-wrong-priority) > .lead-item {
+    padding-top: 11px !important;
+  }
+
+  .lead-item.hot-lead-card .mobile-hot-lead-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex: 0 0 auto !important;
+    min-height: 21px !important;
+    padding: 3px 7px !important;
+    border: 1px solid rgba(245, 151, 62, .72) !important;
+    border-radius: 999px !important;
+    background: linear-gradient(180deg, rgba(221, 105, 17, .27), rgba(170, 70, 6, .22)) !important;
+    color: #ffc982 !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 190, 105, .06) !important;
+    font-size: 8.5px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    letter-spacing: .045em !important;
+    white-space: nowrap !important;
+  }
+
+  .lead-item.hot-lead-card .mobile-hot-lead-badge i {
+    font-size: 9px !important;
+  }
+
+  .lead-item.hot-lead-card {
+    border-color: rgba(230, 124, 35, .62) !important;
+    background: linear-gradient(145deg, rgba(25, 27, 29, .98), rgba(13, 22, 29, .98)) !important;
+    box-shadow: inset 3px 0 0 #e57c22, 0 7px 22px rgba(0,0,0,.16) !important;
+  }
+
+  .lead-item.hot-lead-card .lead-name-line {
+    gap: 5px !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  .lead-item.hot-lead-card .lead-name-line strong {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  /* Kiara's edit control sits on the same right-side row as the chevron. */
+  .lead-item-wrap.kiara-manageable > .lead-item {
+    padding-right: 82px !important;
+  }
+
+  .lead-item-wrap.kiara-manageable .lead-card-edit {
+    top: 50% !important;
+    right: 38px !important;
+    bottom: auto !important;
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 9px !important;
+    transform: translateY(-50%) !important;
+    background: rgba(10, 25, 39, .92) !important;
+    z-index: 10 !important;
+  }
+
+  .lead-item-wrap.kiara-manageable > .lead-item > .bi-chevron-right {
+    position: absolute !important;
+    right: 13px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+}

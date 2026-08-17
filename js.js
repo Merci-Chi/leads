@@ -1247,21 +1247,24 @@ function leadCard(lead) {
     return `<span class="lead-source-chip ${meta.className}"><i class="bi ${meta.icon}" aria-hidden="true"></i><span>${escapeHTML(clean)}</span></span>`;
   }).join('');
   const cornerTags = [
-    isHot ? '<span class="priority-corner-tag hot-lead-tag">🔥 HOT LEAD</span>' : '',
+    isHot ? '<span class="priority-corner-tag hot-lead-tag desktop-hot-lead-tag">🔥 HOT LEAD</span>' : '',
     isWrongNumber ? '<span class="priority-corner-tag wrong-number-tag">WRONG NUMBER</span>' : ''
   ].filter(Boolean).join('');
+  const mobileHotBadge = isHot
+    ? '<span class="mobile-hot-lead-badge"><i class="bi bi-fire" aria-hidden="true"></i> HOT LEAD</span>'
+    : '';
 
   const manageLeadButton = currentUserIsKiara()
     ? `<button class="lead-card-edit" type="button" data-edit-lead-status="${lead.id}" aria-label="Edit lead status" title="Edit lead"><i class="bi bi-pencil-square"></i></button>`
     : '';
 
   return `
-    <div class="lead-item-wrap${manageLeadButton ? ' kiara-manageable' : ''}${cornerTags ? ' has-priority-tags' : ''}">
+    <div class="lead-item-wrap${manageLeadButton ? ' kiara-manageable' : ''}${cornerTags ? ' has-priority-tags' : ''}${isHot ? ' has-hot-priority' : ''}${isWrongNumber ? ' has-wrong-priority' : ''}">
       <button class="lead-item${isHot ? ' hot-lead-card' : ''}${isWrongNumber ? ' wrong-number-card' : ''}" type="button" data-open-lead="${lead.id}">
         ${cornerTags ? `<span class="lead-priority-tags">${cornerTags}</span>` : ''}
         <span class="lead-avatar">${escapeHTML(initial)}</span>
         <span class="lead-copy">
-          <span class="lead-name-line"><strong>${escapeHTML(lead.company || 'No company')}</strong>${badges}</span>
+          <span class="lead-name-line"><strong>${escapeHTML(lead.company || 'No company')}</strong>${mobileHotBadge}${badges}</span>
           <span class="lead-company">${escapeHTML(lead.name || 'No contact name')}</span>
           ${isSold
             ? `<span class="lead-called-by sold-by-card"><i class="bi bi-trophy-fill" aria-hidden="true"></i>Sold by ${escapeHTML(lead.soldBy || latestSoldActor(lead) || 'Unassigned')}</span>`
@@ -3525,15 +3528,24 @@ document.addEventListener('keydown', event => {
 
   // Top New Leads / Follow-ups / Sold Leads tabs.
   // These are the pipeline navigation on BOTH desktop and mobile.
+  const resetLeadBoardToTop = () => {
+    const scroller = document.scrollingElement || document.documentElement;
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (scroller) scroller.scrollTop = 0;
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    if (leadsScreen) leadsScreen.scrollTop = 0;
+  };
+
   const activatePipelineButton = button => {
     if (!button?.dataset?.pipelineView) return;
     showScreen('leads');
     applyPipelineView(button.dataset.pipelineView, { persist: true, scroll: false });
 
-    // Mobile should always land at the top of the selected category.
-    if (window.matchMedia('(max-width: 959px)').matches) {
-      document.getElementById('leadsScreen')?.scrollIntoView({ block: 'start' });
-    }
+    // Every pipeline switch starts at the top. This is especially important
+    // when returning to New Leads after scrolling Follow-ups or Sold.
+    resetLeadBoardToTop();
+    requestAnimationFrame(resetLeadBoardToTop);
   };
 
   pipelineButtons.forEach(button => {
@@ -3548,16 +3560,19 @@ document.addEventListener('keydown', event => {
   leadsNav?.addEventListener('click', () => {
     showScreen('leads');
     applyPipelineView('leads', { persist: true, scroll: false });
+    resetLeadBoardToTop();
   });
 
   followNav?.addEventListener('click', () => {
     showScreen('leads');
     applyPipelineView('followups', { persist: true, scroll: false });
+    resetLeadBoardToTop();
   });
 
   soldNav?.addEventListener('click', () => {
     showScreen('leads');
     applyPipelineView('sold', { persist: true, scroll: false });
+    resetLeadBoardToTop();
   });
 
   addNav?.addEventListener('click', () => {
