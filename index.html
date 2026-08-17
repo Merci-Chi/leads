@@ -17,7 +17,7 @@
 <link href="icons/favicon-64.png" rel="icon" sizes="64x64" type="image/png"/>
 <link href="https://cdn.jsdelivr.net" rel="preconnect"/>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
-<link href="css.css?v=20260817-0445" rel="stylesheet"/>
+<link href="css.css?v=20260817-0435" rel="stylesheet"/>
 </head>
 <body>
 <section aria-label="Sign in" class="auth-gate" id="authGate">
@@ -361,16 +361,6 @@
 
 <p>Scripts, pricing, and useful information for this lead.</p>
 </div>
-<div class="mobile-quick-info-menu">
-  <button class="mobile-quick-info-button scripts" id="mobileScriptsButton" type="button">
-    <i class="bi bi-chat-quote-fill"></i>
-    <span>Scripts</span>
-  </button>
-  <button class="mobile-quick-info-button prices" id="mobilePricesButton" type="button">
-    <i class="bi bi-currency-dollar"></i>
-    <span>Prices</span>
-  </button>
-</div>
 <div class="desktop-panel-grid quick-layout"><div class="panel-column"><article class="business-script-card script-outdated">
 <div class="business-script-title"><i class="bi bi-calendar3"></i><span>OUTDATED</span></div>
 <p>“Hey — my name is <mark class="script-user-name">User</mark>. I was <mark>looking</mark> at your website earlier and <mark>noticed</mark> a couple things that seem pretty <mark>dated</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>redesign</mark> and <mark>upgrade</mark> older sites. I just wanted to see if that’s something you’d be <mark>open</mark> to talking about.”</p>
@@ -395,12 +385,29 @@
 <div class="price-reference-row extra-price"><div><strong>Additional Pages</strong><span>Added beyond the included page limit</span></div><b>+$50 / page</b></div>
 </div>
 </div>
+
 <div class="pricing-group">
 <div class="pricing-group-title">HOSTING</div>
-<div class="price-reference-list">
-<div class="price-reference-row"><div><strong>Standard Hosting</strong><span>Lowest plan</span></div><b>$10 / month</b></div>
-<div class="price-reference-row"><div><strong>Backend Hosting</strong><span>Live database — lowest plan</span></div><b>$20 / month</b></div>
+<div class="hosting-price-columns">
+  <section class="hosting-tier-group">
+    <div class="hosting-tier-heading">STANDARD HOSTING</div>
+    <div class="price-reference-list">
+      <div class="price-reference-row"><div><strong>Month-to-Month</strong><span>Billed monthly</span></div><b>$20 / month</b></div>
+      <div class="price-reference-row"><div><strong>6-Month Plan</strong><span>6-month commitment</span></div><b>$15 / month</b></div>
+      <div class="price-reference-row best-value"><div><strong>Annual Plan</strong><span>Best Value</span></div><b>$10 / month</b></div>
+    </div>
+  </section>
+  <section class="hosting-tier-group">
+    <div class="hosting-tier-heading">BACKEND HOSTING</div>
+    <div class="price-reference-list">
+      <div class="price-reference-row"><div><strong>Month-to-Month</strong><span>Billed monthly</span></div><b>$50 / month</b></div>
+      <div class="price-reference-row"><div><strong>6-Month Plan</strong><span>6-month commitment</span></div><b>$30 / month</b></div>
+      <div class="price-reference-row best-value"><div><strong>Annual Plan</strong><span>Best Value</span></div><b>$20 / month</b></div>
+    </div>
+  </section>
 </div>
+</div>
+
 </div>
 <div class="pricing-group">
 <div class="pricing-group-title">SITE RENEWAL</div>
@@ -705,94 +712,7 @@
 </section>
 </div>
 
-<!-- MOBILE QUICK INFO: SCRIPT CHOOSER -->
-<div aria-hidden="true" class="modal-backdrop mobile-quick-modal" id="mobileScriptMenuModal">
-<section aria-labelledby="mobileScriptMenuTitle" aria-modal="true" class="modal-card mobile-quick-menu-card" role="dialog">
-<div class="modal-heading">
-<div><span class="section-kicker">QUICK INFO</span><h2 id="mobileScriptMenuTitle">Scripts</h2></div>
-<button aria-label="Close" class="icon-button bare modal-close" data-close="mobileScriptMenuModal" type="button"><i class="bi bi-x-lg"></i></button>
-</div>
-<div class="mobile-script-options">
-<button class="mobile-script-option outdated" data-mobile-script="outdated" type="button"><i class="bi bi-calendar3"></i><span>Outdated</span></button>
-<button class="mobile-script-option broken" data-mobile-script="broken" type="button"><i class="bi bi-link-45deg"></i><span>Broken Site</span></button>
-<button class="mobile-script-option nosite" data-mobile-script="nosite" type="button"><i class="bi bi-globe2"></i><span>No Site</span></button>
-<button class="mobile-script-option spanish" data-mobile-script="spanish" type="button"><i class="bi bi-chat-dots-fill"></i><span>Spanish</span></button>
-</div>
-</section>
-</div>
 
-<!-- MOBILE QUICK INFO: SCRIPT DISPLAY -->
-<div aria-hidden="true" class="modal-backdrop mobile-quick-modal" id="mobileScriptDisplayModal">
-<section aria-labelledby="mobileScriptDisplayTitle" aria-modal="true" class="modal-card mobile-quick-display-card" role="dialog">
-<div class="modal-heading">
-<div><span class="section-kicker">SCRIPT</span><h2 id="mobileScriptDisplayTitle">Script</h2></div>
-<button aria-label="Close" class="icon-button bare modal-close" data-close="mobileScriptDisplayModal" type="button"><i class="bi bi-x-lg"></i></button>
-</div>
-<div class="mobile-script-display" id="mobileScriptDisplay"></div>
-</section>
-</div>
-
-<!-- MOBILE QUICK INFO: PRICE CHOOSER -->
-<div aria-hidden="true" class="modal-backdrop mobile-quick-modal" id="mobilePriceMenuModal">
-<section aria-labelledby="mobilePriceMenuTitle" aria-modal="true" class="modal-card mobile-quick-menu-card" role="dialog">
-<div class="modal-heading">
-<div><span class="section-kicker">QUICK INFO</span><h2 id="mobilePriceMenuTitle">Prices</h2></div>
-<button aria-label="Close" class="icon-button bare modal-close" data-close="mobilePriceMenuModal" type="button"><i class="bi bi-x-lg"></i></button>
-</div>
-<div class="mobile-price-options">
-<button class="mobile-price-option new-site" data-mobile-price="new" type="button"><i class="bi bi-window"></i><span>New Site</span></button>
-<button class="mobile-price-option renewal" data-mobile-price="renewal" type="button"><i class="bi bi-arrow-repeat"></i><span>Renewal Site</span></button>
-<button class="mobile-price-option hosting" data-mobile-price="hosting" type="button"><i class="bi bi-server"></i><span>Hosting</span></button>
-</div>
-</section>
-</div>
-
-<!-- MOBILE QUICK INFO: PRICE DISPLAY -->
-<div aria-hidden="true" class="modal-backdrop mobile-quick-modal" id="mobilePriceDisplayModal">
-<section aria-labelledby="mobilePriceDisplayTitle" aria-modal="true" class="modal-card mobile-quick-display-card" role="dialog">
-<div class="modal-heading">
-<div><span class="section-kicker">PRICES</span><h2 id="mobilePriceDisplayTitle">Prices</h2></div>
-<button aria-label="Close" class="icon-button bare modal-close" data-close="mobilePriceDisplayModal" type="button"><i class="bi bi-x-lg"></i></button>
-</div>
-<div class="mobile-price-display" id="mobilePriceDisplay"></div>
-</section>
-</div>
-
-<!-- ACCOUNT / PASSWORD MODAL -->
-<div aria-hidden="true" class="modal-backdrop" id="accountModal">
-<section aria-labelledby="accountModalTitle" aria-modal="true" class="modal-card account-modal-card" role="dialog">
-<div class="modal-heading">
-<div><span class="section-kicker">ACCOUNT</span><h2 id="accountModalTitle">Account Settings</h2></div>
-<button aria-label="Close" class="icon-button bare modal-close" data-close="accountModal" type="button"><i class="bi bi-x-lg"></i></button>
-</div>
-<p class="modal-help" id="accountEmailDisplay"></p>
-<label class="stacked-field">
-<span>Display name</span>
-<input autocomplete="name" id="accountDisplayName" maxlength="60" placeholder="e.g. Kiara" type="text"/>
-</label>
-<button class="account-display-name-save" id="saveDisplayNameButton" type="button"><i class="bi bi-person-check"></i> Save Display Name</button>
-<label class="stacked-field">
-<span>New password</span>
-<input autocomplete="new-password" id="accountNewPassword" placeholder="New password" type="password"/>
-</label>
-<label class="stacked-field">
-<span>Confirm new password</span>
-<input autocomplete="new-password" id="accountConfirmPassword" placeholder="Confirm new password" type="password"/>
-</label>
-<div class="password-requirement">Use at least 8 characters.</div>
-<div aria-live="polite" class="auth-status account-auth-status" id="accountPasswordStatus"></div>
-<div class="modal-actions">
-<button class="modal-secondary" id="signOutButton" type="button">Sign Out</button>
-<button class="modal-primary" id="changePasswordButton" type="button">Change Password</button>
-</div>
-</section>
-</div>
-<!-- PASSWORD RESET MODAL -->
-<div aria-hidden="true" class="modal-backdrop" id="passwordResetModal">
-<section aria-labelledby="passwordResetTitle" aria-modal="true" class="modal-card account-modal-card" role="dialog">
-<div class="modal-heading">
-<div><span class="section-kicker">PASSWORD RECOVERY</span><h2 id="passwordResetTitle">Set a New Password</h2></div>
-</div>
 <p class="modal-help">Enter a new password for your account.</p>
 <label class="stacked-field">
 <span>New password</span>
@@ -809,7 +729,7 @@
 </div>
 <div aria-live="polite" class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js.js?v=20260817-0445"></script>
+<script src="js.js?v=20260817-0435"></script>
 <script>
     window.addEventListener('load', async () => {
       try {

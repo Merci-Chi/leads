@@ -4739,220 +4739,42 @@ html, body { overscroll-behavior-y: contain; }
   font-size: 17px;
 }
 
-/* MOBILE QUICK INFO — desktop Quick Info remains unchanged */
-.mobile-quick-info-menu {
-  display: none;
+
+
+/* HOSTING PRICE OPTIONS */
+.hosting-price-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
 
-.mobile-quick-modal {
-  display: none;
+.hosting-tier-group {
+  min-width: 0;
+}
+
+.hosting-tier-heading {
+  margin: 0 0 8px;
+  color: #8fa8bf;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.price-reference-row.best-value {
+  border-color: rgba(67, 139, 229, .7);
+  box-shadow: inset 0 0 0 1px rgba(83, 159, 244, .08);
+}
+
+.price-reference-row.best-value span {
+  color: #8fc0ff;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
 }
 
 @media (max-width: 959px) {
-  #quickPanel .desktop-panel-grid.quick-layout,
-  #quickPanel > .pricing-reference-card {
-    display: none !important;
-  }
-
-  .mobile-quick-info-menu {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin: 10px 0 18px;
-  }
-
-  .mobile-quick-info-button {
-    min-height: 104px;
-    display: grid;
-    place-items: center;
-    align-content: center;
-    gap: 8px;
-    border: 1px solid #2a4c6b;
-    border-radius: 15px;
-    background: linear-gradient(145deg, #0a1a2b, #06111d);
-    color: #dcecff;
-    font-weight: 850;
-    cursor: pointer;
-  }
-
-  .mobile-quick-info-button i {
-    font-size: 29px;
-  }
-
-  .mobile-quick-info-button.scripts {
-    border-color: rgba(62, 133, 230, .72);
-    box-shadow: inset 0 0 22px rgba(46, 134, 255, .07);
-  }
-
-  .mobile-quick-info-button.scripts i {
-    color: #77b2ff;
-  }
-
-  .mobile-quick-info-button.prices {
-    border-color: rgba(65, 175, 105, .62);
-    box-shadow: inset 0 0 22px rgba(57, 220, 117, .05);
-  }
-
-  .mobile-quick-info-button.prices i {
-    color: #78e39d;
-  }
-
-  .mobile-quick-modal.open {
-    display: flex;
-  }
-
-  .mobile-quick-menu-card,
-  .mobile-quick-display-card {
-    width: min(100%, 410px);
-  }
-
-  .mobile-script-options {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 9px;
-    margin-top: 15px;
-  }
-
-  .mobile-script-option,
-  .mobile-price-option {
-    min-height: 80px;
-    display: grid;
-    place-items: center;
-    align-content: center;
-    gap: 7px;
-    border-radius: 13px;
-    font-weight: 850;
-    cursor: pointer;
-  }
-
-  .mobile-script-option i,
-  .mobile-price-option i {
-    font-size: 22px;
-  }
-
-  .mobile-script-option.outdated {
-    border: 1px solid #d58a2a;
-    background: rgba(213, 138, 42, .12);
-    color: #ffc773;
-  }
-
-  .mobile-script-option.broken {
-    border: 1px solid #db5a63;
-    background: rgba(219, 90, 99, .12);
-    color: #ff9fa5;
-  }
-
-  .mobile-script-option.nosite {
-    border: 1px solid #4b8fe0;
-    background: rgba(75, 143, 224, .12);
-    color: #9fcaff;
-  }
-
-  .mobile-script-option.spanish {
-    border: 1px solid #8a67d6;
-    background: rgba(138, 103, 214, .12);
-    color: #c6b0ff;
-  }
-
-  .mobile-price-options {
-    display: grid;
-    gap: 9px;
-    margin-top: 15px;
-  }
-
-  .mobile-price-option {
-    min-height: 68px;
-    grid-template-columns: 36px 1fr;
-    justify-items: start;
-    padding: 0 16px;
-    border: 1px solid #2d5575;
-    background: #071522;
-    color: #d9e9f8;
-  }
-
-  .mobile-price-option i {
-    color: #76aff9;
-  }
-
-  .mobile-price-option.renewal i {
-    color: #c3a1ff;
-  }
-
-  .mobile-price-option.hosting i {
-    color: #78dfa0;
-  }
-
-  .mobile-script-display {
-    margin-top: 14px;
-    padding: 16px;
-    border: 1px solid #2e526f;
-    border-radius: 14px;
-    background: #07131f;
-    color: #e9f2fb;
-    font-size: 15px;
-    line-height: 1.65;
-  }
-
-  .mobile-script-display.outdated { border-color: rgba(213, 138, 42, .68); }
-  .mobile-script-display.broken { border-color: rgba(219, 90, 99, .68); }
-  .mobile-script-display.nosite { border-color: rgba(75, 143, 224, .68); }
-  .mobile-script-display.spanish { border-color: rgba(138, 103, 214, .68); }
-
-  .mobile-script-display mark {
-    padding: 0 2px;
-    border-radius: 3px;
-    background: rgba(45, 120, 215, .22);
-    color: #b9d8ff;
-  }
-
-  .mobile-price-display {
-    display: grid;
-    gap: 8px;
-    margin-top: 14px;
-  }
-
-  .mobile-price-row {
-    min-height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 11px 12px;
-    border: 1px solid #29465f;
-    border-radius: 11px;
-    background: #07131f;
-  }
-
-  .mobile-price-row > div {
-    min-width: 0;
-    display: grid;
-    gap: 3px;
-  }
-
-  .mobile-price-row strong {
-    color: #edf5fd;
-    font-size: 13px;
-  }
-
-  .mobile-price-row span {
-    color: #7f98af;
-    font-size: 10.5px;
-  }
-
-  .mobile-price-row b {
-    flex: 0 0 auto;
-    color: #83e2a5;
-    font-size: 13px;
-  }
-
-  .mobile-price-row.extra b {
-    color: #9fcaff;
-  }
-}
-
-@media (min-width: 960px) {
-  .mobile-quick-info-menu,
-  .mobile-quick-modal {
-    display: none !important;
+  .hosting-price-columns {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 }
