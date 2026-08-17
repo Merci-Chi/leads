@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -45,7 +44,6 @@
 <button class="desktop-nav-item active" id="desktopLeadsNav" type="button"><i class="bi bi-grid-1x2-fill"></i><span>Lead Board</span></button>
 </nav>
 </aside>
-<!-- LEADS SCREEN -->
 <section aria-label="Leads" class="screen active desktop-leads-view" id="leadsScreen">
 <header class="home-header">
 <div class="app-brand">
@@ -107,9 +105,7 @@
 <span class="count-chip sold-count-chip" id="soldCountChip">0</span>
 </div>
 <section class="lead-list sold-lead-list" id="soldLeadList"></section>
-
 </section>
-<!-- DETAIL SCREEN -->
 <section aria-label="Lead details" class="screen" id="detailScreen">
 <div class="detail-topbar">
 <header class="detail-header">
@@ -346,19 +342,16 @@
 </div>
 </div>
 </div>
-
 <button class="add-to-calendar-button" id="addCallbackToCalendarButton" type="button" hidden>
   <i class="bi bi-calendar-plus"></i>
   <span>Add to Calendar</span>
 </button>
-
 </div>
 </article></div></div></section>
 <section class="panel" id="quickPanel">
 <div class="business-quick-intro">
 <span class="followup-kicker">STEADY HANDS OPERATIONS</span>
 <h2>Quick Info</h2>
-
 <p>Scripts, pricing, and useful information for this lead.</p>
 </div>
 <div class="desktop-panel-grid quick-layout"><div class="panel-column"><article class="business-script-card script-outdated">
@@ -385,7 +378,6 @@
 <div class="price-reference-row extra-price"><div><strong>Additional Pages</strong><span>Added beyond the included page limit</span></div><b>+$50 / page</b></div>
 </div>
 </div>
-
 <div class="pricing-group">
 <div class="pricing-group-title">HOSTING</div>
 <div class="hosting-price-columns">
@@ -407,7 +399,6 @@
   </section>
 </div>
 </div>
-
 </div>
 <div class="pricing-group">
 <div class="pricing-group-title">SITE RENEWAL</div>
@@ -418,7 +409,6 @@
 </div>
 </div>
 </article></section>
-
 <article class="card history-card kiara-only-history" id="kiaraHistoryCard" hidden>
   <button aria-expanded="true" class="history-toggle-button" id="historyToggleButton" type="button">
     <span class="history-toggle-left"><span class="heading-icon"><i class="bi bi-clock-history"></i></span><span>History</span></span>
@@ -426,10 +416,8 @@
   </button>
   <div class="history-list" id="leadHistoryList"></div>
 </article>
-
 </section>
 </main>
-<!-- CUSTOM SOURCE MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="customSourceModal">
 <section aria-labelledby="customSourceTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-heading">
@@ -447,7 +435,6 @@
 </div>
 </section>
 </div>
-<!-- QUICK NOTES MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="quickNotesModal">
 <section aria-labelledby="quickNotesTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-heading">
@@ -462,10 +449,6 @@
 </div>
 </section>
 </div>
-
-
-
-<!-- HISTORY DELETE CONFIRMATION -->
 <div aria-hidden="true" class="modal-backdrop" id="historyDeleteConfirmModal">
 <section aria-labelledby="historyDeleteConfirmTitle" aria-modal="true" class="modal-card compact-confirm-modal" role="dialog">
 <div class="modal-heading">
@@ -479,9 +462,6 @@
 </div>
 </section>
 </div>
-
-<!-- LEAD DELETE CONFIRMATION -->
-<!-- KIARA LEAD STATUS EDIT MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="leadStatusEditModal">
 <section aria-labelledby="leadStatusEditTitle" aria-modal="true" class="modal-card lead-status-edit-modal" role="dialog">
 <div class="modal-heading">
@@ -510,8 +490,6 @@
 </div>
 </section>
 </div>
-
-<!-- ADD SITE AFTER REMOVING NO SITE -->
 <div aria-hidden="true" class="modal-backdrop" id="addSitePromptModal">
 <section aria-labelledby="addSitePromptTitle" aria-modal="true" class="modal-card add-site-prompt-modal" role="dialog">
 <div class="modal-heading">
@@ -529,8 +507,6 @@
 </div>
 </section>
 </div>
-
-<!-- PRE-CALL MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="preCallModal">
 <section aria-labelledby="preCallTitle" aria-modal="true" class="modal-card call-flow-modal" role="dialog">
 <div class="modal-heading">
@@ -559,8 +535,6 @@
 </div>
 </section>
 </div>
-
-<!-- POST-CALL CHECK-IN MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="postCallModal">
 <section aria-labelledby="postCallTitle" aria-modal="true" class="modal-card call-flow-modal post-call-modal" role="dialog">
 <div class="modal-heading">
@@ -601,9 +575,6 @@
 </div>
 </section>
 </div>
-
-
-<!-- SOLD CONFIRMATION MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="soldConfirmModal">
 <section aria-labelledby="soldConfirmTitle" aria-modal="true" class="modal-card sold-flow-modal" role="dialog">
 <div class="modal-heading">
@@ -618,8 +589,6 @@
 </div>
 </section>
 </div>
-
-<!-- SOLD PRODUCTS MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="soldProductsModal">
 <section aria-labelledby="soldProductsTitle" aria-modal="true" class="modal-card sold-flow-modal" role="dialog">
 <div class="modal-heading">
@@ -640,8 +609,6 @@
 </div>
 </section>
 </div>
-
-<!-- DONE / LABEL MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="doneModal">
 <section aria-labelledby="doneTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-heading">
@@ -667,7 +634,6 @@
 </div>
 </section>
 </div>
-<!-- NEW LEAD MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="newLeadModal">
 <section aria-labelledby="newLeadTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-heading">
@@ -711,8 +677,6 @@
 </div>
 </section>
 </div>
-
-<!-- ACCOUNT MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="accountModal">
 <section aria-labelledby="accountTitle" aria-modal="true" class="modal-card account-modal-card" role="dialog">
 <div class="modal-heading">
@@ -734,8 +698,6 @@
 <button class="auth-link-button" id="signOutButton" type="button">Sign Out</button>
 </section>
 </div>
-
-<!-- PASSWORD RECOVERY MODAL -->
 <div aria-hidden="true" class="modal-backdrop" id="passwordResetModal">
 <section aria-labelledby="passwordResetTitle" aria-modal="true" class="modal-card account-modal-card" role="dialog">
 <div class="modal-heading">
@@ -756,7 +718,6 @@
 <button class="auth-button" id="saveRecoveryPassword" type="button">Save New Password</button>
 </section>
 </div>
-
 <div aria-live="polite" class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js.js?v=20260817-1248"></script>
@@ -776,10 +737,8 @@
       }
     });
   </script>
-
 <button aria-label="Scroll to top" class="mobile-scroll-top" id="mobileScrollTopButton" type="button" title="Scroll to top">
   <i class="bi bi-arrow-up"></i>
 </button>
-
 </body>
 </html>

@@ -51,9 +51,6 @@ function leadToSupabaseRow(lead) {
     preferred_days: Array.isArray(lead.days) ? lead.days : [],
     time_preference: lead.timePreference || '',
     specific_time: lead.specificTime || null,
-    // Hot Lead is stored in the SQL `tags` array. Keep it out of the legacy
-    // single-value `tag` column so older Supabase constraints cannot reject
-    // the whole upsert. The UI reads priority tags from both `tag` and `tags`.
     tag: String(lead.tag || '').trim().toLowerCase() === 'hot lead'
       ? ((Array.isArray(lead.tags) ? lead.tags : [])
           .map(tag => String(tag || '').trim())
@@ -126,9 +123,7 @@ async function storeSoldPhoneSecurely(lead) {
 }
 
 function showSyncStatus(text) {
-  // Sync/status pill intentionally hidden. Data still saves normally.
 }
-
 
 async function upsertLeadsByTable(leads) {
   const newLeads = leads.filter(lead => lead.status === 'new');
@@ -248,8 +243,6 @@ function applyRealtimeLeadChange(payload, status) {
     const incoming = supabaseRowToLead(payload.new || {}, status);
     if (!incoming.id) return;
     const index = state.leads.findIndex(lead => lead.id === incoming.id);
-    // sold_leads never contains the private phone. Preserve Kiara's already-loaded
-    // private copy when realtime updates the public sold record.
     if (status === 'sold' && currentUserIsKiara() && index >= 0 && state.leads[index].phone && !incoming.phone) {
       incoming.phone = state.leads[index].phone;
     }
@@ -302,8 +295,6 @@ async function hydrateFromSupabase() {
     ...(soldResult.data || []).map(row => supabaseRowToLead(row, 'sold'))
   ];
 
-  // Older status moves could leave the same lead in two pipeline tables.
-  // Keep only the newest saved copy so refresh cannot resurrect a stale status.
   const dedupedById = new Map();
   for (const lead of loadedLeads) {
     const existing = dedupedById.get(lead.id);
@@ -404,9 +395,6 @@ function addInitialSystemNoteHistory(lead) {
     item?.type === 'note' && item?.initial === true && String(item?.actor || '').toLowerCase() === 'system'
   );
 
-  // Notes that arrive with the original Supabase/import row are system notes.
-  // Prefix the Notes field itself so the attribution is visible even before
-  // opening History. Do this only once.
   if (existingSystemEntry) {
     if (!/^System:\s*/i.test(currentNotes)) {
       lead.notes = `System: ${currentNotes}`;
@@ -415,7 +403,6 @@ function addInitialSystemNoteHistory(lead) {
     return changed;
   }
 
-  // Only create an initial System history event when there is no other history.
   if (lead.history.length) return changed;
 
   const rawNote = currentNotes.replace(/^System:\s*/i, '').trim();
@@ -553,8 +540,6 @@ async function deleteHistoryEntry(historyId) {
 
   lead.history = (lead.history || []).filter(entry => entry.id !== historyId);
 
-  // Call-history deletion must not change the lead's pipeline status.
-  // It only recalculates lastCalled from the remaining call entries.
   if (item.type === 'called') {
     const remainingCalls = (lead.history || [])
       .filter(entry => entry.type === 'called' && entry.at)
@@ -569,9 +554,6 @@ async function deleteHistoryEntry(historyId) {
   if (!supabaseSession) return;
 
   try {
-    // Persist only the fields affected by deleting history. A full-row upsert can
-    // fail because of an unrelated legacy tag/value and make the deleted entry
-    // come back after refresh.
     const table = tableForLead(lead);
     const patch = {
       history: Array.isArray(lead.history) ? lead.history : [],
@@ -590,7 +572,6 @@ async function deleteHistoryEntry(historyId) {
     if (error) throw error;
     if (!data?.id) throw new Error('History update did not match the lead row');
 
-    // Keep local state aligned with what Supabase confirms was saved.
     lead.history = Array.isArray(data.history) ? data.history : [];
     lead.lastCalled = data.last_called || '';
     saveState(lead.id);
@@ -667,7 +648,6 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
 function loadState() {
-  // Supabase is the only persistent source of truth.
   return { leads: structuredClone(seedLeads) };
 }
 
@@ -678,10 +658,8 @@ function saveState(...leadIds) {
   else queueAllLeadSync();
 }
 
-
 function formatPhoneNumber(value) {
   let digits = String(value ?? '').replace(/\D/g, '');
-  // If a US number is pasted with +1 / leading 1, keep the local 10-digit format.
   if (digits.length === 11 && digits.startsWith('1')) digits = digits.slice(1);
   digits = digits.slice(0, 10);
   if (!digits) return '';
@@ -716,8 +694,6 @@ function showScreen(name) {
   leadsScreen.classList.toggle('active', !showingDetail);
   detailScreen.classList.toggle('active', showingDetail);
 
-  // Force a true one-screen-at-a-time layout on desktop too.
-  // This prevents older desktop CSS from keeping the lead board visible.
   if (showingDetail) {
     leadsScreen.style.setProperty('display', 'none', 'important');
     detailScreen.style.removeProperty('display');
@@ -750,7 +726,6 @@ function getActiveSiteTag(lead) {
     ? lead.tags.map(normalizeLeadType).filter(tag => LEAD_TYPE_TAGS.has(tag))
     : [];
 
-  // Prefer the explicit currently selected leadType when it is a website tag.
   const explicit = normalizeLeadType(lead.leadType);
   if (LEAD_TYPE_TAGS.has(explicit)) return explicit;
 
@@ -857,11 +832,8 @@ const SOURCE_TAG_META = {
   'Other': { icon: 'bi-three-dots', className: 'source-other' }
 };
 
-
 function getSourceTagMeta(label) {
   const clean = String(label || '').trim();
-  // Built-in sources use their brand-inspired style. Anything entered through
-  // “Other” is a lead-specific custom source and MUST keep its exact label.
   return SOURCE_TAG_META[clean] || { icon: 'bi-link-45deg', className: 'source-custom' };
 }
 
@@ -905,22 +877,16 @@ function renderSourceTags() {
   if (!lead || !list) return;
 
   lead.sourceTags = Array.isArray(lead.sourceTags) ? lead.sourceTags : [];
-  // Removed options stay hidden even if an older database row still contains them.
-  // Literal "Other" is never a saved/selected source. It is only the button that opens custom source entry.
   lead.sourceTags = lead.sourceTags.filter(tag => String(tag || '').trim().toLowerCase() !== 'other');
   const visibleStoredTags = lead.sourceTags.filter(tag => !REMOVED_SOURCE_TAGS.has(String(tag || '').trim().toLowerCase()));
   const selectedKeys = new Set(visibleStoredTags.map(tag => String(tag || '').trim().toLowerCase()).filter(Boolean));
   const builtInKeys = new Set(AVAILABLE_SOURCE_TAGS.map(tag => tag.toLowerCase()));
   const custom = visibleStoredTags.filter(tag => !builtInKeys.has(String(tag || '').trim().toLowerCase()));
 
-  // Custom sources created through “Other” belong only to this lead. They are
-  // read from lead.sourceTags and are never added to AVAILABLE_SOURCE_TAGS.
-  // Selected/checkmarked sources always render first.
   let all;
   if (sourceTagsExpanded) {
     all = [...AVAILABLE_SOURCE_TAGS, ...custom];
   } else {
-    // Keep popular choices visible while always surfacing every selected extra/custom source.
     const selectedExtras = [...MORE_SOURCE_TAGS, ...custom].filter(tag => selectedKeys.has(tag.toLowerCase()));
     all = [...POPULAR_SOURCE_TAGS, ...selectedExtras];
   }
@@ -952,7 +918,7 @@ async function toggleSourceTag(label) {
   if (!clean) return;
   lead.sourceTags = Array.isArray(lead.sourceTags) ? lead.sourceTags : [];
   const key = clean.toLowerCase();
-  if (key === 'other') return; // “Other” is an entry action, never a saved source value.
+  if (key === 'other') return;
   const exists = lead.sourceTags.some(tag => String(tag || '').trim().toLowerCase() === key);
   if (exists) lead.sourceTags = lead.sourceTags.filter(tag => String(tag || '').trim().toLowerCase() !== key);
   else lead.sourceTags.push(clean);
@@ -971,9 +937,6 @@ function ensureNoSiteTag(lead) {
   if (!lead) return lead;
   lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
 
-  // Website-condition tags are now completely user-controlled.
-  // A lead is allowed to have NO website-condition tag selected.
-  // We only normalize old data so at most one of the three site tags survives.
   const selectedSiteTags = lead.tags
     .map(tag => normalizeLeadType(tag))
     .filter(tag => LEAD_TYPE_TAGS.has(tag));
@@ -1106,7 +1069,6 @@ async function toggleQuickInfoTag(label) {
     return;
   }
 
-  // Sold is consequential: never add it directly from Quick Info.
   if (normalized === 'Sold' && !leadHasTag(lead, 'Sold')) {
     beginSoldFlow();
     return;
@@ -1128,9 +1090,6 @@ async function toggleQuickInfoTag(label) {
     if (isSelected) removeMatchingTag();
     else addTagIfMissing();
   } else if (LEAD_TYPE_TAGS.has(normalized)) {
-    // Website condition is optional: zero OR one can be active.
-    // Clicking a different site condition switches to it and removes the old one.
-    // Clicking the currently selected condition untoggles it.
     const removingCurrentSiteTag = isSelected;
 
     lead.tags = lead.tags.filter(tag => !LEAD_TYPE_TAGS.has(normalizeLeadType(tag)));
@@ -1142,7 +1101,6 @@ async function toggleQuickInfoTag(label) {
       lead.leadType = normalized;
     }
 
-    // Removing No Site offers a chance to add the actual website.
     if (normalized === 'No Site' && removingCurrentSiteTag) {
       setTimeout(() => openAddSitePrompt(), 0);
     }
@@ -1157,13 +1115,7 @@ async function toggleQuickInfoTag(label) {
     } else {
       addTagIfMissing();
 
-      // A selected status tag should also be the lead's primary SQL `tag`.
-      // This is important for priority tags such as Hot Lead and Wrong Number:
-      // Supabase stores the full tag list in `tags`, but the main status badge
-      // and SQL `tag` column come from lead.tag.
       if (FOLLOWUP_TAGS.has(cleanLabel)) {
-        // Hot Lead is a priority flag, not the legacy single-value status.
-        // Persist it in `tags` so Supabase keeps it across refreshes.
         if (normalized !== 'Hot Lead') {
           lead.tag = cleanLabel;
         }
@@ -1178,8 +1130,6 @@ async function toggleQuickInfoTag(label) {
   renderLists();
   try {
     if (normalized === 'Hot Lead') {
-      // Hot Lead is intentionally persisted DIRECTLY to the SQL `tags` array.
-      // Do not depend on the legacy single-value `tag` column or a whole-row upsert.
       const savedTags = await syncLeadTagsOnly(lead);
       const remoteHasHot = savedTags.some(
         tag => String(tag || '').trim().toLowerCase() === 'hot lead'
@@ -1311,7 +1261,6 @@ function renderLists() {
   $('#followCountChip').textContent = followCount;
   $('#soldCountChip').textContent = soldCount;
 
-  // Keep the selected pipeline category separated after every render.
   const selectedPipeline = document.querySelector('[data-pipeline-view].active')?.dataset.pipelineView || 'leads';
   const screen = document.getElementById('leadsScreen');
   if (screen) {
@@ -1414,8 +1363,6 @@ function renderCurrentLead() {
     button.classList.toggle('selected', button.dataset.callOutcome === displayedOutcome);
   });
 
-  // New lead requirement: no status or mood starts highlighted until the user picks one.
-  // Follow-up leads retain selections because they were previously saved.
 }
 
 function setTab(panelId) {
@@ -1464,7 +1411,6 @@ function noteAddedText(before, after) {
   if (previous && current.startsWith(previous)) return current.slice(previous.length).trim();
   return current;
 }
-
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -1521,7 +1467,6 @@ function initializeScheduleDropdown(prefix) {
   ids.year.innerHTML = '';
   for (let year = now.year - 1; year <= now.year + 10; year++) ids.year.add(new Option(String(year), String(year)));
 
-  // Time values are deliberately blank until the user picks each part.
   for (let hour = 1; hour <= 12; hour++) ids.hour.add(new Option(String(hour), String(hour)));
   ['00','15','30','45'].forEach(minute => ids.minute.add(new Option(minute, minute)));
 
@@ -1676,9 +1621,7 @@ function bindScheduleEditor(prefix) {
     const newMonth = Number(ids.month.value);
     let year = Number(ids.year.value);
 
-    // Scrolling December -> January means the next calendar year.
     if (oldMonth === 12 && newMonth === 1) year += 1;
-    // And January -> December naturally goes back one year.
     else if (oldMonth === 1 && newMonth === 12) year -= 1;
 
     ensureYearOption(ids.year, year);
@@ -1707,8 +1650,6 @@ document.addEventListener('click', () => {
   if (picker) picker.hidden = true;
   $('#specificTimeButton')?.setAttribute('aria-expanded', 'false');
 });
-
-
 
 function escapeICS(value) {
   return String(value || '')
@@ -1786,8 +1727,6 @@ $('#addCallbackToCalendarButton')?.addEventListener('click', () => {
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 });
 
-
-
 function openModal(id) {
   const modal = document.getElementById(id);
   modal.classList.add('open');
@@ -1862,7 +1801,6 @@ $('#confirmLeadDeleteButton')?.addEventListener('click', async () => {
   }
 });
 
-
 $$('[data-lead-status-option]').forEach(button => {
   button.addEventListener('click', async () => {
     const id = editingLeadStatusId;
@@ -1884,7 +1822,6 @@ $('#deleteLeadFromEditButton')?.addEventListener('click', () => {
   openLeadDeleteConfirmation(id);
 });
 
-// Navigation / lists
 $('#backButton').addEventListener('click', () => { renderLists(); clearDetailPageState(); showScreen('leads'); });
 $('#leadSearch').addEventListener('input', renderLists);
 $('#addLeadBottomButton').addEventListener('click', openNewLeadModal);
@@ -1936,7 +1873,6 @@ async function setFollowupCallOutcome(value) {
   lead.tag = value;
   lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
 
-  // These are call-result tags: keep only the latest one from this set.
   const outcomeSet = new Set([
     'interested', 'call back', 'needs more info', 'skeptical',
     'no answer', 'not interested', 'wrong number', 'conversion', 'sold'
@@ -1962,10 +1898,8 @@ $$('[data-call-outcome]').forEach(button => {
   button.addEventListener('click', () => setFollowupCallOutcome(button.dataset.callOutcome || ''));
 });
 
-// Tabs
 $$('.tab').forEach(tab => tab.addEventListener('click', () => setTab(tab.dataset.tab)));
 
-// Single-select controls are true toggles: tapping the selected option again clears it.
 $$('[data-field]').forEach(button => {
   button.addEventListener('click', () => {
     const lead = currentLead();
@@ -1997,8 +1931,6 @@ $$('[data-field]').forEach(button => {
   });
 });
 
-
-// Specific-time picker for General Availability
 function initializeSpecificTimePicker() {
   const hour = $('#specificHour');
   const minute = $('#specificMinute');
@@ -2062,7 +1994,6 @@ $('#specificTimeButton')?.addEventListener('click', event => {
 $('#specificTimePicker')?.addEventListener('click', event => event.stopPropagation());
 ['#specificHour','#specificMinute','#specificPeriod'].forEach(sel => $(sel)?.addEventListener('change', saveSpecificTime));
 
-// Multi-select preferred days
 $$('[data-multi="days"]').forEach(button => {
   button.addEventListener('click', () => {
     const lead = currentLead();
@@ -2075,13 +2006,11 @@ $$('[data-multi="days"]').forEach(button => {
   });
 });
 
-// Text/select/date fields save on every change/input.
 $$('[data-save]').forEach(element => {
   element.addEventListener('input', () => autosaveField(element));
   element.addEventListener('change', () => autosaveField(element));
 });
 
-// Call flow: show lead context first, launch phone call, then ask a few quick questions.
 let postCallAnswer = '';
 let postCallMood = '';
 let postCallTag = '';
@@ -2213,7 +2142,6 @@ $('#startActualCallButton')?.addEventListener('click', () => {
   window.location.href = tel;
 });
 
-
 $$('[data-post-answer]').forEach(button => {
   button.addEventListener('click', () => {
     postCallAnswer = button.dataset.postAnswer || '';
@@ -2259,7 +2187,6 @@ async function saveVisiblePostCallAnswers() {
     lead.outcome = postCallTag;
   }
 
-
   saveState(lead.id);
   renderCurrentLead();
   renderLists();
@@ -2290,9 +2217,6 @@ $('#savePostCallButton')?.addEventListener('click', async () => {
   await finishLeadAndExit(lead?.tag || '');
 });
 
-
-
-// History is expanded by default; the user can still collapse it with the History button.
 $('#historyToggleButton')?.addEventListener('click', () => {
   historyExpanded = !historyExpanded;
   renderLeadHistory();
@@ -2301,7 +2225,6 @@ $('#historyToggleButton')?.addEventListener('click', () => {
 let pendingHistoryDeleteId = '';
 let pendingLeadDeleteId = '';
 
-// Only Kiara gets X buttons for removable note and call history entries.
 $('#leadHistoryList')?.addEventListener('click', event => {
   const button = event.target.closest('[data-delete-history]');
   if (!button || !currentUserIsKiara()) return;
@@ -2325,7 +2248,6 @@ $('#confirmHistoryDeleteButton')?.addEventListener('click', async () => {
   closeModal('historyDeleteConfirmModal');
   if (id) await deleteHistoryEntry(id);
 });
-
 
 function openAddSitePrompt() {
   const lead = currentLead();
@@ -2374,7 +2296,6 @@ $('#addSiteNotNowButton')?.addEventListener('click', () => {
   closeModal('addSitePromptModal');
 });
 
-// Lead tags: every available tag is visible and can be toggled on/off.
 $('#quickTagsList')?.addEventListener('click', event => {
   const chip = event.target.closest('[data-toggle-lead-tag]');
   if (!chip) return;
@@ -2407,7 +2328,6 @@ async function saveCustomSource() {
   if (!custom) return toast('Type a source first');
 
   lead.sourceTags = Array.isArray(lead.sourceTags) ? lead.sourceTags : [];
-  // "Other" is only an entry action now, not a stored source.
   lead.sourceTags = lead.sourceTags.filter(tag => String(tag || '').trim().toLowerCase() !== 'other');
   const exists = lead.sourceTags.some(tag => String(tag || '').trim().toLowerCase() === custom.toLowerCase());
   if (!exists) lead.sourceTags.push(custom);
@@ -2433,8 +2353,6 @@ $('#customSourceInput')?.addEventListener('keydown', event => {
   }
 });
 
-// Quick Notes is the single notes editor for every lead.
-// It always opens with every saved note so notes are never split between screens.
 $('#quickNotesButton')?.addEventListener('click', () => {
   const lead = currentLead();
   if (!lead) return;
@@ -2474,8 +2392,6 @@ $('#saveQuickNote')?.addEventListener('click', async () => {
   }
 });
 
-// Done -> choose label -> move to follow-ups
-// A prospect can only enter Follow-ups after an actual call has been logged.
 function leadHasBeenCalled(lead) {
   if (!lead) return false;
   if (lead.lastCalled) return true;
@@ -2489,10 +2405,8 @@ $('#doneButton').addEventListener('click', async () => {
     return;
   }
 
-  // Only ask the mini questions that are still empty.
   if (openPostCallCheckIn()) return;
 
-  // Nothing is missing, so finish immediately with the lead's existing status tag.
   await finishLeadAndExit(lead?.tag || '');
 });
 $$('.tag-choice[data-tag]').forEach(button => {
@@ -2634,7 +2548,6 @@ function finalizeSoldAndDraftEmail() {
   showScreen('leads');
   toast(`Sold · Sold by ${seller}`);
 
-  // Start the sync, but do not block the email draft behind an async wait.
   syncLeadNow(lead).then(() => {
     if (!currentUserIsKiara()) {
       lead.phone = '';
@@ -2657,7 +2570,6 @@ async function finishLeadAndExit(tag = '') {
   }
   await completeLeadMove(tag);
 }
-
 
 $('#confirmSoldButton')?.addEventListener('click', () => {
   closeModal('soldConfirmModal');
@@ -2687,14 +2599,12 @@ $('#finishLeadButton').addEventListener('click', async () => {
 
 const doneModalCloseButton = $('#doneModal .modal-close');
 if (doneModalCloseButton) {
-  // Do not let the generic data-close handler also fire for this button.
   doneModalCloseButton.removeAttribute('data-close');
   doneModalCloseButton.addEventListener('click', async () => {
     await finishLeadAndExit('');
   });
 }
 
-// New lead + bulk JSON import
 function setLeadEntryMode(mode) {
   const single = mode === 'single';
   $('#singleLeadTab').classList.toggle('active', single);
@@ -2770,8 +2680,6 @@ async function setLeadPipelineStatus(leadId, nextStatus) {
   const sourceTable = previousStatus === 'sold' ? 'sold_leads' : (previousStatus === 'followup' ? 'follow_ups' : 'new_leads');
   const targetTable = nextStatus === 'sold' ? 'sold_leads' : (nextStatus === 'followup' ? 'follow_ups' : 'new_leads');
 
-  // Build the destination record without changing the visible lead first.
-  // The UI only changes after Supabase confirms the destination row exists.
   const movedLead = {
     ...lead,
     history: Array.isArray(lead.history) ? lead.history.map(item => ({ ...item })) : [],
@@ -2797,7 +2705,6 @@ async function setLeadPipelineStatus(leadId, nextStatus) {
   try {
     const row = nextStatus === 'sold' ? soldPublicRow(movedLead) : leadToSupabaseRow(movedLead);
 
-    // Destination save is the actual status change. Do this first.
     const { data: savedRows, error: saveError } = await supabaseClient
       .from(targetTable)
       .upsert(row, { onConflict: 'id' })
@@ -2812,11 +2719,8 @@ async function setLeadPipelineStatus(leadId, nextStatus) {
       await storeSoldPhoneSecurely(movedLead);
     }
 
-    // Now commit the status locally.
     state.leads[leadIndex] = movedLead;
 
-    // Removing stale copies is cleanup. A cleanup/RLS failure must NOT undo a
-    // status change that Supabase already saved successfully in the target.
     for (const table of ['new_leads', 'follow_ups', 'sold_leads']) {
       if (table === targetTable) continue;
       const { error: cleanupError } = await supabaseClient.from(table).delete().eq('id', lead.id);
@@ -2839,8 +2743,6 @@ async function setLeadPipelineStatus(leadId, nextStatus) {
     toast(`Moved to ${labels[nextStatus]}`);
   } catch (error) {
     console.error('Could not switch lead status:', error);
-    // Since local state was not changed before destination confirmation,
-    // a failed save cannot leave a fake status on screen.
     renderLists();
     if (currentLeadId === lead.id) renderCurrentLead();
     toast(error?.message ? `Status failed: ${error.message}` : 'Could not switch lead status');
@@ -2849,8 +2751,6 @@ async function setLeadPipelineStatus(leadId, nextStatus) {
     statusButtons.forEach(button => { button.disabled = false; });
   }
 }
-
-
 
 function makeLead(raw = {}) {
   const text = value => value == null ? '' : String(value).trim();
@@ -2965,7 +2865,6 @@ async function loadLeadsJson() {
   }
 }
 
-
 const newPhoneInput = $('#newPhone');
 newPhoneInput.addEventListener('input', () => {
   newPhoneInput.value = formatPhoneNumber(newPhoneInput.value);
@@ -2982,7 +2881,6 @@ newPhoneInput.addEventListener('keydown', event => {
   if (!/^\d$/.test(event.key)) event.preventDefault();
 });
 
-// Pasted values are trimmed before insertion so copied text never starts/ends with stray spaces.
 ['newName','newCompany','newSite','newAge','newIssue'].forEach(id => {
   const input = $(`#${id}`);
   if (!input) return;
@@ -3089,7 +2987,6 @@ $('#importLeadsButton').addEventListener('click', () => {
     return;
   }
 
-  // Import is append-only: existing leads are never replaced or modified.
   const { imported, skipped } = mergeLeadRows(rows);
 
   renderLists();
@@ -3102,7 +2999,6 @@ $('#importLeadsButton').addEventListener('click', () => {
   }
 });
 
-// Generic modal close buttons / tapping backdrop
 $$('[data-close]').forEach(button => button.addEventListener('click', () => closeModal(button.dataset.close)));
 $$('.modal-backdrop').forEach(backdrop => {
   backdrop.addEventListener('click', event => {
@@ -3172,14 +3068,12 @@ $('#authForm')?.addEventListener('submit', event => {
   submitLogin();
 });
 
-// Return/Enter in Email moves to Password instead of submitting immediately.
 $('#authEmail')?.addEventListener('keydown', event => {
   if (event.key !== 'Enter') return;
   event.preventDefault();
   $('#authPassword')?.focus();
 });
 
-// Return/Enter in Password submits the login form.
 $('#authPassword')?.addEventListener('keydown', event => {
   if (event.key !== 'Enter') return;
   event.preventDefault();
@@ -3324,7 +3218,6 @@ initializeSupabaseAuth().then(async () => {
   if (supabaseSession) await loadLeadsJson();
 });
 
-/* PULL TO REFRESH --------------------------------------------------------- */
 (function setupPullToRefresh() {
   const threshold = 82;
   const maxPull = 126;
@@ -3371,7 +3264,6 @@ initializeSupabaseAuth().then(async () => {
       return;
     }
 
-    // Rubber-band the movement so the indicator feels native instead of following 1:1.
     distance = Math.min(maxPull, rawDistance * .62);
     if (distance < 8) return;
 
@@ -3401,20 +3293,15 @@ initializeSupabaseAuth().then(async () => {
     indicator.classList.add('visible', 'refreshing');
     icon.className = 'bi bi-arrow-clockwise';
 
-    // Give the refresh animation a moment to appear, then perform a real page reload.
     setTimeout(() => window.location.reload(), 180);
   }, { passive: true });
 
   document.addEventListener('touchcancel', resetIndicator, { passive: true });
 })();
 
-// Desktop dashboard navigation. Reuses the same underlying actions as mobile.
-
-// Escape key navigation: close the most recently opened UI first.
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
 
-  // 1) Close an open modal (Quick Notes, Add/Edit Lead, Account, Done, etc.).
   const openModals = [...document.querySelectorAll('.modal-backdrop.open')];
   if (openModals.length) {
     event.preventDefault();
@@ -3423,7 +3310,6 @@ document.addEventListener('keydown', event => {
     return;
   }
 
-  // 2) Close any open time picker/dropdown before navigating away.
   let closedPicker = false;
   ['callback', 'preferred'].forEach(prefix => {
     const ids = scheduleIds(prefix);
@@ -3446,7 +3332,6 @@ document.addEventListener('keydown', event => {
     return;
   }
 
-  // 3) If a lead is open, Escape behaves exactly like the Back button.
   const detailScreen = document.getElementById('detailScreen');
   if (detailScreen?.classList.contains('active')) {
     event.preventDefault();
@@ -3526,8 +3411,6 @@ document.addEventListener('keydown', event => {
     }
   };
 
-  // Top New Leads / Follow-ups / Sold Leads tabs.
-  // These are the pipeline navigation on BOTH desktop and mobile.
   const resetLeadBoardToTop = () => {
     const scroller = document.scrollingElement || document.documentElement;
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -3542,8 +3425,6 @@ document.addEventListener('keydown', event => {
     showScreen('leads');
     applyPipelineView(button.dataset.pipelineView, { persist: true, scroll: false });
 
-    // Every pipeline switch starts at the top. This is especially important
-    // when returning to New Leads after scrolling Follow-ups or Sold.
     resetLeadBoardToTop();
     requestAnimationFrame(resetLeadBoardToTop);
   };
@@ -3556,7 +3437,6 @@ document.addEventListener('keydown', event => {
     });
   });
 
-  // Desktop sidebar buttons use the exact same pipeline state.
   leadsNav?.addEventListener('click', () => {
     showScreen('leads');
     applyPipelineView('leads', { persist: true, scroll: false });
@@ -3589,13 +3469,9 @@ document.addEventListener('keydown', event => {
     applyPipelineView(currentPipelineView, { persist: false, scroll: false });
   });
 
-  // Always start on New Leads after a full reload.
   applyPipelineView('leads', { persist: false, scroll: false });
 })();
 
-
-// Mobile-only scroll-to-top control. Only show it after the user has
-// scrolled down the lead board a bit, and hide it on detail/modals/login.
 (() => {
   const button = document.getElementById('mobileScrollTopButton');
   if (!button) return;
@@ -3637,8 +3513,6 @@ document.addEventListener('keydown', event => {
       scroller.scrollTop = 0;
     }
 
-    // Safari can occasionally ignore scrollTo on documentElement, so also
-    // issue the window scroll and a direct fallback.
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { window.scrollTo(0, 0); }
     setTimeout(() => {
       if (currentScrollTop() > 8) {
@@ -3654,7 +3528,6 @@ document.addEventListener('keydown', event => {
   window.addEventListener('resize', updateScrollTopButton);
   document.addEventListener('visibilitychange', updateScrollTopButton);
 
-  // Screen changes are class/hidden mutations, not always scroll events.
   const observer = new MutationObserver(updateScrollTopButton);
   ['leadsScreen', 'detailScreen', 'appShell', 'authGate'].forEach(id => {
     const el = document.getElementById(id);

@@ -40,7 +40,6 @@ a { color: inherit; }
 .screen { display: none; }
 .screen.active { display: block; }
 
-/* HOME */
 .home-header,
 .detail-header {
   min-height: 62px;
@@ -204,7 +203,6 @@ a { color: inherit; }
   cursor: pointer;
 }
 
-
 .home-bottom-actions {
   position: sticky;
   bottom: 0;
@@ -227,7 +225,6 @@ a { color: inherit; }
 }
 .add-lead-bottom i { margin-right: 7px; }
 
-/* DETAIL */
 .detail-header { position: relative; }
 .phone-card,
 .card,
@@ -425,7 +422,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
 .done-action { border: 1px solid #2e83ff; background: linear-gradient(180deg, #1266e8, #0a3f9b); box-shadow: 0 0 20px rgba(30,117,255,.23); }
 .secondary-action i, .done-action i { margin-right: 7px; }
 
-/* MODALS */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -493,7 +489,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
   .split-fields { grid-template-columns: 1fr; }
 }
 
-/* ADD / IMPORT LEADS */
 .import-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -578,7 +573,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
 .import-status.success { color: #75e99b; }
 #bulkLeadJson { min-height: 190px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; }
 
-/* CUSTOM CALLBACK / PREFERRED CONTACT DROPDOWNS */
 .add-schedule-button {
   width: 100%;
   min-height: 46px;
@@ -675,7 +669,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
   .custom-dropdown { padding: 0 6px; font-size: 11px; }
 }
 
-/* REFINED FOLLOW-UP SCREEN */
 #followupPanel { padding-top: 14px; }
 .followup-intro { margin: 2px 3px 13px; }
 .followup-kicker {
@@ -864,7 +857,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
   .time-picker-row { gap: 5px; grid-template-columns: minmax(0,1fr) 8px minmax(0,1fr) minmax(0,1.12fr); }
 }
 
-/* BIG TAP-FRIENDLY FOLLOW-UP CONTROLS */
 #followupPanel .custom-dropdown,
 #followupPanel .followup-select {
   min-height: 62px;
@@ -932,7 +924,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
   #followupPanel .time-picker-row .custom-dropdown { min-height: 56px; font-size: 14px; }
 }
 
-/* APP BRANDING / INSTALLED APP */
 .app-brand {
   min-width: 0;
   display: flex;
@@ -953,8 +944,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
   .app-shell { padding-top: max(16px, env(safe-area-inset-top)); }
 }
 
-
-/* POSSIBLE LANGUAGE TAG */
 .spanish-badge {
   border-color: #4f6f96;
   color: #b8d6ff;
@@ -969,8 +958,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
   color: #d6e9ff;
 }
 
-
-/* SUPABASE AUTH */
 [hidden] { display: none !important; }
 .auth-gate { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--bg); }
 .auth-card { width: min(100%, 390px); padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(145deg, rgba(9,24,40,.98), rgba(4,12,21,.99)); box-shadow: 0 24px 80px rgba(0,0,0,.45); }
@@ -982,8 +969,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
 .auth-button { width: 100%; min-height: 50px; margin-top: 16px; border: 1px solid #2e83ff; border-radius: 12px; background: linear-gradient(180deg, #1266e8, #0a3f9b); color: #fff; font-weight: 800; cursor: pointer; }
 .auth-status { min-height: 18px; margin-top: 10px; color: #ff9295; font-size: 12px; text-align: center; }
 
-
-/* ACCOUNT / PASSWORD */
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .auth-link-button { display: block; margin: 11px auto 0; padding: 6px 9px; border: 0; background: transparent; color: #78aeff; font-size: 12px; font-weight: 750; cursor: pointer; }
 .auth-link-button:hover { color: #a6c9ff; }
@@ -992,7 +977,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
 .account-auth-status { min-height: 18px; margin-top: 9px; }
 .account-auth-status.success { color: #75e99b; }
 
-/* PULL TO REFRESH */
 html, body { overscroll-behavior-y: contain; }
 .pull-refresh-indicator {
   position: fixed;
@@ -1022,8 +1006,6 @@ html, body { overscroll-behavior-y: contain; }
 .pull-refresh-indicator.refreshing i { animation: pull-refresh-spin .7s linear infinite; }
 @keyframes pull-refresh-spin { to { transform: rotate(360deg); } }
 
-
-/* QUICK INFO TAG MANAGEMENT */
 .quick-tags-section {
   margin: 13px 0 2px;
   padding: 12px;
@@ -1062,8 +1044,6 @@ html, body { overscroll-behavior-y: contain; }
 .quick-tag-chip.spanish.selected { border-color: #8066c8; color: #d7caff; background: rgba(100, 72, 174, .17); }
 .quick-tags-empty { color: #637b91; font-size: 10.5px; font-weight: 700; }
 
-
-/* BUSINESS QUICK INFO / CALL REFERENCE */
 .lead-notes-card { margin-top: 10px; }
 .business-quick-intro { margin: 14px 3px 13px; }
 .business-quick-intro h2 { margin: 0; font-size: 22px; letter-spacing: -.025em; }
@@ -1121,8 +1101,6 @@ html, body { overscroll-behavior-y: contain; }
 .price-reference-row b { flex: 0 0 auto; color: #79b2ff; font-size: 11px; font-weight: 850; }
 .pricing-reference-note { margin: 10px 2px 0; color: #5f788f; font-size: 9.5px; line-height: 1.4; }
 
-
-/* STEADY HANDS OPERATIONS PRICING REFERENCE */
 .business-site-link {
   min-height: 42px;
   margin-top: 10px;
@@ -1150,8 +1128,6 @@ html, body { overscroll-behavior-y: contain; }
 .price-reference-row b { text-align: right; }
 .price-reference-row.extra-price { border-style: dashed; }
 
-
-/* SIGNED-IN USER + LEAD HISTORY */
 .signed-in-user {
   display: block;
   margin-top: 2px;
@@ -1223,7 +1199,6 @@ html, body { overscroll-behavior-y: contain; }
 .history-note-delete:hover { border-color: #8a444d; background: #281016; color: #ff9fa1; }
 .history-note-delete:active { transform: scale(.96); }
 
-/* COLLAPSIBLE HISTORY */
 .history-card { padding: 10px 13px; }
 .history-toggle-button {
   width: 100%;
@@ -1245,8 +1220,6 @@ html, body { overscroll-behavior-y: contain; }
 .history-list[hidden] { display: none !important; }
 .history-toggle-button.open + .history-list { margin-top: 4px; }
 
-
-/* EDITABLE LEAD DETAILS */
 .detail-title-wrap {
   position: absolute;
   left: 50%;
@@ -1277,18 +1250,14 @@ html, body { overscroll-behavior-y: contain; }
 .edit-lead-icon:active { transform: scale(.95); }
 .optional-fields-help { margin-bottom: 0; }
 
-/* Hide the add/import tab shell while editing an existing lead. */
 .import-tabs[hidden] { display: none !important; }
 
-/* Automatic missing-contact tag */
 .no-phone-badge {
   border-color: #6a5261;
   color: #d9a9c3;
   background: rgba(132, 70, 103, .12);
 }
 
-
-/* Separate discovery/source tags */
 .source-tags-section {
   margin-top: 14px;
   padding-top: 14px;
@@ -1302,8 +1271,6 @@ html, body { overscroll-behavior-y: contain; }
 }
 .source-tag-chip.selected i { color: #b7a4ff; }
 
-
-/* Compact Found On source selector */
 .source-tags-expand {
   width: 100%;
   min-height: 36px;
@@ -1323,11 +1290,9 @@ html, body { overscroll-behavior-y: contain; }
 .source-tags-expand:hover { border-color: #4a6682; color: #c1d2e2; }
 .source-tags-expand i { font-size: 10px; }
 
-/* Tag icon + ordering polish */
 .lead-tag-option > .bi:first-child { font-size: 12px; opacity: .95; }
 .tag-state-check { margin-left: 1px; font-size: 9px !important; opacity: .9; }
 
-/* Found On: source-specific brand-inspired colors */
 .source-tag-chip {
   --source-rgb: 126, 145, 164;
   --source-border: #40556a;
@@ -1368,13 +1333,9 @@ html, body { overscroll-behavior-y: contain; }
 .source-other { --source-rgb: 137,116,168; --source-text: #cab9e1; }
 .source-custom { --source-rgb: 137,116,168; --source-text: #cab9e1; }
 
-/* Custom Found On source entry */
 .custom-source-field { margin-top: 12px; }
 .custom-source-field input { min-height: 48px; }
 
-
-/* Selected Found On sources shown on main lead cards.
-   Match the exact selected-source treatment used inside the lead itself. */
 .lead-source-tags {
   display: flex;
   flex-wrap: wrap;
@@ -1401,8 +1362,6 @@ html, body { overscroll-behavior-y: contain; }
 .lead-source-chip > i { color: rgb(var(--source-rgb, 126, 145, 164)); font-size: 10px; }
 .lead-source-chip > span { overflow: hidden; text-overflow: ellipsis; }
 
-
-/* Caller attribution */
 .lead-called-by {
   display: flex;
   align-items: center;
@@ -1422,7 +1381,6 @@ html, body { overscroll-behavior-y: contain; }
 }
 .phone-called-by.has-call { color: #8fc3f4; }
 
-/* DESKTOP STRUCTURE */
 .desktop-sidebar,
 .desktop-header-add-lead,
 .desktop-scroll-top { display: none; }
@@ -1436,7 +1394,6 @@ html, body { overscroll-behavior-y: contain; }
 .desktop-sidebar-spacer { flex: 1; }
 .desktop-account-nav { border-top: 1px solid #17293a; border-radius: 0; padding-top: 8px; }
 
-/* SOLD PIPELINE ---------------------------------------------------------- */
 .sold-heading { margin-top: 23px; }
 .sold-count-chip {
   border-color: rgba(57,220,117,.42);
@@ -1479,8 +1436,6 @@ html, body { overscroll-behavior-y: contain; }
 .history-item .history-dot.sold,
 .history-dot.sold { border-color: rgba(57,220,117,.55); background: rgba(57,220,117,.14); color: #69e992; }
 
-
-/* PRIORITY LEAD FLAGS -------------------------------------------------- */
 .quick-tag-chip.priority-tag {
   border-color: rgba(255, 166, 61, .52);
   color: #ffc16f;
@@ -1537,7 +1492,6 @@ html, body { overscroll-behavior-y: contain; }
   margin-top: 20px;
 }
 
-/* DESKTOP SCROLL-TO-TOP -------------------------------------------------- */
 .desktop-scroll-top {
   display: none;
 }
@@ -1589,7 +1543,7 @@ html, body { overscroll-behavior-y: contain; }
     line-height: 1;
   }
 
-  /* Keep the arrow above the fixed detail footer when a lead is open. */
+
   #detailScreen.active ~ .desktop-scroll-top,
   body:has(#detailScreen.active) .desktop-scroll-top {
     bottom: 88px;
@@ -1598,12 +1552,6 @@ html, body { overscroll-behavior-y: contain; }
 
 .detail-topbar { display: block; }
 
-/* =========================================================
-   DESKTOP MASTER LAYOUT — 2026 CLEANUP
-   This is the single authoritative computer layout. It is
-   intentionally last so older experimental desktop rules
-   cannot distort the UI. Mobile styles remain unchanged.
-   ========================================================= */
 @media (min-width: 960px) {
   html, body {
     min-width: 960px;
@@ -1706,7 +1654,7 @@ html, body { overscroll-behavior-y: contain; }
     display: none !important;
   }
 
-  /* ---------- PIPELINE LIST PAGES ---------- */
+
   #leadsScreen.active,
   #leadsScreen.desktop-leads-view,
   #leadsScreen.desktop-followups-view,
@@ -1873,7 +1821,7 @@ html, body { overscroll-behavior-y: contain; }
     text-align: center !important;
   }
 
-  /* ---------- FULL DESKTOP LEAD DETAILS ---------- */
+
   #detailScreen.active {
     display: block !important;
     max-width: 1580px !important;
@@ -2032,7 +1980,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-/* DESKTOP PIPELINE SWITCHER — single sidebar tab + category controls */
 @media (min-width: 960px) {
   #leadsScreen > .summary-row.pipeline-switcher {
     display: grid !important;
@@ -2102,11 +2049,8 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-/* =========================================================
-   DESKTOP DETAIL POLISH — EVEN CARDS + TOOLBAR + TOP CARD
-   ========================================================= */
 @media (min-width: 960px) {
-  /* Top card */
+
   #detailScreen > .detail-topbar {
     min-height: 92px !important;
     padding: 12px 16px !important;
@@ -2196,7 +2140,7 @@ html, body { overscroll-behavior-y: contain; }
     color: #89dfaa !important;
   }
 
-  /* Tabs + Quick Notes + Done on the same row */
+
   #detailScreen > .detail-toolbar {
     width: 100% !important;
     margin: 0 0 16px !important;
@@ -2248,7 +2192,7 @@ html, body { overscroll-behavior-y: contain; }
     white-space: nowrap !important;
   }
 
-  /* Equal card sizing inside each active tab */
+
   #detailScreen > .panel.active {
     align-items: stretch !important;
     grid-auto-flow: row !important;
@@ -2261,7 +2205,7 @@ html, body { overscroll-behavior-y: contain; }
     align-self: stretch !important;
   }
 
-  /* Details row pairs */
+
   #detailsPanel.active > .details-card,
   #detailsPanel.active > .lead-notes-card {
     grid-row: 2 !important;
@@ -2272,7 +2216,7 @@ html, body { overscroll-behavior-y: contain; }
     grid-row: 3 !important;
   }
 
-  /* Follow-up: force clean paired rows */
+
   #followupPanel.active > .outcome-card {
     grid-column: 1 !important;
     grid-row: 2 !important;
@@ -2293,7 +2237,7 @@ html, body { overscroll-behavior-y: contain; }
     grid-row: 3 !important;
   }
 
-  /* Quick Info script cards: two even pairs, pricing full width */
+
   #quickPanel.active > .script-outdated,
   #quickPanel.active > .script-nosite {
     grid-row: 2 !important;
@@ -2320,10 +2264,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-/* =========================================================
-   DESKTOP DETAIL UI V3 — INTENTIONAL TWO-COLUMN CARD LAYOUTS
-   ========================================================= */
-
 .desktop-panel-grid {
   display: contents;
 }
@@ -2333,7 +2273,7 @@ html, body { overscroll-behavior-y: contain; }
     max-width: 1480px !important;
   }
 
-  /* Cleaner top summary card */
+
   #detailScreen > .detail-topbar {
     min-height: 88px !important;
     padding: 12px 18px !important;
@@ -2350,7 +2290,7 @@ html, body { overscroll-behavior-y: contain; }
     font-size: 23px !important;
   }
 
-  /* Tabs + actions become one clean control row */
+
   #detailScreen > .detail-toolbar {
     grid-template-columns: minmax(520px, 760px) auto !important;
     gap: 16px !important;
@@ -2365,7 +2305,7 @@ html, body { overscroll-behavior-y: contain; }
     min-width: 126px !important;
   }
 
-  /* Panel itself is now simple; the internal layout controls columns */
+
   #detailScreen > .panel.active {
     display: block !important;
   }
@@ -2392,7 +2332,7 @@ html, body { overscroll-behavior-y: contain; }
     align-content: start !important;
   }
 
-  /* Let cards size naturally instead of forcing awkward equal heights */
+
   #detailScreen .panel-column > .card,
   #detailScreen .panel-column > .followup-card,
   #detailScreen .panel-column > .business-script-card {
@@ -2402,7 +2342,7 @@ html, body { overscroll-behavior-y: contain; }
     align-self: start !important;
   }
 
-  /* DETAILS */
+
   #detailsPanel .details-layout {
     grid-template-columns: minmax(360px, .92fr) minmax(460px, 1.08fr) !important;
   }
@@ -2427,7 +2367,7 @@ html, body { overscroll-behavior-y: contain; }
     padding: 14px !important;
   }
 
-  /* FOLLOW-UP */
+
   #followupPanel .followup-layout {
     grid-template-columns: minmax(420px, .92fr) minmax(500px, 1.08fr) !important;
   }
@@ -2440,12 +2380,12 @@ html, body { overscroll-behavior-y: contain; }
     margin-top: 12px !important;
   }
 
-  /* Keep the larger preference card in the wider right column */
+
   #followupPanel .panel-column:last-child .followup-card:first-child {
     min-height: 100% !important;
   }
 
-  /* QUICK INFO */
+
   #quickPanel .quick-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     margin-bottom: 16px !important;
@@ -2495,12 +2435,8 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* =========================================================
-   DESKTOP DETAIL UI V4 — COMPACT, BALANCED, FITS THE VIEWPORT
-   ========================================================= */
 @media (min-width: 960px) {
-  /* Give the workspace more room without making it feel stretched. */
+
   .app-shell {
     grid-template-columns: 220px minmax(0, 1fr) !important;
   }
@@ -2521,7 +2457,7 @@ html, body { overscroll-behavior-y: contain; }
     max-width: 1440px !important;
   }
 
-  /* Compact lead summary. */
+
   #detailScreen > .detail-topbar {
     min-height: 76px !important;
     margin-bottom: 10px !important;
@@ -2570,7 +2506,7 @@ html, body { overscroll-behavior-y: contain; }
     font-size: 9px !important;
   }
 
-  /* One compact control strip: tabs + Quick Notes + Done. */
+
   #detailScreen > .detail-toolbar {
     min-height: 46px !important;
     margin-bottom: 12px !important;
@@ -2608,7 +2544,7 @@ html, body { overscroll-behavior-y: contain; }
   #quickNotesButton { min-width: 122px !important; }
   #doneButton { min-width: 102px !important; }
 
-  /* Section title becomes a slim divider rather than a tall block. */
+
   #detailScreen > .panel.active > .details-intro,
   #detailScreen > .panel.active > .followup-intro,
   #detailScreen > .panel.active > .business-quick-intro {
@@ -2649,7 +2585,7 @@ html, body { overscroll-behavior-y: contain; }
     gap: 12px !important;
   }
 
-  /* Make cards visually consistent and less vertically wasteful. */
+
   #detailScreen .card,
   #detailScreen .followup-card,
   #detailScreen .business-script-card,
@@ -2668,7 +2604,7 @@ html, body { overscroll-behavior-y: contain; }
     padding: 12px !important;
   }
 
-  /* Contact details become a true 2-column information card. */
+
   #detailsPanel .details-card {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -2712,7 +2648,7 @@ html, body { overscroll-behavior-y: contain; }
     line-height: 1.3 !important;
   }
 
-  /* Answer + mood side by side. */
+
   #detailsPanel .status-card {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) minmax(0, .72fr) !important;
@@ -2744,7 +2680,7 @@ html, body { overscroll-behavior-y: contain; }
     min-height: 38px !important;
   }
 
-  /* Form cards: tighter headings and fields. */
+
   #detailScreen .card-heading {
     margin-bottom: 10px !important;
   }
@@ -2768,7 +2704,7 @@ html, body { overscroll-behavior-y: contain; }
     min-height: 78px !important;
   }
 
-  /* Follow-up cards keep two columns and fit more above the fold. */
+
   #followupPanel .followup-card-body {
     margin-top: 9px !important;
   }
@@ -2786,7 +2722,7 @@ html, body { overscroll-behavior-y: contain; }
     min-height: 38px;
   }
 
-  /* Quick info scripts stay readable without giant cards. */
+
   #quickPanel .business-script-card {
     padding: 14px !important;
   }
@@ -2841,8 +2777,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* DETAILS — Mood card on the left column */
 #detailsPanel .mood-card {
   padding: 12px !important;
 }
@@ -2866,7 +2800,7 @@ html, body { overscroll-behavior-y: contain; }
 }
 
 @media (min-width: 960px) {
-  /* The right status card now contains only Answer Status, so let it use full width. */
+
   #detailsPanel .status-card {
     display: block !important;
   }
@@ -2880,10 +2814,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* DETAILS — final desktop arrangement:
-   LEFT: Details → Answer Status → Mood → History
-   RIGHT: Lead Info only */
 @media (min-width: 960px) {
   #detailsPanel .details-layout {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
@@ -2922,10 +2852,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* FOLLOW-UP — final desktop arrangement:
-   LEFT: Call Outcome → Callback → Contact Preference
-   RIGHT: Day / Time Preferences only */
 @media (min-width: 960px) {
   #followupPanel .followup-layout {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
@@ -2952,7 +2878,7 @@ html, body { overscroll-behavior-y: contain; }
     margin: 0 !important;
   }
 
-  /* Keep the day/time card compact while making it the only right-side card. */
+
   #followupPanel .availability-card .followup-card-body {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
@@ -2974,10 +2900,8 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* FOLLOW-UP — restore General Availability proportions */
 @media (min-width: 960px) {
-  /* Keep all call/contact cards on the left and give Availability more breathing room. */
+
   #followupPanel .followup-layout {
     grid-template-columns: minmax(420px, .9fr) minmax(560px, 1.1fr) !important;
     gap: 16px !important;
@@ -2989,7 +2913,7 @@ html, body { overscroll-behavior-y: contain; }
     min-width: 0 !important;
   }
 
-  /* Restore the wide, shallow General Availability card styling. */
+
   #followupPanel .followup-preferences-column > .availability-card {
     width: 100% !important;
     min-height: 0 !important;
@@ -3032,7 +2956,7 @@ html, body { overscroll-behavior-y: contain; }
     font-size: 11px !important;
   }
 
-  /* Best days stays on one row. */
+
   #followupPanel .availability-card .day-grid {
     display: grid !important;
     grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
@@ -3045,7 +2969,7 @@ html, body { overscroll-behavior-y: contain; }
     padding: 0 6px !important;
   }
 
-  /* Morning / Noon / Night / Specific stays on one row like before. */
+
   #followupPanel .availability-card .followup-time-grid {
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
@@ -3065,8 +2989,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* FOLLOW-UP — General Availability: Best Days top, Best Time bottom */
 @media (min-width: 960px) {
   #followupPanel .availability-card .followup-card-body {
     display: grid !important;
@@ -3090,14 +3012,14 @@ html, body { overscroll-behavior-y: contain; }
     padding-top: 12px !important;
   }
 
-  /* BEST DAYS — top row */
+
   #followupPanel .availability-card .day-grid {
     display: grid !important;
     grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
     gap: 7px !important;
   }
 
-  /* BEST TIME — bottom row */
+
   #followupPanel .availability-card .followup-time-grid {
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
@@ -3110,8 +3032,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* FOLLOW-UP — equal 50/50 columns + taller General Availability */
 @media (min-width: 960px) {
   #followupPanel .followup-layout {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
@@ -3148,8 +3068,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* PRIORITY LEADS + CALL FLOW */
 .lead-item {
   position: relative;
 }
@@ -3400,8 +3318,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* CONDITIONAL DONE QUESTIONS + SOLD FLOW */
 .mini-question[hidden],
 .post-call-notes[hidden] {
   display: none !important;
@@ -3477,8 +3393,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* QUICK INFO TAG GROUPS — sorted, related, color coordinated */
 #quickTagsList {
   display: grid !important;
   grid-template-columns: 1fr !important;
@@ -3533,7 +3447,6 @@ html, body { overscroll-behavior-y: contain; }
   transform: scale(.98);
 }
 
-/* Website condition: blue family. These three are mutually exclusive. */
 .quick-tag-chip.tag-group-site {
   border-color: rgba(73, 151, 207, .3) !important;
   background: rgba(73, 151, 207, .07) !important;
@@ -3547,7 +3460,6 @@ html, body { overscroll-behavior-y: contain; }
   box-shadow: inset 0 0 0 1px rgba(77,158,213,.18);
 }
 
-/* Contact / accessibility: violet family. */
 .quick-tag-chip.tag-group-contact {
   border-color: rgba(151, 112, 204, .3) !important;
   background: rgba(151, 112, 204, .07) !important;
@@ -3560,7 +3472,6 @@ html, body { overscroll-behavior-y: contain; }
   color: #f1e7ff !important;
 }
 
-/* Interest / next step: warm orange family. */
 .quick-tag-chip.tag-group-interest {
   border-color: rgba(223, 137, 48, .3) !important;
   background: rgba(223, 137, 48, .07) !important;
@@ -3573,7 +3484,6 @@ html, body { overscroll-behavior-y: contain; }
   color: #fff0db !important;
 }
 
-/* Negative call outcomes: red family. */
 .quick-tag-chip.tag-group-outcome {
   border-color: rgba(203, 76, 84, .3) !important;
   background: rgba(203, 76, 84, .07) !important;
@@ -3586,7 +3496,6 @@ html, body { overscroll-behavior-y: contain; }
   color: #ffe8ea !important;
 }
 
-/* Conversion: gold/green treatment. */
 .quick-tag-chip.tag-group-conversion {
   border-color: rgba(193, 159, 58, .34) !important;
   background: rgba(193, 159, 58, .08) !important;
@@ -3599,13 +3508,11 @@ html, body { overscroll-behavior-y: contain; }
   color: #fff5c9 !important;
 }
 
-/* Custom tags remain neutral. */
 .quick-tag-chip.tag-group-custom {
   border-color: rgba(126,155,174,.24) !important;
   background: rgba(126,155,174,.06) !important;
 }
 
-/* Match the pre-call prompt to the selected website-condition tag. */
 .call-prompt-box.prompt-no-site {
   border-color: rgba(61,157,216,.35) !important;
   background: rgba(61,157,216,.09) !important;
@@ -3632,8 +3539,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* ADD SITE PROMPT */
 .add-site-prompt-modal {
   width: min(520px, calc(100vw - 28px));
 }
@@ -3647,8 +3552,6 @@ html, body { overscroll-behavior-y: contain; }
   min-height: 46px;
 }
 
-
-/* ADD LEAD — beside pipeline categories */
 .pipeline-switcher .pipeline-add-lead {
   min-width: 0;
   min-height: 52px;
@@ -3696,8 +3599,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* PRE-CALL PROMPT — neutral box + Quick Info-style highlights */
 .call-prompt-box,
 .call-prompt-box.prompt-no-site,
 .call-prompt-box.prompt-broken-site,
@@ -3725,8 +3626,6 @@ html, body { overscroll-behavior-y: contain; }
   line-height: 1.65;
 }
 
-
-/* HISTORY + MAIN LEAD DELETE */
 .compact-confirm-modal {
   width: min(500px, calc(100vw - 28px));
 }
@@ -3795,15 +3694,13 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* MOBILE HOT LEAD + PRE-CALL DETAILS */
 .mobile-hot-lead-badge,
 .mobile-call-details-button {
   display: none;
 }
 
 @media (max-width: 700px) {
-  /* Guarantee HOT LEAD is visible on the main mobile lead cards. */
+
   .mobile-hot-lead-badge {
     display: inline-flex !important;
     align-items: center;
@@ -3821,7 +3718,7 @@ html, body { overscroll-behavior-y: contain; }
     white-space: nowrap;
   }
 
-  /* The corner priority tag stays visible too, but never gets clipped. */
+
   .lead-item-wrap,
   .lead-item {
     overflow: visible !important;
@@ -3832,7 +3729,7 @@ html, body { overscroll-behavior-y: contain; }
     z-index: 12 !important;
   }
 
-  /* Mobile gets an obvious call action that ALWAYS opens the pre-call details first. */
+
   .mobile-call-details-button {
     margin: 10px 0 2px auto;
     min-height: 38px;
@@ -3855,7 +3752,7 @@ html, body { overscroll-behavior-y: contain; }
     display: none !important;
   }
 
-  /* Make the call-details popup work like a proper mobile bottom sheet. */
+
   #preCallModal {
     align-items: flex-end;
     padding: 10px;
@@ -3906,8 +3803,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* MOBILE QUICK INFO TAG ORGANIZATION */
 @media (max-width: 700px) {
   #quickTagsList {
     display: grid !important;
@@ -3974,7 +3869,7 @@ html, body { overscroll-behavior-y: contain; }
     margin-left: auto !important;
   }
 
-  /* Website choices stay together and fill the row cleanly. */
+
   #quickTagsList .lead-tag-group-site .lead-tag-group-options {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
@@ -3985,12 +3880,12 @@ html, body { overscroll-behavior-y: contain; }
     padding: 0 5px !important;
   }
 
-  /* Sold gets its own full-width conversion action. */
+
   #quickTagsList .lead-tag-group-conversion .lead-tag-group-options {
     grid-template-columns: 1fr !important;
   }
 
-  /* Preserve the same category color system on mobile. */
+
   #quickTagsList .lead-tag-group-site {
     border-color: rgba(73,151,207,.18) !important;
   }
@@ -4028,8 +3923,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* MOBILE — Quick Notes is the only notes editor */
 @media (max-width: 700px) {
   #quickNotesButton {
     display: inline-flex !important;
@@ -4055,7 +3948,7 @@ html, body { overscroll-behavior-y: contain; }
 
   #quickNotesInput {
     min-height: 180px !important;
-    font-size: 16px !important; /* prevents iOS zoom */
+    font-size: 16px !important;
     line-height: 1.45 !important;
   }
 
@@ -4065,15 +3958,13 @@ html, body { overscroll-behavior-y: contain; }
     padding-bottom: env(safe-area-inset-bottom) !important;
   }
 
-  /* There is no second editable Notes field on mobile. */
+
   #postNotesQuestion,
   .post-call-notes {
     display: none !important;
   }
 }
 
-
-/* KIARA-ONLY main-list delete control — desktop + mobile */
 @media (max-width: 700px) {
   .lead-item-wrap .lead-card-delete {
     display: grid !important;
@@ -4091,12 +3982,8 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* =========================================================
-   MOBILE PIPELINE — NEW / FOLLOW-UPS / SOLD ARE SEPARATE VIEWS
-   ========================================================= */
 @media (max-width: 959px) {
-  /* Keep the category/count controls visible and clickable. */
+
   #leadsScreen > .summary-row.pipeline-switcher {
     display: grid !important;
     width: 100% !important;
@@ -4140,7 +4027,7 @@ html, body { overscroll-behavior-y: contain; }
     box-shadow: inset 0 0 0 1px rgba(76, 151, 235, .10) !important;
   }
 
-  /* Add Lead gets its own full-width row beneath the three pipeline categories. */
+
   #leadsScreen > .summary-row.pipeline-switcher .pipeline-add-lead {
     grid-column: 1 / -1 !important;
     min-height: 42px !important;
@@ -4148,7 +4035,7 @@ html, body { overscroll-behavior-y: contain; }
     margin: 0 !important;
   }
 
-  /* Never stack all three categories underneath one another on mobile. */
+
   #leadsScreen > .section-heading,
   #leadsScreen > #newLeadList,
   #leadsScreen > #followLeadList,
@@ -4156,7 +4043,7 @@ html, body { overscroll-behavior-y: contain; }
     display: none !important;
   }
 
-  /* NEW LEADS */
+
   #leadsScreen.desktop-leads-view > .section-heading:not(.follow-heading):not(.sold-heading) {
     display: flex !important;
   }
@@ -4165,7 +4052,7 @@ html, body { overscroll-behavior-y: contain; }
     display: grid !important;
   }
 
-  /* FOLLOW-UPS */
+
   #leadsScreen.desktop-followups-view > .follow-heading {
     display: flex !important;
   }
@@ -4174,7 +4061,7 @@ html, body { overscroll-behavior-y: contain; }
     display: grid !important;
   }
 
-  /* SOLD */
+
   #leadsScreen.desktop-sold-view > .sold-heading {
     display: flex !important;
   }
@@ -4203,19 +4090,14 @@ html, body { overscroll-behavior-y: contain; }
     border-bottom: 1px solid rgba(126, 155, 174, .14) !important;
   }
 
-  /* The separate section count chip is redundant on mobile; the top count is the switcher. */
+
   #leadsScreen .section-heading .count-chip {
     display: none !important;
   }
 }
 
-
-/* =====================================================================
-   FINAL MOBILE OVERRIDE — THIS BLOCK MUST STAY LAST
-   One pipeline at a time + desktop-identical grouped/color-coded tags.
-   ===================================================================== */
 @media (max-width: 959px) {
-  /* CATEGORY SWITCHER */
+
   #leadsScreen > .summary-row.pipeline-switcher {
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -4268,7 +4150,7 @@ html, body { overscroll-behavior-y: contain; }
     box-shadow: inset 0 0 0 1px rgba(75,151,238,.12), 0 0 16px rgba(46,134,255,.10) !important;
   }
 
-  /* Add Lead stays separate instead of stealing a category column. */
+
   #leadsScreen > .summary-row.pipeline-switcher > .pipeline-add-lead {
     grid-column: 1 / -1 !important;
     width: 100% !important;
@@ -4276,7 +4158,7 @@ html, body { overscroll-behavior-y: contain; }
     margin-top: 0 !important;
   }
 
-  /* Pipeline visibility is also enforced inline by JS; these are the CSS fallback. */
+
   #leadsScreen > .section-heading,
   #leadsScreen > #newLeadList,
   #leadsScreen > #followLeadList,
@@ -4314,7 +4196,7 @@ html, body { overscroll-behavior-y: contain; }
     display: grid !important;
   }
 
-  /* HOT LEAD ON MAIN MOBILE LIST */
+
   .lead-item.hot-lead-card {
     border-color: rgba(240,126,30,.8) !important;
     box-shadow: inset 4px 0 0 #e86f10, 0 8px 24px rgba(0,0,0,.12) !important;
@@ -4328,7 +4210,7 @@ html, body { overscroll-behavior-y: contain; }
     opacity: 1 !important;
   }
 
-  /* TAGS — SAME GROUPS AND SAME COLORS AS COMPUTER */
+
   #quickTagsList {
     display: grid !important;
     grid-template-columns: 1fr !important;
@@ -4393,7 +4275,7 @@ html, body { overscroll-behavior-y: contain; }
     text-align: center !important;
   }
 
-  /* Website */
+
   #quickTagsList .quick-tag-chip.tag-group-site {
     border-color: rgba(73,151,207,.3) !important;
     background: rgba(73,151,207,.07) !important;
@@ -4405,7 +4287,7 @@ html, body { overscroll-behavior-y: contain; }
     color: #e7f7ff !important;
   }
 
-  /* Contact */
+
   #quickTagsList .quick-tag-chip.tag-group-contact {
     border-color: rgba(151,112,204,.3) !important;
     background: rgba(151,112,204,.07) !important;
@@ -4417,7 +4299,7 @@ html, body { overscroll-behavior-y: contain; }
     color: #f1e7ff !important;
   }
 
-  /* Lead Status — includes HOT LEAD */
+
   #quickTagsList .quick-tag-chip.tag-group-interest {
     border-color: rgba(223,137,48,.3) !important;
     background: rgba(223,137,48,.07) !important;
@@ -4429,7 +4311,7 @@ html, body { overscroll-behavior-y: contain; }
     color: #fff0db !important;
   }
 
-  /* Call Outcome */
+
   #quickTagsList .quick-tag-chip.tag-group-outcome {
     border-color: rgba(203,76,84,.3) !important;
     background: rgba(203,76,84,.07) !important;
@@ -4441,7 +4323,7 @@ html, body { overscroll-behavior-y: contain; }
     color: #ffe8ea !important;
   }
 
-  /* Sold */
+
   #quickTagsList .quick-tag-chip.tag-group-conversion {
     border-color: rgba(193,159,58,.34) !important;
     background: rgba(193,159,58,.08) !important;
@@ -4454,8 +4336,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* KIARA-ONLY LEAD STATUS MANAGER */
 .lead-card-edit {
   position: absolute;
   top: 10px;
@@ -4491,8 +4371,6 @@ html, body { overscroll-behavior-y: contain; }
 .lead-status-delete { margin-top: 14px; border: 1px solid rgba(255,94,97,.55); background: rgba(105,20,25,.18); color: #ff8a8c; }
 .lead-status-delete i { width: 24px; font-size: 17px; }
 
-
-/* SCROLL TO TOP — desktop + mobile, hidden until the lead board is scrolled */
 .mobile-scroll-top {
   display: grid;
   position: fixed;
@@ -4539,9 +4417,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* FINAL TAG / EDIT COLLISION GUARD
-   Tags always stay inside the card and Kiara's edit button owns its own space. */
 .lead-item-wrap.kiara-manageable > .lead-item {
   padding-right: 62px !important;
 }
@@ -4581,7 +4456,6 @@ html, body { overscroll-behavior-y: contain; }
   text-overflow: ellipsis;
 }
 
-/* Priority tags get their own top row instead of covering lead text. */
 .lead-item-wrap.has-priority-tags > .lead-item {
   padding-top: 46px !important;
 }
@@ -4610,8 +4484,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* KIARA-ONLY HISTORY — ALWAYS LAST ON LEAD DETAIL */
 #detailScreen > .kiara-only-history {
   width: 100%;
   margin-top: 18px;
@@ -4635,8 +4507,6 @@ html, body { overscroll-behavior-y: contain; }
   pointer-events: none;
 }
 
-
-/* FOLLOW-UP — LAST CALL OUTCOME TAGS */
 .call-outcome-tags {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4681,7 +4551,6 @@ html, body { overscroll-behavior-y: contain; }
   margin-right: 5px;
 }
 
-/* FOLLOW-UP — ICON-ONLY CONTACT PREFERENCE */
 .contact-method-icons {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -4726,8 +4595,6 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* CALLBACK — ADD TO CALENDAR */
 .add-to-calendar-button {
   width: 100%;
   min-height: 46px;
@@ -4752,9 +4619,6 @@ html, body { overscroll-behavior-y: contain; }
   font-size: 17px;
 }
 
-
-
-/* HOSTING PRICE OPTIONS */
 .hosting-price-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4792,10 +4656,8 @@ html, body { overscroll-behavior-y: contain; }
   }
 }
 
-
-/* MOBILE CARD POLISH — inline Hot Lead + edit beside chevron */
 @media (max-width: 700px) {
-  /* Hot Lead belongs on the company row on mobile, not in a separate row above. */
+
   .lead-item-wrap.has-hot-priority .desktop-hot-lead-tag {
     display: none !important;
   }
@@ -4850,7 +4712,7 @@ html, body { overscroll-behavior-y: contain; }
     white-space: nowrap !important;
   }
 
-  /* Kiara's edit control sits on the same right-side row as the chevron. */
+
   .lead-item-wrap.kiara-manageable > .lead-item {
     padding-right: 82px !important;
   }
