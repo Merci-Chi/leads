@@ -1851,7 +1851,7 @@ $$('[data-lead-status-option]').forEach(button => {
     } catch (error) {
       console.error('Could not update lead status:', error);
       showSyncStatus('Status update failed');
-      toast('Could not update lead status');
+      toast(error?.message ? `Status failed: ${error.message}` : 'Could not update lead status');
     }
   });
 });
@@ -2822,7 +2822,7 @@ async function setLeadPipelineStatus(leadId, nextStatus) {
     // a failed save cannot leave a fake status on screen.
     renderLists();
     if (currentLeadId === lead.id) renderCurrentLead();
-    toast('Could not switch lead status');
+    toast(error?.message ? `Status failed: ${error.message}` : 'Could not switch lead status');
     throw error;
   } finally {
     statusButtons.forEach(button => { button.disabled = false; });
