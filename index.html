@@ -1,620 +1,781 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#030711">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Leads">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="application-name" content="Leads">
-  <meta name="description" content="Steady Hands Operations lead calling and follow-up app.">
-  <title>Leads | Steady Hands Operations</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<meta content="#030711" name="theme-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="Leads" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="Leads" name="application-name"/>
+<meta content="Steady Hands Operations lead calling and follow-up app." name="description"/>
+<title>Leads | Steady Hands Operations</title>
+<link href="manifest.webmanifest" rel="manifest"/>
+<link href="icons/apple-touch-icon.png" rel="apple-touch-icon"/>
+<link href="icons/favicon-64.png" rel="icon" sizes="64x64" type="image/png"/>
+<link href="https://cdn.jsdelivr.net" rel="preconnect"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+<link href="css.css?v=20260817-1056" rel="stylesheet"/>
 </head>
 <body>
-  <section class="auth-gate" id="authGate" aria-label="Sign in">
-    <div class="auth-card">
-      <img class="auth-logo" src="icons/icon-192.png" alt="">
-      <span class="eyebrow">STEADY HANDS OPERATIONS</span>
-      <h1>Lead Board</h1>
-      <p>Sign in to sync your leads across devices.</p>
-      <label><span>Email</span><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></label>
-      <label><span>Password</span><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"></label>
-      <button class="auth-button" id="authSignIn" type="button">Sign In</button>
-      <button class="auth-link-button" id="forgotPasswordButton" type="button">Forgot password?</button>
-      <div class="auth-status" id="authStatus" aria-live="polite"></div>
-    </div>
-  </section>
-  <main class="app-shell" id="appShell" hidden>
-    <!-- LEADS SCREEN -->
-    <section class="screen active" id="leadsScreen" aria-label="Leads">
-      <header class="home-header">
-        <div class="app-brand">
-          <img class="app-brand-icon" src="icons/icon-192.png" alt="" aria-hidden="true">
-          <div>
-            <span class="eyebrow">STEADY HANDS OPERATIONS</span>
-            <h1>Lead Board</h1>
-          </div>
-        </div>
-        <div class="header-actions">
-          <button class="icon-button" id="accountButton" type="button" aria-label="Account settings">
-            <i class="bi bi-person-gear"></i>
-          </button>
-        </div>
-      </header>
+<section aria-label="Sign in" class="auth-gate" id="authGate">
+<div class="auth-card">
+<img alt="" class="auth-logo" src="icons/icon-192.png"/>
+<span class="eyebrow">STEADY HANDS OPERATIONS</span>
+<h1>Lead Board</h1>
+<p>Sign in to sync your leads across devices.</p>
+<label><span>Email</span><input autocomplete="email" id="authEmail" placeholder="you@example.com" type="email"/></label>
+<label><span>Password</span><input autocomplete="current-password" id="authPassword" placeholder="Password" type="password"/></label>
+<button class="auth-button" id="authSignIn" type="button">Sign In</button>
+<button class="auth-link-button" id="forgotPasswordButton" type="button">Forgot password?</button>
+<div aria-live="polite" class="auth-status" id="authStatus"></div>
+</div>
+</section>
+<main class="app-shell" hidden="" id="appShell">
+<aside aria-label="Desktop navigation" class="desktop-sidebar">
+<div class="desktop-sidebar-brand">
+<img alt="" aria-hidden="true" src="icons/icon-192.png"/>
+<div><span>STEADY HANDS</span><strong>Operations</strong></div>
+</div>
+<nav class="desktop-nav">
+<button class="desktop-nav-item active" id="desktopLeadsNav" type="button"><i class="bi bi-grid-1x2-fill"></i><span>Lead Board</span></button>
+</nav>
+</aside>
+<!-- LEADS SCREEN -->
+<section aria-label="Leads" class="screen active desktop-leads-view" id="leadsScreen">
+<header class="home-header">
+<div class="app-brand">
+<img alt="" aria-hidden="true" class="app-brand-icon" src="icons/icon-192.png"/>
+<div>
+<span class="eyebrow">STEADY HANDS OPERATIONS</span>
+<h1>Lead Board</h1>
+</div>
+</div>
+<div class="header-actions">
+<button class="desktop-header-add-lead" id="desktopHeaderAddLeadButton" type="button">
+<i class="bi bi-plus-lg"></i>
+<span>Add New Lead</span>
+</button>
+<button aria-label="Account settings" class="icon-button" id="accountButton" type="button">
+<i class="bi bi-person-gear"></i>
+</button>
+</div>
+</header>
+<label class="search-field">
+<i class="bi bi-search"></i>
+<input autocomplete="off" id="leadSearch" placeholder="Search leads, company, or number" type="search"/>
+</label>
+<section aria-label="Lead categories" class="summary-row pipeline-switcher">
+<button aria-pressed="true" class="pipeline-summary active" data-pipeline-view="leads" type="button">
+<span>NEW</span><strong id="newCount">0</strong>
+</button>
+<button aria-pressed="false" class="pipeline-summary" data-pipeline-view="followups" type="button">
+<span>FOLLOW UPS</span><strong id="followCount">0</strong>
+</button>
+<button aria-pressed="false" class="pipeline-summary" data-pipeline-view="sold" type="button">
+<span>SOLD</span><strong id="soldCount">0</strong>
+</button>
+<button class="pipeline-add-lead" id="addLeadBottomButton" type="button">
+<i class="bi bi-plus-lg"></i><span>Add Lead</span>
+</button>
+</section>
+<div class="section-heading">
+<div>
+<span class="section-kicker">INBOX</span>
+<h2>New Leads</h2>
+</div>
+<span class="count-chip" id="newCountChip">0</span>
+</div>
+<section class="lead-list" id="newLeadList"></section>
+<div class="section-heading follow-heading">
+<div>
+<span class="section-kicker">CALL AGAIN</span>
+<h2>Follow-ups</h2>
+</div>
+<span class="count-chip" id="followCountChip">0</span>
+</div>
+<section class="lead-list" id="followLeadList"></section>
+<div class="section-heading sold-heading">
+<div>
+<span class="section-kicker">CLOSED</span>
+<h2>Sold</h2>
+</div>
+<span class="count-chip sold-count-chip" id="soldCountChip">0</span>
+</div>
+<section class="lead-list sold-lead-list" id="soldLeadList"></section>
 
-      <label class="search-field">
-        <i class="bi bi-search"></i>
-        <input id="leadSearch" type="search" placeholder="Search leads, company, or number" autocomplete="off">
-      </label>
-
-      <section class="summary-row" aria-label="Lead summary">
-        <div><strong id="newCount">0</strong><span>New</span></div>
-        <div><strong id="followCount">0</strong><span>Follow-ups</span></div>
-        <div><strong id="soldCount">0</strong><span>Sold</span></div>
-      </section>
-
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">INBOX</span>
-          <h2>New Leads</h2>
-        </div>
-        <span class="count-chip" id="newCountChip">0</span>
-      </div>
-      <section class="lead-list" id="newLeadList"></section>
-
-      <div class="section-heading follow-heading">
-        <div>
-          <span class="section-kicker">CALL AGAIN</span>
-          <h2>Follow-ups</h2>
-        </div>
-        <span class="count-chip" id="followCountChip">0</span>
-      </div>
-      <section class="lead-list" id="followLeadList"></section>
-
-      <div class="home-bottom-actions">
-        <button class="add-lead-bottom" id="addLeadBottomButton" type="button">
-          <i class="bi bi-plus-lg"></i> Add New Leads
-        </button>
-      </div>
-
-    </section>
-
-    <!-- DETAIL SCREEN -->
-    <section class="screen" id="detailScreen" aria-label="Lead details">
-      <header class="detail-header">
-        <button class="icon-button bare" id="backButton" type="button" aria-label="Back to leads">
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <div class="detail-title-wrap">
-          <h1>Lead Details</h1>
-          <button class="edit-lead-icon" id="editLeadButton" type="button" aria-label="Edit lead" title="Edit lead">
-            <i class="bi bi-pencil-square"></i>
-          </button>
-        </div>
-        <a class="icon-button bare call-top" id="topCallButton" href="tel:" aria-label="Call lead">
-          <i class="bi bi-telephone-fill"></i>
-        </a>
-      </header>
-
-      <section class="phone-card">
-        <div class="phone-card-label">PHONE NUMBER</div>
-        <div class="phone-number" id="leadPhone">(000)000-0000</div>
-        <div class="phone-called-by" id="leadCalledBy">Not called yet</div>
-        <div class="sound-line" aria-hidden="true"><span></span></div>
-      </section>
-
-      <nav class="tabs" aria-label="Lead sections">
-        <button class="tab active" data-tab="detailsPanel" type="button">Details</button>
-        <button class="tab" data-tab="followupPanel" type="button">Follow-up</button>
-        <button class="tab" data-tab="quickPanel" type="button">Quick Info</button>
-      </nav>
-
-      <section class="panel active" id="detailsPanel">
-        <article class="card details-card">
-          <div class="detail-row">
-            <span class="row-icon"><i class="bi bi-buildings"></i></span>
-            <div><span>Company Name</span><strong id="leadCompany"></strong></div>
-          </div>
-          <div class="detail-row">
-            <span class="row-icon"><i class="bi bi-person"></i></span>
-            <div><span>Name</span><strong id="leadName"></strong></div>
-          </div>
-          <div class="detail-row">
-            <span class="row-icon"><i class="bi bi-envelope"></i></span>
-            <div><span>Email</span><a id="leadEmail" href="#"></a></div>
-          </div>
-          <div class="detail-row">
-            <span class="row-icon"><i class="bi bi-globe2"></i></span>
-            <div><span>Site HTML</span><a id="leadSite" href="#" target="_blank" rel="noreferrer"></a></div>
-          </div>
-          <div class="detail-row">
-            <span class="row-icon"><i class="bi bi-calendar3"></i></span>
-            <div><span>Site Age</span><strong id="leadAge"></strong></div>
-          </div>
-          <div class="detail-row no-border">
-            <span class="row-icon"><i class="bi bi-exclamation-square"></i></span>
-            <div><span>Main Issues</span><strong id="leadIssue"></strong></div>
-          </div>
-        </article>
-
-        <article class="card form-card lead-notes-card">
-          <div class="card-heading"><span class="heading-icon"><i class="bi bi-journal-text"></i></span><h2>Lead Info</h2></div>
-
-          <section class="quick-tags-section" aria-labelledby="quickTagsTitle">
-            <div class="quick-tags-heading">
-              <div>
-                <span id="quickTagsTitle">Tags</span>
-                <small>Tap any tag to toggle it</small>
-              </div>
-            </div>
-            <div class="quick-tags-list" id="quickTagsList"></div>
-          </section>
-
-          <section class="quick-tags-section source-tags-section" aria-labelledby="sourceTagsTitle">
-            <div class="quick-tags-heading">
-              <div>
-                <span id="sourceTagsTitle">Found On</span>
-                <small>Where you found this lead</small>
-              </div>
-            </div>
-            <div class="quick-tags-list" id="sourceTagsList"></div>
-            <button class="source-tags-expand" id="sourceTagsExpandButton" type="button" aria-expanded="false">
-              <span>More Sources</span><i class="bi bi-chevron-down"></i>
-            </button>
-          </section>
-
-          <label class="stacked-field">
-            <span>Main Issue / Concerns</span>
-            <textarea id="concernsField" data-save="concerns" rows="5" placeholder="Type concerns, objections, pain points, or anything important…"></textarea>
-          </label>
-
-          <label class="stacked-field">
-            <span>Notes</span>
-            <textarea id="notesField" data-save="notes" rows="6" placeholder="Type notes about this lead..."></textarea>
-          </label>
-        </article>
-
-        <article class="card status-card">
-          <div class="status-section">
-            <h2>Answer Status</h2>
-            <div class="status-grid two">
-              <button class="select-button status-select" data-field="answerStatus" data-value="Answered" type="button">
-                <span class="status-icon"><i class="bi bi-check-lg"></i></span> Answered
+</section>
+<!-- DETAIL SCREEN -->
+<section aria-label="Lead details" class="screen" id="detailScreen">
+<div class="detail-topbar">
+<header class="detail-header">
+<button aria-label="Back to leads" class="icon-button bare" id="backButton" type="button">
+<i class="bi bi-chevron-left"></i>
+</button>
+<div class="detail-title-wrap">
+<h1>Lead Details</h1>
+<button aria-label="Edit lead" class="edit-lead-icon" id="editLeadButton" title="Edit lead" type="button">
+<i class="bi bi-pencil-square"></i>
+</button>
+</div>
+<a aria-label="Call lead" class="icon-button bare call-top" href="tel:" id="topCallButton">
+<i class="bi bi-telephone-fill"></i>
+</a>
+</header>
+<section class="phone-card">
+<div class="phone-card-label"><i aria-hidden="true" class="bi bi-telephone-fill"></i><span>PHONE NUMBER</span></div>
+<div class="phone-number" id="leadPhone">(000)000-0000</div>
+<button class="mobile-call-details-button" id="mobilePreCallButton" type="button">
+<i class="bi bi-telephone-fill"></i>
+<span>Call</span>
+</button>
+<div class="phone-called-by" id="leadCalledBy">Not called yet</div>
+<div class="sold-by-detail" hidden="" id="soldByDetail"></div>
+<div aria-hidden="true" class="sound-line"><span></span></div>
+</section>
+</div>
+<div class="detail-toolbar">
+<nav aria-label="Lead sections" class="tabs">
+<button class="tab active" data-tab="detailsPanel" type="button">Details</button>
+<button class="tab" data-tab="followupPanel" type="button">Follow-up</button>
+<button class="tab" data-tab="quickPanel" type="button">Quick Info</button>
+</nav>
+<footer class="bottom-actions">
+<button class="secondary-action" id="quickNotesButton" type="button"><i class="bi bi-journal-text"></i> Quick Notes</button>
+<button class="done-action" id="doneButton" type="button"><i class="bi bi-check2-circle"></i> Done</button>
+</footer>
+</div>
+<section class="panel active" id="detailsPanel">
+<div class="followup-intro details-intro">
+<span class="followup-kicker">LEAD INFORMATION</span>
+<h2>Details</h2>
+<p>Contact and business information for this lead.</p>
+</div>
+<div class="desktop-panel-grid details-layout"><div class="panel-column"><article class="card details-card">
+<div class="detail-row">
+<span class="row-icon"><i class="bi bi-buildings"></i></span>
+<div><span>Company Name</span><strong id="leadCompany"></strong></div>
+</div>
+<div class="detail-row">
+<span class="row-icon"><i class="bi bi-person"></i></span>
+<div><span>Name</span><strong id="leadName"></strong></div>
+</div>
+<div class="detail-row">
+<span class="row-icon"><i class="bi bi-envelope"></i></span>
+<div><span>Email</span><a href="#" id="leadEmail"></a></div>
+</div>
+<div class="detail-row">
+<span class="row-icon"><i class="bi bi-globe2"></i></span>
+<div><span>Site HTML</span><a href="#" id="leadSite" rel="noreferrer" target="_blank"></a></div>
+</div>
+<div class="detail-row">
+<span class="row-icon"><i class="bi bi-calendar3"></i></span>
+<div><span>Site Age</span><strong id="leadAge"></strong></div>
+</div>
+<div class="detail-row no-border">
+<span class="row-icon"><i class="bi bi-exclamation-square"></i></span>
+<div><span>Main Issues</span><strong id="leadIssue"></strong></div>
+</div>
+</article><article class="card status-card">
+<div class="status-section">
+<h2>Answer Status</h2>
+<div class="status-grid two">
+<button class="select-button status-select" data-field="answerStatus" data-value="Answered" type="button">
+<span class="status-icon"><i class="bi bi-check-lg"></i></span> Answered
               </button>
-              <button class="select-button status-select" data-field="answerStatus" data-value="No Answer" type="button">
-                <span class="status-icon"><i class="bi bi-x-lg"></i></span> No Answer
+<button class="select-button status-select" data-field="answerStatus" data-value="No Answer" type="button">
+<span class="status-icon"><i class="bi bi-x-lg"></i></span> No Answer
               </button>
-            </div>
-          </div>
-          <div class="card-divider"></div>
-          <div class="status-section">
-            <h2>Mood</h2>
-            <div class="mood-grid">
-              <button class="mood-button" data-field="mood" data-value="Positive" type="button" aria-label="Positive mood"><i class="bi bi-emoji-smile"></i></button>
-              <button class="mood-button" data-field="mood" data-value="Neutral" type="button" aria-label="Neutral mood"><i class="bi bi-emoji-neutral"></i></button>
-              <button class="mood-button" data-field="mood" data-value="Negative" type="button" aria-label="Negative mood"><i class="bi bi-emoji-frown"></i></button>
-            </div>
-          </div>
-        </article>
-
-        <article class="card history-card">
-          <button class="history-toggle-button" id="historyToggleButton" type="button" aria-expanded="true">
-            <span class="history-toggle-left"><span class="heading-icon"><i class="bi bi-clock-history"></i></span><span>History</span></span>
-            <i class="bi bi-chevron-down history-toggle-chevron"></i>
-          </button>
-          <div class="history-list" id="leadHistoryList"></div>
-        </article>
-      </section>
-
-      <section class="panel" id="followupPanel">
-        <div class="followup-intro">
-          <span class="followup-kicker">NEXT STEP</span>
-          <h2>Follow-up</h2>
-          <p>Keep only what matters for the next contact.</p>
-        </div>
-
-        <article class="card followup-card outcome-card">
-          <div class="followup-card-head">
-            <span class="followup-card-icon"><i class="bi bi-chat-square-text"></i></span>
-            <div>
-              <h3>Call Outcome</h3>
-              <p>What happened on this call?</p>
-            </div>
-          </div>
-          <label class="followup-control">
-            <span class="sr-only">Outcome</span>
-            <select id="outcomeField" class="custom-dropdown followup-select" data-save="outcome">
-              <option value="">No outcome selected</option>
-              <option>Left Voicemail</option>
-              <option>Spoke — Follow Up</option>
-              <option>Interested</option>
-              <option>Not Interested</option>
-              <option>Wrong Number</option>
-              <option>No Answer</option>
-            </select>
-          </label>
-        </article>
-
-        <article class="card followup-card">
-          <div class="followup-card-head">
-            <span class="followup-card-icon"><i class="bi bi-telephone-forward"></i></span>
-            <div>
-              <h3>Callback</h3>
-              <p>Set the exact date and time to call again.</p>
-            </div>
-          </div>
-          <div class="followup-card-body">
-            <button class="add-schedule-button callback-add" id="addCallbackButton" type="button"><i class="bi bi-plus-lg"></i> Add Callback</button>
-            <div class="schedule-editor" id="callbackEditor" hidden>
-              <div class="schedule-editor-head">
-                <span><i class="bi bi-calendar3"></i> Scheduled callback</span>
-                <button class="clear-schedule" id="clearCallbackButton" type="button">Remove</button>
-              </div>
-              <div class="schedule-subtitle">DATE</div>
-              <div class="date-dropdowns" aria-label="Callback date">
-                <label><span>Month</span><select class="custom-dropdown" id="callbackMonth" aria-label="Callback month"></select></label>
-                <label><span>Day</span><select class="custom-dropdown" id="callbackDay" aria-label="Callback day"></select></label>
-                <label><span>Year</span><select class="custom-dropdown" id="callbackYear" aria-label="Callback year"></select></label>
-              </div>
-              <div class="schedule-subtitle time-title">TIME <span>optional</span></div>
-              <div class="time-control" aria-label="Callback time">
-                <button class="time-display-button" id="callbackTimeButton" type="button" aria-expanded="false">
-                  <i class="bi bi-clock"></i><span id="callbackTimeDisplay">00:00 AM</span><i class="bi bi-chevron-down time-chevron"></i>
-                </button>
-                <div class="time-picker-popover" id="callbackTimePicker" hidden>
-                  <div class="time-picker-row">
-                    <select class="custom-dropdown time-part" id="callbackHour" aria-label="Callback hour"><option value="">00</option></select>
-                    <span class="time-separator">:</span>
-                    <select class="custom-dropdown time-part" id="callbackMinute" aria-label="Callback minutes"><option value="">00</option></select>
-                    <select class="custom-dropdown time-part period-part" id="callbackPeriod" aria-label="Callback AM or PM"><option value="">AM</option><option value="AM">AM</option><option value="PM">PM</option></select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <article class="card followup-card">
-          <div class="followup-card-head">
-            <span class="followup-card-icon"><i class="bi bi-person-lines-fill"></i></span>
-            <div>
-              <h3>Contact Preference</h3>
-              <p>How and when do they want to be contacted?</p>
-            </div>
-          </div>
-          <div class="followup-card-body compact-stack">
-            <label class="followup-labeled-control">
-              <span>Preferred method</span>
-              <select id="preferredContact" class="custom-dropdown followup-select" data-save="preferredContact" aria-label="Preferred contact method">
-                <option value="">None selected</option>
-                <option value="Call">Call</option>
-                <option value="Text">Text</option>
-                <option value="Email">Email</option>
-                <option value="Zoom">Zoom</option>
-              </select>
-            </label>
-
-            <div class="preference-divider"></div>
-
-            <div class="preferred-schedule-block">
-              <div class="inline-label-row">
-                <span>Preferred date / time</span>
-                <small>Optional</small>
-              </div>
-              <button class="add-schedule-button" id="addPreferredButton" type="button"><i class="bi bi-plus-lg"></i> Add Preferred Date / Time</button>
-              <div class="schedule-editor" id="preferredEditor" hidden>
-                <div class="schedule-editor-head">
-                  <span><i class="bi bi-calendar3"></i> Preferred contact</span>
-                  <button class="clear-schedule" id="clearPreferredButton" type="button">Remove</button>
-                </div>
-                <div class="schedule-subtitle">DATE</div>
-                <div class="date-dropdowns" aria-label="Preferred contact date">
-                  <label><span>Month</span><select class="custom-dropdown" id="preferredMonth" aria-label="Preferred month"></select></label>
-                  <label><span>Day</span><select class="custom-dropdown" id="preferredDay" aria-label="Preferred day"></select></label>
-                  <label><span>Year</span><select class="custom-dropdown" id="preferredYear" aria-label="Preferred year"></select></label>
-                </div>
-                <div class="schedule-subtitle time-title">TIME <span>optional</span></div>
-                <div class="time-control" aria-label="Preferred contact time">
-                  <button class="time-display-button" id="preferredTimeButton" type="button" aria-expanded="false">
-                    <i class="bi bi-clock"></i><span id="preferredTimeDisplay">00:00 AM</span><i class="bi bi-chevron-down time-chevron"></i>
-                  </button>
-                  <div class="time-picker-popover" id="preferredTimePicker" hidden>
-                    <div class="time-picker-row">
-                      <select class="custom-dropdown time-part" id="preferredHour" aria-label="Preferred hour"><option value="">00</option></select>
-                      <span class="time-separator">:</span>
-                      <select class="custom-dropdown time-part" id="preferredMinute" aria-label="Preferred minutes"><option value="">00</option></select>
-                      <select class="custom-dropdown time-part period-part" id="preferredPeriod" aria-label="Preferred AM or PM"><option value="">AM</option><option value="AM">AM</option><option value="PM">PM</option></select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <article class="card followup-card availability-card">
-          <div class="followup-card-head">
-            <span class="followup-card-icon"><i class="bi bi-clock"></i></span>
-            <div>
-              <h3>General Availability</h3>
-              <p>Useful when there is no exact appointment.</p>
-            </div>
-          </div>
-          <div class="followup-card-body">
-            <fieldset class="followup-fieldset">
-              <legend>Best days</legend>
-              <div class="day-grid" id="dayGrid">
-                <button class="multi-choice" data-multi="days" data-value="M" type="button">M</button>
-                <button class="multi-choice" data-multi="days" data-value="T" type="button">T</button>
-                <button class="multi-choice" data-multi="days" data-value="W" type="button">W</button>
-                <button class="multi-choice" data-multi="days" data-value="Th" type="button">Th</button>
-                <button class="multi-choice" data-multi="days" data-value="F" type="button">F</button>
-                <button class="multi-choice" data-multi="days" data-value="S" type="button">S</button>
-              </div>
-            </fieldset>
-            <fieldset class="followup-fieldset time-preference-fieldset">
-              <legend>Best time</legend>
-              <div class="choice-grid two followup-time-grid">
-                <button class="choice-button" data-field="timePreference" data-value="Morning" type="button"><i class="bi bi-sunrise"></i> Morning</button>
-                <button class="choice-button" data-field="timePreference" data-value="Noon" type="button"><i class="bi bi-sun"></i> Noon</button>
-                <button class="choice-button" data-field="timePreference" data-value="Night" type="button"><i class="bi bi-moon-stars"></i> Night</button>
-                <button class="choice-button" id="specificTimeChoice" data-field="timePreference" data-value="Specific Time" type="button"><i class="bi bi-clock-history"></i> Specific</button>
-              </div>
-              <div class="specific-time-control" id="specificTimeControl" hidden>
-                <button class="time-display-button" id="specificTimeButton" type="button" aria-expanded="false">
-                  <i class="bi bi-clock"></i><span id="specificTimeDisplay">00:00 AM</span><i class="bi bi-chevron-down time-chevron"></i>
-                </button>
-                <div class="time-picker-popover" id="specificTimePicker" hidden>
-                  <div class="time-picker-row">
-                    <select class="custom-dropdown time-part" id="specificHour" aria-label="Specific hour"><option value="">00</option></select>
-                    <span class="time-separator">:</span>
-                    <select class="custom-dropdown time-part" id="specificMinute" aria-label="Specific minutes"><option value="">00</option></select>
-                    <select class="custom-dropdown time-part period-part" id="specificPeriod" aria-label="Specific AM or PM"><option value="">AM</option><option value="AM">AM</option><option value="PM">PM</option></select>
-                  </div>
-                </div>
-              </div>
-            </fieldset>
-          </div>
-        </article>
-      </section>
-
-      <section class="panel" id="quickPanel">
-        <div class="business-quick-intro">
-          <span class="followup-kicker">STEADY HANDS OPERATIONS</span>
-          <h2>Call Reference</h2>
-          <p>Quick scripts and pricing reference while you are on a call.</p>
-        </div>
-
-        <article class="business-script-card script-outdated">
-          <div class="business-script-title"><i class="bi bi-calendar3"></i><span>OUTDATED</span></div>
-          <p>“Hey — my name is <mark class="script-user-name">User</mark>. I was <mark>looking</mark> at your website earlier and <mark>noticed</mark> a couple things that seem pretty <mark>dated</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>redesign</mark> and <mark>upgrade</mark> older sites. I just wanted to see if that’s something you’d be <mark>open</mark> to talking about.”</p>
-        </article>
-
-        <article class="business-script-card script-nosite">
-          <div class="business-script-title"><i class="bi bi-globe2"></i><span>NO SITE</span></div>
-          <p>“Hey — my name is <mark class="script-user-name">User</mark>. I was looking into your business earlier and I <mark>couldn’t find</mark> a website. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with a <mark>professional site</mark>. I just wanted to see if that’s something <mark>you’re considering</mark>.”</p>
-        </article>
-
-        <article class="business-script-card script-broken">
-          <div class="business-script-title"><i class="bi bi-link-45deg"></i><span>BROKEN SITE</span></div>
-          <p>“Hey — my name is <mark class="script-user-name">User</mark>, I was looking at your website earlier and I <mark>noticed</mark> a couple parts <mark>weren’t working properly</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with <mark>professional sites</mark>; or if you’re just looking for a <mark>quick fix</mark> I can look to <mark>get you a quote</mark>. Is that something you’d be <mark>interested in getting fixed</mark>?”</p>
-        </article>
-
-        <article class="business-script-card script-spanish">
-          <div class="business-script-title"><i class="bi bi-chat-dots-fill"></i><span>SPANISH</span></div>
-          <p>“No hay problema. Un <mark>miembro de mi equipo habla español</mark>. Puedo pedirle que la llame?”</p>
-        </article>
-
-        <article class="card pricing-reference-card">
-          <div class="card-heading"><span class="heading-icon"><i class="bi bi-currency-dollar"></i></span><h2>Prices</h2></div>
-          <a class="business-site-link" href="http://steadyhandsop.com" target="_blank" rel="noreferrer"><i class="bi bi-globe2"></i> steadyhandsop.com</a>
-
-          <div class="pricing-group">
-            <div class="pricing-group-title">WEBSITE DEVELOPMENT</div>
-            <div class="price-reference-list">
-              <div class="price-reference-row"><div><strong>Personal Site</strong><span>Up to 3 pages</span></div><b>$349</b></div>
-              <div class="price-reference-row"><div><strong>Business Site</strong><span>Up to 5 pages</span></div><b>$549</b></div>
-              <div class="price-reference-row"><div><strong>Personal Site</strong><span>Statistics, Management, Users</span></div><b>$749</b></div>
-              <div class="price-reference-row extra-price"><div><strong>Additional Pages</strong><span>Added beyond the included page limit</span></div><b>+$50 / page</b></div>
-            </div>
-          </div>
-
-          <div class="pricing-group">
-            <div class="pricing-group-title">HOSTING</div>
-            <div class="price-reference-list">
-              <div class="price-reference-row"><div><strong>Standard Hosting</strong><span>Lowest plan</span></div><b>$10 / month</b></div>
-              <div class="price-reference-row"><div><strong>Backend Hosting</strong><span>Live database — lowest plan</span></div><b>$20 / month</b></div>
-            </div>
-          </div>
-
-          <div class="pricing-group">
-            <div class="pricing-group-title">SITE RENEWAL</div>
-            <div class="price-reference-list">
-              <div class="price-reference-row"><div><strong>Personal Site Renewal</strong><span>Up to 3 pages</span></div><b>$279</b></div>
-              <div class="price-reference-row"><div><strong>Business Site Renewal</strong><span>Up to 5 pages</span></div><b>$489</b></div>
-              <div class="price-reference-row extra-price"><div><strong>Additional Pages</strong><span>Added beyond the included page limit</span></div><b>+$50 / page</b></div>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <footer class="bottom-actions">
-        <button class="secondary-action" id="quickNotesButton" type="button"><i class="bi bi-journal-text"></i> Quick Notes</button>
-        <button class="done-action" id="doneButton" type="button"><i class="bi bi-check2-circle"></i> Done</button>
-      </footer>
-    </section>
-  </main>
-
-  <!-- CUSTOM SOURCE MODAL -->
-  <div class="modal-backdrop" id="customSourceModal" aria-hidden="true">
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="customSourceTitle">
-      <div class="modal-heading">
-        <div><span class="section-kicker">FOUND ON</span><h2 id="customSourceTitle">Add Other Source</h2></div>
-        <button class="icon-button bare modal-close" data-close="customSourceModal" type="button" aria-label="Close"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <p class="modal-help">Type where you found this lead.</p>
-      <label class="stacked-field custom-source-field">
-        <span>Source</span>
-        <input id="customSourceInput" type="text" autocomplete="off" placeholder="e.g. Local Facebook Group">
-      </label>
-      <div class="modal-actions">
-        <button class="modal-secondary" data-close="customSourceModal" type="button">Cancel</button>
-        <button class="modal-primary" id="saveCustomSourceButton" type="button">Add Source</button>
-      </div>
-    </section>
-  </div>
-
-  <!-- QUICK NOTES MODAL -->
-  <div class="modal-backdrop" id="quickNotesModal" aria-hidden="true">
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="quickNotesTitle">
-      <div class="modal-heading">
-        <div><span class="section-kicker">FAST ENTRY</span><h2 id="quickNotesTitle">Quick Notes</h2></div>
-        <button class="icon-button bare modal-close" data-close="quickNotesModal" type="button" aria-label="Close"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <p class="modal-help">Anything saved here will be appended to the lead's Notes on a new line.</p>
-      <textarea id="quickNotesInput" rows="7" placeholder="Type a quick note..."></textarea>
-      <div class="modal-actions">
-        <button class="modal-secondary" data-close="quickNotesModal" type="button">Cancel</button>
-        <button class="modal-primary" id="saveQuickNote" type="button">Add Note</button>
-      </div>
-    </section>
-  </div>
-
-  <!-- DONE / LABEL MODAL -->
-  <div class="modal-backdrop" id="doneModal" aria-hidden="true">
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
-      <div class="modal-heading">
-        <div><span class="section-kicker">FINISH CALL</span><h2 id="doneTitle">Label this lead</h2></div>
-        <button class="icon-button bare modal-close" data-close="doneModal" type="button" aria-label="Close"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <p class="modal-help">Choose a tag. The lead will move to Follow-ups when you finish.</p>
-      <div class="tag-options" id="tagOptions">
-        <button class="tag-choice" data-tag="Sold" type="button"><i class="bi bi-trophy"></i> Sold</button>
-        <button class="tag-choice" data-tag="Skeptical" type="button"><i class="bi bi-question-circle"></i> Skeptical</button>
-        <button class="tag-choice" data-tag="Needs More Info" type="button"><i class="bi bi-info-circle"></i> Needs More Info</button>
-        <button class="tag-choice" data-tag="Interested" type="button"><i class="bi bi-star"></i> Interested</button>
-        <button class="tag-choice" data-tag="Call Back" type="button"><i class="bi bi-telephone-forward"></i> Call Back</button>
-        <button class="tag-choice" data-tag="No Answer" type="button"><i class="bi bi-telephone-x"></i> No Answer</button>
-        <button class="tag-choice" data-tag="Not Interested" type="button"><i class="bi bi-slash-circle"></i> Not Interested</button>
-        <button class="tag-choice secondary-tag-choice" id="spanishTagChoice" data-secondary-tag="spanishPossible" type="button"><i class="bi bi-translate"></i> Spanish?</button>
-      </div>
-      <div class="modal-actions">
-        <button class="modal-secondary" data-close="doneModal" type="button">Cancel</button>
-        <button class="modal-primary" id="finishLeadButton" type="button" disabled>Done</button>
-      </div>
-    </section>
-  </div>
-
-  <!-- NEW LEAD MODAL -->
-  <div class="modal-backdrop" id="newLeadModal" aria-hidden="true">
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="newLeadTitle">
-      <div class="modal-heading">
-        <div><span class="section-kicker" id="newLeadKicker">ADD TO INBOX</span><h2 id="newLeadTitle">Add Leads</h2></div>
-        <button class="icon-button bare modal-close" data-close="newLeadModal" type="button" aria-label="Close"><i class="bi bi-x-lg"></i></button>
-      </div>
-
-      <div class="import-tabs" role="tablist" aria-label="Add lead method">
-        <button class="import-tab active" id="singleLeadTab" type="button">Single Lead</button>
-        <button class="import-tab" id="bulkLeadTab" type="button">Import Multiple</button>
-      </div>
-
-      <div class="lead-entry-panel active" id="singleLeadPanel">
-        <p class="modal-help optional-fields-help">Every field is optional. Blank fields are saved as empty.</p>
-        <div class="modal-form">
-          <label><span>Company Name</span><input id="newCompany" type="text" placeholder="Company name"></label>
-          <label><span>Phone Number</span><input id="newPhone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="13" placeholder="(000)000-0000"></label>
-          <label><span>Email</span><input id="newEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
-          <label><span>Name</span><input id="newName" type="text" placeholder="Lead name"></label>
-          <label><span>Website</span><input id="newSite" type="url" placeholder="https://example.com"></label>
-          <label><span>Site Age</span><input id="newAge" type="text" placeholder="e.g. 7 years"></label>
-          <label><span>Main Issue</span><input id="newIssue" type="text" placeholder="What needs improvement?"></label>
-        </div>
-        <div class="modal-actions">
-          <button class="modal-secondary" data-close="newLeadModal" type="button">Cancel</button>
-          <button class="modal-primary" id="createLeadButton" type="button">Add Lead</button>
-        </div>
-      </div>
-
-      <div class="lead-entry-panel" id="bulkLeadPanel">
-        <p class="modal-help import-help">Import a JSON file containing an array of leads. Empty fields are allowed and will stay empty.</p>
-        <label class="file-import-box" for="bulkLeadFile">
-          <i class="bi bi-file-earmark-arrow-up"></i>
-          <span><strong>Choose JSON file</strong><small>Use an array, or an object with a <code>leads</code> array.</small></span>
-          <input id="bulkLeadFile" type="file" accept=".json,.txt,application/json,text/plain">
-        </label>
-        <div class="import-or"><span>OR PASTE JSON</span></div>
-        <textarea id="bulkLeadJson" rows="9" spellcheck="false" placeholder="Paste JSON here..."></textarea>
-        <div class="import-status" id="importStatus" aria-live="polite"></div>
-        <div class="modal-actions">
-          <button class="modal-secondary" data-close="newLeadModal" type="button">Cancel</button>
-          <button class="modal-primary" id="importLeadsButton" type="button">Import Leads</button>
-        </div>
-      </div>
-    </section>
-  </div>
+</div>
+</div>
+</article><article class="card mood-card">
+<div class="status-section">
+<h2>Mood</h2>
+<div class="mood-grid">
+<button aria-label="Positive mood" class="mood-button" data-field="mood" data-value="Positive" type="button"><i class="bi bi-emoji-smile"></i></button>
+<button aria-label="Neutral mood" class="mood-button" data-field="mood" data-value="Neutral" type="button"><i class="bi bi-emoji-neutral"></i></button>
+<button aria-label="Negative mood" class="mood-button" data-field="mood" data-value="Negative" type="button"><i class="bi bi-emoji-frown"></i></button>
+</div>
+</div>
+</article><article class="card history-card">
+<button aria-expanded="true" class="history-toggle-button" id="historyToggleButton" type="button">
+<span class="history-toggle-left"><span class="heading-icon"><i class="bi bi-clock-history"></i></span><span>History</span></span>
+<i class="bi bi-chevron-down history-toggle-chevron"></i>
+</button>
+<div class="history-list" id="leadHistoryList"></div>
+</article></div><div class="panel-column"><article class="card form-card lead-notes-card">
+<div class="card-heading"><span class="heading-icon"><i class="bi bi-journal-text"></i></span><h2>Lead Info</h2></div>
+<section aria-labelledby="quickTagsTitle" class="quick-tags-section">
+<div class="quick-tags-heading">
+<div>
+<span id="quickTagsTitle">Tags</span>
+<small>Tap any tag to toggle it</small>
+</div>
+</div>
+<div class="quick-tags-list" id="quickTagsList"></div>
+</section>
+<section aria-labelledby="sourceTagsTitle" class="quick-tags-section source-tags-section">
+<div class="quick-tags-heading">
+<div>
+<span id="sourceTagsTitle">Found On</span>
+<small>Where you found this lead</small>
+</div>
+</div>
+<div class="quick-tags-list" id="sourceTagsList"></div>
+<button aria-expanded="false" class="source-tags-expand" id="sourceTagsExpandButton" type="button">
+<span>More Sources</span><i class="bi bi-chevron-down"></i>
+</button>
+</section>
+<label class="stacked-field">
+<span>Main Issue / Concerns</span>
+<textarea data-save="concerns" id="concernsField" placeholder="Type concerns, objections, pain points, or anything important…" rows="5"></textarea>
+</label>
+</article></div></div></section>
+<section class="panel" id="followupPanel">
+<div class="followup-intro">
+<span class="followup-kicker">NEXT STEP</span>
+<h2>Follow-up</h2>
+<p>Keep only what matters for the next contact.</p>
+</div>
+<div class="desktop-panel-grid followup-layout"><div class="panel-column"><article class="card followup-card outcome-card">
+<div class="followup-card-head">
+<span class="followup-card-icon"><i class="bi bi-chat-square-text"></i></span>
+<div>
+<h3>Call Outcome</h3>
+<p>What happened on this call?</p>
+</div>
+</div>
+<label class="followup-control">
+<span class="sr-only">Outcome</span>
+<select class="custom-dropdown followup-select" data-save="outcome" id="outcomeField">
+<option value="">No outcome selected</option>
+<option>Left Voicemail</option>
+<option>Spoke — Follow Up</option>
+<option>Interested</option>
+<option>Not Interested</option>
+<option>Wrong Number</option>
+<option>No Answer</option>
+</select>
+</label>
+</article><article class="card followup-card contact-preference-card">
+<div class="followup-card-head">
+<span class="followup-card-icon"><i class="bi bi-person-lines-fill"></i></span>
+<div>
+<h3>Contact Preference</h3>
+<p>How and when do they want to be contacted?</p>
+</div>
+</div>
+<div class="followup-card-body compact-stack">
+<label class="followup-labeled-control">
+<span>Preferred method</span>
+<select aria-label="Preferred contact method" class="custom-dropdown followup-select" data-save="preferredContact" id="preferredContact">
+<option value="">None selected</option>
+<option value="Call">Call</option>
+<option value="Text">Text</option>
+<option value="Email">Email</option>
+<option value="Zoom">Zoom</option>
+</select>
+</label>
+<div class="preference-divider"></div>
+<div class="preferred-schedule-block">
+<div class="inline-label-row">
+<span>Preferred date / time</span>
+<small>Optional</small>
+</div>
+<button class="add-schedule-button" id="addPreferredButton" type="button"><i class="bi bi-plus-lg"></i> Add Preferred Date / Time</button>
+<div class="schedule-editor" hidden="" id="preferredEditor">
+<div class="schedule-editor-head">
+<span><i class="bi bi-calendar3"></i> Preferred contact</span>
+<button class="clear-schedule" id="clearPreferredButton" type="button">Remove</button>
+</div>
+<div class="schedule-subtitle">DATE</div>
+<div aria-label="Preferred contact date" class="date-dropdowns">
+<label><span>Month</span><select aria-label="Preferred month" class="custom-dropdown" id="preferredMonth"></select></label>
+<label><span>Day</span><select aria-label="Preferred day" class="custom-dropdown" id="preferredDay"></select></label>
+<label><span>Year</span><select aria-label="Preferred year" class="custom-dropdown" id="preferredYear"></select></label>
+</div>
+<div class="schedule-subtitle time-title">TIME <span>optional</span></div>
+<div aria-label="Preferred contact time" class="time-control">
+<button aria-expanded="false" class="time-display-button" id="preferredTimeButton" type="button">
+<i class="bi bi-clock"></i><span id="preferredTimeDisplay">00:00 AM</span><i class="bi bi-chevron-down time-chevron"></i>
+</button>
+<div class="time-picker-popover" hidden="" id="preferredTimePicker">
+<div class="time-picker-row">
+<select aria-label="Preferred hour" class="custom-dropdown time-part" id="preferredHour"><option value="">00</option></select>
+<span class="time-separator">:</span>
+<select aria-label="Preferred minutes" class="custom-dropdown time-part" id="preferredMinute"><option value="">00</option></select>
+<select aria-label="Preferred AM or PM" class="custom-dropdown time-part period-part" id="preferredPeriod"><option value="">AM</option><option value="AM">AM</option><option value="PM">PM</option></select>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</article></div><div class="panel-column followup-preferences-column"><article class="card followup-card availability-card">
+<div class="followup-card-head">
+<span class="followup-card-icon"><i class="bi bi-clock"></i></span>
+<div>
+<h3>General Availability</h3>
+<p>Useful when there is no exact appointment.</p>
+</div>
+</div>
+<div class="followup-card-body">
+<fieldset class="followup-fieldset">
+<legend>Best days</legend>
+<div class="day-grid" id="dayGrid">
+<button class="multi-choice" data-multi="days" data-value="M" type="button">M</button>
+<button class="multi-choice" data-multi="days" data-value="T" type="button">T</button>
+<button class="multi-choice" data-multi="days" data-value="W" type="button">W</button>
+<button class="multi-choice" data-multi="days" data-value="Th" type="button">Th</button>
+<button class="multi-choice" data-multi="days" data-value="F" type="button">F</button>
+<button class="multi-choice" data-multi="days" data-value="S" type="button">S</button>
+</div>
+</fieldset>
+<fieldset class="followup-fieldset time-preference-fieldset">
+<legend>Best time</legend>
+<div class="choice-grid two followup-time-grid">
+<button class="choice-button" data-field="timePreference" data-value="Morning" type="button"><i class="bi bi-sunrise"></i> Morning</button>
+<button class="choice-button" data-field="timePreference" data-value="Noon" type="button"><i class="bi bi-sun"></i> Noon</button>
+<button class="choice-button" data-field="timePreference" data-value="Night" type="button"><i class="bi bi-moon-stars"></i> Night</button>
+<button class="choice-button" data-field="timePreference" data-value="Specific Time" id="specificTimeChoice" type="button"><i class="bi bi-clock-history"></i> Specific</button>
+</div>
+<div class="specific-time-control" hidden="" id="specificTimeControl">
+<button aria-expanded="false" class="time-display-button" id="specificTimeButton" type="button">
+<i class="bi bi-clock"></i><span id="specificTimeDisplay">00:00 AM</span><i class="bi bi-chevron-down time-chevron"></i>
+</button>
+<div class="time-picker-popover" hidden="" id="specificTimePicker">
+<div class="time-picker-row">
+<select aria-label="Specific hour" class="custom-dropdown time-part" id="specificHour"><option value="">00</option></select>
+<span class="time-separator">:</span>
+<select aria-label="Specific minutes" class="custom-dropdown time-part" id="specificMinute"><option value="">00</option></select>
+<select aria-label="Specific AM or PM" class="custom-dropdown time-part period-part" id="specificPeriod"><option value="">AM</option><option value="AM">AM</option><option value="PM">PM</option></select>
+</div>
+</div>
+</div>
+</fieldset>
+</div>
+</article><article class="card followup-card">
+<div class="followup-card-head">
+<span class="followup-card-icon"><i class="bi bi-telephone-forward"></i></span>
+<div>
+<h3>Callback</h3>
+<p>Set the exact date and time to call again.</p>
+</div>
+</div>
+<div class="followup-card-body">
+<button class="add-schedule-button callback-add" id="addCallbackButton" type="button"><i class="bi bi-plus-lg"></i> Add Callback</button>
+<div class="schedule-editor" hidden="" id="callbackEditor">
+<div class="schedule-editor-head">
+<span><i class="bi bi-calendar3"></i> Scheduled callback</span>
+<button class="clear-schedule" id="clearCallbackButton" type="button">Remove</button>
+</div>
+<div class="schedule-subtitle">DATE</div>
+<div aria-label="Callback date" class="date-dropdowns">
+<label><span>Month</span><select aria-label="Callback month" class="custom-dropdown" id="callbackMonth"></select></label>
+<label><span>Day</span><select aria-label="Callback day" class="custom-dropdown" id="callbackDay"></select></label>
+<label><span>Year</span><select aria-label="Callback year" class="custom-dropdown" id="callbackYear"></select></label>
+</div>
+<div class="schedule-subtitle time-title">TIME <span>optional</span></div>
+<div aria-label="Callback time" class="time-control">
+<button aria-expanded="false" class="time-display-button" id="callbackTimeButton" type="button">
+<i class="bi bi-clock"></i><span id="callbackTimeDisplay">00:00 AM</span><i class="bi bi-chevron-down time-chevron"></i>
+</button>
+<div class="time-picker-popover" hidden="" id="callbackTimePicker">
+<div class="time-picker-row">
+<select aria-label="Callback hour" class="custom-dropdown time-part" id="callbackHour"><option value="">00</option></select>
+<span class="time-separator">:</span>
+<select aria-label="Callback minutes" class="custom-dropdown time-part" id="callbackMinute"><option value="">00</option></select>
+<select aria-label="Callback AM or PM" class="custom-dropdown time-part period-part" id="callbackPeriod"><option value="">AM</option><option value="AM">AM</option><option value="PM">PM</option></select>
+</div>
+</div>
+</div>
+</div>
+</div>
+</article></div></div></section>
+<section class="panel" id="quickPanel">
+<div class="business-quick-intro">
+<span class="followup-kicker">STEADY HANDS OPERATIONS</span>
+<h2>Quick Info</h2>
+<p>Scripts, pricing, and useful information for this lead.</p>
+</div>
+<div class="desktop-panel-grid quick-layout"><div class="panel-column"><article class="business-script-card script-outdated">
+<div class="business-script-title"><i class="bi bi-calendar3"></i><span>OUTDATED</span></div>
+<p>“Hey — my name is <mark class="script-user-name">User</mark>. I was <mark>looking</mark> at your website earlier and <mark>noticed</mark> a couple things that seem pretty <mark>dated</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>redesign</mark> and <mark>upgrade</mark> older sites. I just wanted to see if that’s something you’d be <mark>open</mark> to talking about.”</p>
+</article><article class="business-script-card script-broken">
+<div class="business-script-title"><i class="bi bi-link-45deg"></i><span>BROKEN SITE</span></div>
+<p>“Hey — my name is <mark class="script-user-name">User</mark>, I was looking at your website earlier and I <mark>noticed</mark> a couple parts <mark>weren’t working properly</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with <mark>professional sites</mark>; or if you’re just looking for a <mark>quick fix</mark> I can look to <mark>get you a quote</mark>. Is that something you’d be <mark>interested in getting fixed</mark>?”</p>
+</article></div><div class="panel-column"><article class="business-script-card script-nosite">
+<div class="business-script-title"><i class="bi bi-globe2"></i><span>NO SITE</span></div>
+<p>“Hey — my name is <mark class="script-user-name">User</mark>. I was looking into your business earlier and I <mark>couldn’t find</mark> a website. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with a <mark>professional site</mark>. I just wanted to see if that’s something <mark>you’re considering</mark>.”</p>
+</article><article class="business-script-card script-spanish">
+<div class="business-script-title"><i class="bi bi-chat-dots-fill"></i><span>SPANISH</span></div>
+<p>“No hay problema. Un <mark>miembro de mi equipo habla español</mark>. Puedo pedirle que la llame?”</p>
+</article></div></div><article class="card pricing-reference-card">
+<div class="card-heading"><span class="heading-icon"><i class="bi bi-currency-dollar"></i></span><h2>Prices</h2></div>
+<a class="business-site-link" href="http://steadyhandsop.com" rel="noreferrer" target="_blank"><i class="bi bi-globe2"></i> steadyhandsop.com</a>
+<div class="pricing-group">
+<div class="pricing-group-title">WEBSITE DEVELOPMENT</div>
+<div class="price-reference-list">
+<div class="price-reference-row"><div><strong>Personal Site</strong><span>Up to 3 pages</span></div><b>$349</b></div>
+<div class="price-reference-row"><div><strong>Business Site</strong><span>Up to 5 pages</span></div><b>$549</b></div>
+<div class="price-reference-row"><div><strong>Personal Site</strong><span>Statistics, Management, Users</span></div><b>$749</b></div>
+<div class="price-reference-row extra-price"><div><strong>Additional Pages</strong><span>Added beyond the included page limit</span></div><b>+$50 / page</b></div>
+</div>
+</div>
+<div class="pricing-group">
+<div class="pricing-group-title">HOSTING</div>
+<div class="price-reference-list">
+<div class="price-reference-row"><div><strong>Standard Hosting</strong><span>Lowest plan</span></div><b>$10 / month</b></div>
+<div class="price-reference-row"><div><strong>Backend Hosting</strong><span>Live database — lowest plan</span></div><b>$20 / month</b></div>
+</div>
+</div>
+<div class="pricing-group">
+<div class="pricing-group-title">SITE RENEWAL</div>
+<div class="price-reference-list">
+<div class="price-reference-row"><div><strong>Personal Site Renewal</strong><span>Up to 3 pages</span></div><b>$279</b></div>
+<div class="price-reference-row"><div><strong>Business Site Renewal</strong><span>Up to 5 pages</span></div><b>$489</b></div>
+<div class="price-reference-row extra-price"><div><strong>Additional Pages</strong><span>Added beyond the included page limit</span></div><b>+$50 / page</b></div>
+</div>
+</div>
+</article></section>
+</section>
+</main>
+<!-- CUSTOM SOURCE MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="customSourceModal">
+<section aria-labelledby="customSourceTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">FOUND ON</span><h2 id="customSourceTitle">Add Other Source</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="customSourceModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<p class="modal-help">Type where you found this lead.</p>
+<label class="stacked-field custom-source-field">
+<span>Source</span>
+<input autocomplete="off" id="customSourceInput" placeholder="e.g. Local Facebook Group" type="text"/>
+</label>
+<div class="modal-actions">
+<button class="modal-secondary" data-close="customSourceModal" type="button">Cancel</button>
+<button class="modal-primary" id="saveCustomSourceButton" type="button">Add Source</button>
+</div>
+</section>
+</div>
+<!-- QUICK NOTES MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="quickNotesModal">
+<section aria-labelledby="quickNotesTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">FAST ENTRY</span><h2 id="quickNotesTitle">Quick Notes</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="quickNotesModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<p class="modal-help">All notes for this lead are kept here. Edit or add anything, then save.</p>
+<textarea id="quickNotesInput" placeholder="No notes yet. Type notes about this lead..." rows="10"></textarea>
+<div class="modal-actions">
+<button class="modal-secondary" data-close="quickNotesModal" type="button">Cancel</button>
+<button class="modal-primary" id="saveQuickNote" type="button">Save Notes</button>
+</div>
+</section>
+</div>
 
 
-  <!-- ACCOUNT / PASSWORD MODAL -->
-  <div class="modal-backdrop" id="accountModal" aria-hidden="true">
-    <section class="modal-card account-modal-card" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle">
-      <div class="modal-heading">
-        <div><span class="section-kicker">ACCOUNT</span><h2 id="accountModalTitle">Account Settings</h2></div>
-        <button class="icon-button bare modal-close" data-close="accountModal" type="button" aria-label="Close"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <p class="modal-help" id="accountEmailDisplay"></p>
-      <label class="stacked-field">
-        <span>New password</span>
-        <input id="accountNewPassword" type="password" autocomplete="new-password" placeholder="New password">
-      </label>
-      <label class="stacked-field">
-        <span>Confirm new password</span>
-        <input id="accountConfirmPassword" type="password" autocomplete="new-password" placeholder="Confirm new password">
-      </label>
-      <div class="password-requirement">Use at least 8 characters.</div>
-      <div class="auth-status account-auth-status" id="accountPasswordStatus" aria-live="polite"></div>
-      <div class="modal-actions">
-        <button class="modal-secondary" id="signOutButton" type="button">Sign Out</button>
-        <button class="modal-primary" id="changePasswordButton" type="button">Change Password</button>
-      </div>
-    </section>
-  </div>
 
-  <!-- PASSWORD RESET MODAL -->
-  <div class="modal-backdrop" id="passwordResetModal" aria-hidden="true">
-    <section class="modal-card account-modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordResetTitle">
-      <div class="modal-heading">
-        <div><span class="section-kicker">PASSWORD RECOVERY</span><h2 id="passwordResetTitle">Set a New Password</h2></div>
-      </div>
-      <p class="modal-help">Enter a new password for your account.</p>
-      <label class="stacked-field">
-        <span>New password</span>
-        <input id="recoveryNewPassword" type="password" autocomplete="new-password" placeholder="New password">
-      </label>
-      <label class="stacked-field">
-        <span>Confirm new password</span>
-        <input id="recoveryConfirmPassword" type="password" autocomplete="new-password" placeholder="Confirm new password">
-      </label>
-      <div class="password-requirement">Use at least 8 characters.</div>
-      <div class="auth-status account-auth-status" id="recoveryPasswordStatus" aria-live="polite"></div>
-      <button class="auth-button" id="saveRecoveryPassword" type="button">Save New Password</button>
-    </section>
-  </div>
+<!-- HISTORY DELETE CONFIRMATION -->
+<div aria-hidden="true" class="modal-backdrop" id="historyDeleteConfirmModal">
+<section aria-labelledby="historyDeleteConfirmTitle" aria-modal="true" class="modal-card compact-confirm-modal" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">HISTORY</span><h2 id="historyDeleteConfirmTitle">Delete this history item?</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="historyDeleteConfirmModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<p class="modal-help" id="historyDeleteConfirmText">Are you sure you want to delete this?</p>
+<div class="modal-actions">
+<button class="modal-secondary" data-close="historyDeleteConfirmModal" type="button">Cancel</button>
+<button class="modal-danger" id="confirmHistoryDeleteButton" type="button"><i class="bi bi-trash3"></i> Delete</button>
+</div>
+</section>
+</div>
 
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
-    }
+<!-- LEAD DELETE CONFIRMATION -->
+<div aria-hidden="true" class="modal-backdrop" id="leadDeleteConfirmModal">
+<section aria-labelledby="leadDeleteConfirmTitle" aria-modal="true" class="modal-card compact-confirm-modal" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">DELETE LEAD</span><h2 id="leadDeleteConfirmTitle">Delete this lead?</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="leadDeleteConfirmModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<p class="modal-help" id="leadDeleteConfirmText">Are you sure you want to permanently delete this lead?</p>
+<div class="modal-actions">
+<button class="modal-secondary" data-close="leadDeleteConfirmModal" type="button">Cancel</button>
+<button class="modal-danger" id="confirmLeadDeleteButton" type="button"><i class="bi bi-trash3"></i> Delete Lead</button>
+</div>
+</section>
+</div>
+
+<!-- ADD SITE AFTER REMOVING NO SITE -->
+<div aria-hidden="true" class="modal-backdrop" id="addSitePromptModal">
+<section aria-labelledby="addSitePromptTitle" aria-modal="true" class="modal-card add-site-prompt-modal" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">WEBSITE</span><h2 id="addSitePromptTitle">Add site?</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="addSitePromptModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<p class="modal-help">You removed the No Site tag. Add their website now, or leave it blank for later.</p>
+<label class="stacked-field add-site-prompt-field">
+<span>Website</span>
+<input id="addSitePromptInput" inputmode="url" placeholder="example.com" type="text" />
+</label>
+<div class="modal-actions">
+<button class="modal-secondary" id="addSiteNotNowButton" type="button">Not Now</button>
+<button class="modal-primary" id="saveAddedSiteButton" type="button"><i class="bi bi-check2"></i> Save</button>
+</div>
+</section>
+</div>
+
+<!-- PRE-CALL MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="preCallModal">
+<section aria-labelledby="preCallTitle" aria-modal="true" class="modal-card call-flow-modal" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">BEFORE YOU CALL</span><h2 id="preCallTitle">Call this lead</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="preCallModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<div class="precall-lead-name" id="preCallLeadName"></div>
+<div class="call-preview-grid">
+<div class="call-preview-card">
+<span class="call-preview-label"><i class="bi bi-journal-text"></i> Quick Notes</span>
+<div class="call-preview-value call-preview-notes" id="preCallNotes">No notes yet.</div>
+</div>
+<div class="call-preview-card">
+<span class="call-preview-label"><i class="bi bi-geo-alt-fill"></i> Found On</span>
+<div class="call-preview-value" id="preCallSources">No source saved.</div>
+</div>
+</div>
+<button aria-expanded="false" class="call-prompt-toggle" id="callPromptToggle" type="button"><i class="bi bi-chat-quote"></i><span>Show Call Prompt</span><i class="bi bi-chevron-down"></i></button>
+<div class="call-prompt-box" hidden="" id="callPromptBox">
+<div class="call-prompt-type" id="callPromptType"></div>
+<p id="callPromptText"></p>
+</div>
+<div class="modal-actions call-flow-actions">
+<button class="modal-secondary" data-close="preCallModal" type="button">Cancel</button>
+<button class="modal-primary call-now-button" id="startActualCallButton" type="button"><i class="bi bi-telephone-fill"></i> Call Now</button>
+</div>
+</section>
+</div>
+
+<!-- POST-CALL CHECK-IN MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="postCallModal">
+<section aria-labelledby="postCallTitle" aria-modal="true" class="modal-card call-flow-modal post-call-modal" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">CALL CHECK-IN</span><h2 id="postCallTitle">How did the call go?</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="postCallModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<div class="mini-question" id="postAnswerQuestion">
+<span class="mini-question-label">Did the lead pick up?</span>
+<div class="mini-choice-row two">
+<button class="mini-choice" data-post-answer="Answered" type="button"><i class="bi bi-telephone-inbound"></i> Yes</button>
+<button class="mini-choice" data-post-answer="No Answer" type="button"><i class="bi bi-telephone-x"></i> No</button>
+</div>
+</div>
+<div class="mini-question" id="postMoodQuestion">
+<span class="mini-question-label">Their mood</span>
+<div class="mini-choice-row three">
+<button aria-label="Positive" class="mini-choice mood-mini" data-post-mood="Positive" type="button"><i class="bi bi-emoji-smile"></i></button>
+<button aria-label="Neutral" class="mini-choice mood-mini" data-post-mood="Neutral" type="button"><i class="bi bi-emoji-neutral"></i></button>
+<button aria-label="Negative" class="mini-choice mood-mini" data-post-mood="Negative" type="button"><i class="bi bi-emoji-frown"></i></button>
+</div>
+</div>
+<div class="mini-question" id="postStatusQuestion">
+<span class="mini-question-label">Status tag</span>
+<div class="post-call-tags">
+<button class="mini-tag hot" data-post-tag="Hot Lead" type="button">🔥 Hot Lead</button>
+<button class="mini-tag" data-post-tag="Interested" type="button">Interested</button>
+<button class="mini-tag" data-post-tag="Call Back" type="button">Call Back</button>
+<button class="mini-tag" data-post-tag="Needs More Info" type="button">Needs More Info</button>
+<button class="mini-tag" data-post-tag="Skeptical" type="button">Skeptical</button>
+<button class="mini-tag danger" data-post-tag="Wrong Number" type="button">Wrong Number</button>
+<button class="mini-tag sold" data-post-tag="Sold" type="button"><i class="bi bi-trophy"></i> Sold</button>
+<button class="mini-tag" data-post-tag="Not Interested" type="button">Not Interested</button>
+<button class="mini-tag" data-post-tag="No Answer" type="button">No Answer</button>
+</div>
+</div>
+<div class="modal-actions call-flow-actions">
+<button class="modal-secondary" id="skipPostCallButton" type="button">Skip</button>
+<button class="modal-primary" id="savePostCallButton" type="button">Done</button>
+</div>
+</section>
+</div>
+
+
+<!-- SOLD CONFIRMATION MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="soldConfirmModal">
+<section aria-labelledby="soldConfirmTitle" aria-modal="true" class="modal-card sold-flow-modal" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">CONFIRM SALE</span><h2 id="soldConfirmTitle">Mark this lead as sold?</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="soldConfirmModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<p class="modal-help">This will move the lead to Sold, record who sold it, and prepare the client information for Kiara.</p>
+<div class="sold-confirm-summary" id="soldConfirmSummary"></div>
+<div class="modal-actions">
+<button class="modal-secondary" data-close="soldConfirmModal" type="button">Cancel</button>
+<button class="modal-primary sold-confirm-button" id="confirmSoldButton" type="button">Yes, this is sold</button>
+</div>
+</section>
+</div>
+
+<!-- SOLD PRODUCTS MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="soldProductsModal">
+<section aria-labelledby="soldProductsTitle" aria-modal="true" class="modal-card sold-flow-modal" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">WHAT ARE THEY BUYING?</span><h2 id="soldProductsTitle">Select products</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="soldProductsModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<p class="modal-help">Choose everything this client wants to purchase. The selections will be included in the email draft to Kiara.</p>
+<div class="sold-product-grid" id="soldProductGrid">
+<button class="sold-product-choice" data-sold-product="Personal Website" type="button"><i class="bi bi-person-vcard"></i><span>Personal Website</span></button>
+<button class="sold-product-choice" data-sold-product="Business Website" type="button"><i class="bi bi-buildings"></i><span>Business Website</span></button>
+<button class="sold-product-choice" data-sold-product="Admin Dashboard" type="button"><i class="bi bi-window-sidebar"></i><span>Admin Dashboard</span></button>
+<button class="sold-product-choice" data-sold-product="Website Hosting" type="button"><i class="bi bi-cloud"></i><span>Website Hosting</span></button>
+<button class="sold-product-choice" data-sold-product="Backend Hosting" type="button"><i class="bi bi-server"></i><span>Backend Hosting</span></button>
+</div>
+<div class="modal-actions">
+<button class="modal-secondary" data-close="soldProductsModal" type="button">Cancel</button>
+<button class="modal-primary" disabled="" id="createSoldEmailButton" type="button"><i class="bi bi-envelope"></i> Create Email Draft</button>
+</div>
+</section>
+</div>
+
+<!-- DONE / LABEL MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="doneModal">
+<section aria-labelledby="doneTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">FINISH CALL</span><h2 id="doneTitle">Label this lead</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="doneModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<p class="modal-help">Choose a tag. Sold leads move to Sold; every other result moves to Follow-ups.</p>
+<div class="tag-options" id="tagOptions">
+<button class="tag-choice" data-tag="Sold" type="button"><i class="bi bi-trophy"></i> Sold</button>
+<button class="tag-choice" data-tag="Skeptical" type="button"><i class="bi bi-question-circle"></i> Skeptical</button>
+<button class="tag-choice" data-tag="Needs More Info" type="button"><i class="bi bi-info-circle"></i> Needs More Info</button>
+<button class="tag-choice" data-tag="Hot Lead" type="button"><i class="bi bi-fire"></i> Hot Lead</button>
+<button class="tag-choice" data-tag="Interested" type="button"><i class="bi bi-star"></i> Interested</button>
+<button class="tag-choice" data-tag="Call Back" type="button"><i class="bi bi-telephone-forward"></i> Call Back</button>
+<button class="tag-choice" data-tag="No Answer" type="button"><i class="bi bi-telephone-x"></i> No Answer</button>
+<button class="tag-choice" data-tag="Wrong Number" type="button"><i class="bi bi-exclamation-octagon"></i> Wrong Number</button>
+<button class="tag-choice" data-tag="Not Interested" type="button"><i class="bi bi-slash-circle"></i> Not Interested</button>
+<button class="tag-choice secondary-tag-choice" data-secondary-tag="spanishPossible" id="spanishTagChoice" type="button"><i class="bi bi-translate"></i> Spanish?</button>
+</div>
+<div class="modal-actions">
+<button class="modal-secondary" data-close="doneModal" type="button">Cancel</button>
+<button class="modal-primary" disabled="" id="finishLeadButton" type="button">Done</button>
+</div>
+</section>
+</div>
+<!-- NEW LEAD MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="newLeadModal">
+<section aria-labelledby="newLeadTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker" id="newLeadKicker">ADD TO INBOX</span><h2 id="newLeadTitle">Add Leads</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="newLeadModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<div aria-label="Add lead method" class="import-tabs" role="tablist">
+<button class="import-tab active" id="singleLeadTab" type="button">Single Lead</button>
+<button class="import-tab" id="bulkLeadTab" type="button">Import Multiple</button>
+</div>
+<div class="lead-entry-panel active" id="singleLeadPanel">
+<p class="modal-help optional-fields-help">Every field is optional. Blank fields are saved as empty.</p>
+<div class="modal-form">
+<label><span>Company Name</span><input id="newCompany" placeholder="Company name" type="text"/></label>
+<label><span>Phone Number</span><input autocomplete="tel" id="newPhone" inputmode="numeric" maxlength="13" placeholder="(000)000-0000" type="tel"/></label>
+<label><span>Email</span><input autocomplete="email" id="newEmail" placeholder="name@example.com" type="email"/></label>
+<label><span>Name</span><input id="newName" placeholder="Lead name" type="text"/></label>
+<label><span>Website</span><input id="newSite" placeholder="https://example.com" type="url"/></label>
+<label><span>Site Age</span><input id="newAge" placeholder="e.g. 7 years" type="text"/></label>
+<label><span>Main Issue</span><input id="newIssue" placeholder="What needs improvement?" type="text"/></label>
+</div>
+<div class="modal-actions">
+<button class="modal-secondary" data-close="newLeadModal" type="button">Cancel</button>
+<button class="modal-primary" id="createLeadButton" type="button">Add Lead</button>
+</div>
+</div>
+<div class="lead-entry-panel" id="bulkLeadPanel">
+<p class="modal-help import-help">Import a JSON file containing an array of leads. Empty fields are allowed and will stay empty.</p>
+<label class="file-import-box" for="bulkLeadFile">
+<i class="bi bi-file-earmark-arrow-up"></i>
+<span><strong>Choose JSON file</strong><small>Use an array, or an object with a <code>leads</code> array.</small></span>
+<input accept=".json,.txt,application/json,text/plain" id="bulkLeadFile" type="file"/>
+</label>
+<div class="import-or"><span>OR PASTE JSON</span></div>
+<textarea id="bulkLeadJson" placeholder="Paste JSON here..." rows="9" spellcheck="false"></textarea>
+<div aria-live="polite" class="import-status" id="importStatus"></div>
+<div class="modal-actions">
+<button class="modal-secondary" data-close="newLeadModal" type="button">Cancel</button>
+<button class="modal-primary" id="importLeadsButton" type="button">Import Leads</button>
+</div>
+</div>
+</section>
+</div>
+<!-- ACCOUNT / PASSWORD MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="accountModal">
+<section aria-labelledby="accountModalTitle" aria-modal="true" class="modal-card account-modal-card" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">ACCOUNT</span><h2 id="accountModalTitle">Account Settings</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="accountModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<p class="modal-help" id="accountEmailDisplay"></p>
+<label class="stacked-field">
+<span>Display name</span>
+<input autocomplete="name" id="accountDisplayName" maxlength="60" placeholder="e.g. Kiara" type="text"/>
+</label>
+<button class="account-display-name-save" id="saveDisplayNameButton" type="button"><i class="bi bi-person-check"></i> Save Display Name</button>
+<label class="stacked-field">
+<span>New password</span>
+<input autocomplete="new-password" id="accountNewPassword" placeholder="New password" type="password"/>
+</label>
+<label class="stacked-field">
+<span>Confirm new password</span>
+<input autocomplete="new-password" id="accountConfirmPassword" placeholder="Confirm new password" type="password"/>
+</label>
+<div class="password-requirement">Use at least 8 characters.</div>
+<div aria-live="polite" class="auth-status account-auth-status" id="accountPasswordStatus"></div>
+<div class="modal-actions">
+<button class="modal-secondary" id="signOutButton" type="button">Sign Out</button>
+<button class="modal-primary" id="changePasswordButton" type="button">Change Password</button>
+</div>
+</section>
+</div>
+<!-- PASSWORD RESET MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="passwordResetModal">
+<section aria-labelledby="passwordResetTitle" aria-modal="true" class="modal-card account-modal-card" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">PASSWORD RECOVERY</span><h2 id="passwordResetTitle">Set a New Password</h2></div>
+</div>
+<p class="modal-help">Enter a new password for your account.</p>
+<label class="stacked-field">
+<span>New password</span>
+<input autocomplete="new-password" id="recoveryNewPassword" placeholder="New password" type="password"/>
+</label>
+<label class="stacked-field">
+<span>Confirm new password</span>
+<input autocomplete="new-password" id="recoveryConfirmPassword" placeholder="Confirm new password" type="password"/>
+</label>
+<div class="password-requirement">Use at least 8 characters.</div>
+<div aria-live="polite" class="auth-status account-auth-status" id="recoveryPasswordStatus"></div>
+<button class="auth-button" id="saveRecoveryPassword" type="button">Save New Password</button>
+</section>
+</div>
+<div aria-live="polite" class="toast" id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js.js?v=20260817-1056"></script>
+<script>
+    window.addEventListener('load', async () => {
+      try {
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map(registration => registration.unregister()));
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(key => caches.delete(key)));
+        }
+      } catch (error) {
+        console.error('Old app cache cleanup failed:', error);
+      }
+    });
   </script>
 </body>
 </html>

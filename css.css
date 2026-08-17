@@ -100,7 +100,8 @@ a { color: inherit; }
   gap: 8px;
   margin: 10px 0 18px;
 }
-.summary-row div {
+.summary-row div,
+.summary-row button {
   min-height: 64px;
   padding: 9px;
   display: grid;
@@ -111,6 +112,7 @@ a { color: inherit; }
 }
 .summary-row strong { font-size: 21px; }
 .summary-row span { color: var(--muted); font-size: 11px; }
+.summary-row button { color: var(--text); font: inherit; cursor: pointer; }
 
 .section-heading {
   display: flex;
@@ -800,37 +802,6 @@ textarea::placeholder, input::placeholder { color: #60778d; }
   border: 0 !important;
 }
 
-/* THICKER, NORMAL-LOOKING FOLLOW-UP CONTROLS */
-#followupPanel .custom-dropdown,
-#followupPanel .followup-select {
-  min-height: 52px;
-  padding: 0 14px;
-  border: 1px solid #3a5e80;
-  border-radius: 13px;
-  background: linear-gradient(180deg, #0c1d2e 0%, #081623 100%);
-  color: #eef6ff;
-  font-size: 14px;
-  font-weight: 700;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.025), 0 5px 14px rgba(0,0,0,.12);
-}
-#followupPanel .custom-dropdown:focus,
-#followupPanel .followup-select:focus {
-  border-color: #3f91ff;
-  box-shadow: 0 0 0 3px rgba(52,137,255,.12);
-}
-#followupPanel .date-dropdowns {
-  grid-template-columns: 1.3fr .75fr .9fr;
-  gap: 9px;
-}
-#followupPanel .date-dropdowns label > span {
-  margin-bottom: 7px;
-  color: #8ca6bd;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
 .time-control { position: relative; }
 .time-display-button {
   width: 100%;
@@ -1452,3 +1423,3035 @@ html, body { overscroll-behavior-y: contain; }
   font-weight: 700;
 }
 .phone-called-by.has-call { color: #8fc3f4; }
+
+/* DESKTOP STRUCTURE */
+.desktop-sidebar,
+.desktop-header-add-lead,
+.desktop-scroll-top { display: none; }
+.desktop-sidebar-brand { display: flex; align-items: center; gap: 11px; }
+.desktop-sidebar-brand img { width: 38px; height: 38px; border-radius: 10px; }
+.desktop-sidebar-brand div { display: grid; gap: 1px; min-width: 0; }
+.desktop-sidebar-brand span { color: #7f9ab4; font-size: 9px; letter-spacing: .13em; font-weight: 800; }
+.desktop-sidebar-brand strong { color: #eef7ff; font-size: 15px; line-height: 1.1; }
+.desktop-nav { display: grid; }
+.desktop-nav-item { font: inherit; text-align: left; cursor: pointer; }
+.desktop-sidebar-spacer { flex: 1; }
+.desktop-account-nav { border-top: 1px solid #17293a; border-radius: 0; padding-top: 8px; }
+
+/* SOLD PIPELINE ---------------------------------------------------------- */
+.sold-heading { margin-top: 23px; }
+.sold-count-chip {
+  border-color: rgba(57,220,117,.42);
+  color: #8af0aa;
+  background: rgba(26,108,60,.13);
+}
+.sold-lead-list .lead-item {
+  border-color: rgba(57,220,117,.25);
+  background: linear-gradient(145deg, rgba(8,31,25,.98), rgba(5,17,17,.98));
+}
+.sold-lead-list .lead-avatar {
+  border-color: rgba(57,220,117,.38);
+  background: linear-gradient(180deg, #123d2a, #09241a);
+  color: #89f0aa;
+}
+.sold-tag-badge {
+  border-color: rgba(57,220,117,.52) !important;
+  color: #8cf3ac !important;
+  background: rgba(57,220,117,.10) !important;
+}
+.sold-by-card { color: #79d998 !important; }
+.sold-by-card i { color: #45dc79 !important; }
+.sold-by-detail {
+  margin-top: 7px;
+  color: #79e79d;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+.phone-card:has(.sold-by-detail:not([hidden])) .sound-line::before {
+  background: linear-gradient(90deg, transparent, #20a85d 20%, #61e48f 50%, #20a85d 80%, transparent);
+  box-shadow: 0 0 9px rgba(57,220,117,.55);
+}
+.sold-empty-state { border-color: rgba(57,220,117,.22); }
+
+@media (min-width: 900px) {
+  #desktopSoldNav.active { box-shadow: none; }
+}
+
+.history-item .history-dot.sold,
+.history-dot.sold { border-color: rgba(57,220,117,.55); background: rgba(57,220,117,.14); color: #69e992; }
+
+
+/* PRIORITY LEAD FLAGS -------------------------------------------------- */
+.quick-tag-chip.priority-tag {
+  border-color: rgba(255, 166, 61, .52);
+  color: #ffc16f;
+  background: rgba(118, 66, 8, .16);
+}
+.quick-tag-chip.priority-tag:hover,
+.quick-tag-chip.priority-tag:active {
+  border-color: #ffad45;
+  color: #ffe0b0;
+}
+.quick-tag-chip.priority-tag.selected {
+  border-color: #ff9f2f;
+  color: #fff5e7;
+  background: rgba(172, 90, 10, .30);
+  box-shadow: inset 0 0 0 1px rgba(255, 194, 111, .11), 0 0 16px rgba(255, 145, 31, .16);
+}
+.priority-badge {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  border-color: rgba(255, 166, 61, .78) !important;
+  color: #ffd095 !important;
+  background: rgba(155, 81, 8, .24) !important;
+  box-shadow: 0 0 10px rgba(255, 145, 31, .11);
+}
+.priority-badge i { font-size: 9px; }
+.lead-item.priority-lead,
+.sold-lead-list .lead-item.priority-lead {
+  position: relative;
+  border-color: rgba(255, 166, 61, .78) !important;
+  background: linear-gradient(145deg, rgba(67, 37, 8, .98), rgba(29, 18, 6, .99)) !important;
+  box-shadow: inset 3px 0 0 #ff9f2f, 0 0 18px rgba(255, 145, 31, .11) !important;
+}
+.lead-item.priority-lead .lead-avatar,
+.sold-lead-list .lead-item.priority-lead .lead-avatar {
+  border-color: rgba(255, 166, 61, .62) !important;
+  background: linear-gradient(180deg, #624016, #302008) !important;
+  color: #ffd095 !important;
+}
+.lead-item.priority-lead > i { color: #ffbc63 !important; }
+.lead-item.priority-lead .lead-meta,
+.lead-item.priority-lead .lead-called-by { color: #d7a96f; }
+.priority-fire {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  z-index: 3;
+  font-size: 18px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 5px rgba(255, 120, 0, .28));
+  pointer-events: none;
+}
+.lead-item.priority-lead > .bi-chevron-right {
+  margin-top: 20px;
+}
+
+/* DESKTOP SCROLL-TO-TOP -------------------------------------------------- */
+.desktop-scroll-top {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .desktop-scroll-top {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    z-index: 85;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #2d638e;
+    border-radius: 50%;
+    background: rgba(9, 29, 48, .96);
+    color: #b9d9ff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .34);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    pointer-events: none;
+    cursor: pointer;
+    transition: opacity .18s ease, transform .18s ease, visibility .18s ease, border-color .18s ease, background .18s ease;
+  }
+
+  .desktop-scroll-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .desktop-scroll-top:hover {
+    border-color: #4293df;
+    background: #0d3150;
+  }
+
+  .desktop-scroll-top:focus-visible {
+    outline: 2px solid #74b5ff;
+    outline-offset: 3px;
+  }
+
+  .desktop-scroll-top i {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  /* Keep the arrow above the fixed detail footer when a lead is open. */
+  #detailScreen.active ~ .desktop-scroll-top,
+  body:has(#detailScreen.active) .desktop-scroll-top {
+    bottom: 88px;
+  }
+}
+
+.detail-topbar { display: block; }
+
+/* =========================================================
+   DESKTOP MASTER LAYOUT — 2026 CLEANUP
+   This is the single authoritative computer layout. It is
+   intentionally last so older experimental desktop rules
+   cannot distort the UI. Mobile styles remain unchanged.
+   ========================================================= */
+@media (min-width: 960px) {
+  html, body {
+    min-width: 960px;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .app-shell {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: grid !important;
+    grid-template-columns: 236px minmax(0, 1fr) !important;
+    align-items: stretch !important;
+  }
+
+  .desktop-sidebar {
+    display: flex !important;
+    position: sticky !important;
+    top: 0 !important;
+    align-self: start !important;
+    width: 236px !important;
+    height: 100vh !important;
+    padding: 22px 14px !important;
+    flex-direction: column !important;
+    gap: 18px !important;
+    border-right: 1px solid #1b3145 !important;
+    background: linear-gradient(180deg, #07131f 0%, #050d16 100%) !important;
+    overflow-y: auto !important;
+  }
+
+  .desktop-sidebar-brand {
+    min-height: 56px !important;
+    padding: 4px 6px 16px !important;
+    border-bottom: 1px solid #192d40 !important;
+  }
+
+  .desktop-sidebar-brand img {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .desktop-nav {
+    display: grid !important;
+    gap: 7px !important;
+  }
+
+  .desktop-nav-item {
+    width: 100% !important;
+    min-height: 46px !important;
+    padding: 0 13px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 11px !important;
+    border: 1px solid transparent !important;
+    border-radius: 10px !important;
+    background: transparent !important;
+    color: #91a9bf !important;
+    text-align: left !important;
+    font-size: 13px !important;
+    font-weight: 750 !important;
+    box-shadow: none !important;
+  }
+
+  .desktop-nav-item i {
+    width: 20px !important;
+    font-size: 16px !important;
+    text-align: center !important;
+  }
+
+  .desktop-nav-item:hover {
+    color: #dbeaff !important;
+    background: #0d1f30 !important;
+    border-color: #203c55 !important;
+  }
+
+  .desktop-nav-item.active {
+    color: #fff !important;
+    background: linear-gradient(180deg, #123152, #0d2742) !important;
+    border-color: #2c5e87 !important;
+    box-shadow: inset 3px 0 0 #5ba9ff !important;
+  }
+
+  .screen {
+    grid-column: 2 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 30px clamp(28px, 3vw, 52px) 92px !important;
+  }
+
+  #leadsScreen:not(.active),
+  #detailScreen:not(.active) {
+    display: none !important;
+  }
+
+  /* ---------- PIPELINE LIST PAGES ---------- */
+  #leadsScreen.active,
+  #leadsScreen.desktop-leads-view,
+  #leadsScreen.desktop-followups-view,
+  #leadsScreen.desktop-sold-view {
+    display: block !important;
+    max-width: 1500px !important;
+    margin: 0 auto !important;
+  }
+
+  #leadsScreen > .home-header {
+    width: 100% !important;
+    min-height: 62px !important;
+    margin: 0 0 20px !important;
+    padding: 0 0 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-bottom: 1px solid #1a3043 !important;
+  }
+
+  #leadsScreen .app-brand-icon {
+    display: none !important;
+  }
+
+  #leadsScreen .home-header h1 {
+    font-size: 28px !important;
+    line-height: 1.1 !important;
+  }
+
+  #leadsScreen .home-header .header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+  }
+
+  #leadsScreen .desktop-header-add-lead {
+    min-height: 40px !important;
+    padding: 0 15px !important;
+    border-radius: 9px !important;
+  }
+
+  #leadsScreen #accountButton {
+    display: grid !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 9px !important;
+  }
+
+  #leadsScreen > .search-field {
+    display: flex !important;
+    width: min(100%, 720px) !important;
+    height: 46px !important;
+    margin: 0 0 24px !important;
+    border-radius: 10px !important;
+    background: #091724 !important;
+  }
+
+  #leadsScreen > .summary-row,
+  #leadsScreen > .home-bottom-actions {
+    display: none !important;
+  }
+
+  #leadsScreen > .section-heading,
+  #leadsScreen > #newLeadList,
+  #leadsScreen > #followLeadList,
+  #leadsScreen > #soldLeadList {
+    display: none !important;
+  }
+
+  #leadsScreen.desktop-leads-view > .section-heading:not(.follow-heading):not(.sold-heading),
+  #leadsScreen.desktop-followups-view > .follow-heading,
+  #leadsScreen.desktop-sold-view > .sold-heading {
+    width: 100% !important;
+    margin: 0 0 12px !important;
+    padding: 0 0 11px !important;
+    display: flex !important;
+    align-items: end !important;
+    justify-content: space-between !important;
+    border-bottom: 1px solid #172b3e !important;
+  }
+
+  #leadsScreen .section-heading h2 {
+    font-size: 19px !important;
+  }
+
+  #leadsScreen.desktop-leads-view > #newLeadList,
+  #leadsScreen.desktop-followups-view > #followLeadList,
+  #leadsScreen.desktop-sold-view > #soldLeadList {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    align-content: start !important;
+    align-items: stretch !important;
+  }
+
+  #leadsScreen .lead-item {
+    position: relative !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 82px !important;
+    padding: 11px 13px !important;
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) 20px !important;
+    gap: 12px !important;
+    align-items: center !important;
+    border-radius: 12px !important;
+    border: 1px solid #1c3448 !important;
+    background: linear-gradient(145deg, #0b1b2a, #08141f) !important;
+    box-shadow: 0 5px 18px rgba(0,0,0,.11) !important;
+    transition: transform .14s ease, border-color .14s ease, background .14s ease, box-shadow .14s ease !important;
+  }
+
+  #leadsScreen .lead-item:hover {
+    transform: translateY(-1px) !important;
+    border-color: #356483 !important;
+    background: linear-gradient(145deg, #102337, #0b1a29) !important;
+    box-shadow: 0 9px 24px rgba(0,0,0,.2) !important;
+  }
+
+  #leadsScreen .lead-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 11px !important;
+  }
+
+  #leadsScreen .lead-copy,
+  #leadsScreen .lead-name-line {
+    min-width: 0 !important;
+  }
+
+  #leadsScreen .lead-name-line {
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  #leadsScreen .lead-name-line strong {
+    min-width: 0 !important;
+    font-size: 14px !important;
+  }
+
+  #leadsScreen .lead-company {
+    margin-top: 2px !important;
+    font-size: 12px !important;
+  }
+
+  #leadsScreen .lead-meta,
+  #leadsScreen .lead-called-by {
+    margin-top: 4px !important;
+    font-size: 10.5px !important;
+  }
+
+  #leadsScreen .empty-state {
+    grid-column: auto !important;
+    width: 100% !important;
+    min-height: 82px !important;
+    height: 82px !important;
+    padding: 11px 13px !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 12px !important;
+    border: 1px dashed #29465f !important;
+    background: #081520 !important;
+    text-align: center !important;
+  }
+
+  /* ---------- FULL DESKTOP LEAD DETAILS ---------- */
+  #detailScreen.active {
+    display: block !important;
+    max-width: 1580px !important;
+    margin: 0 auto !important;
+  }
+
+  #detailScreen > .detail-topbar {
+    width: 100% !important;
+    min-height: 82px !important;
+    margin: 0 0 14px !important;
+    padding: 10px 16px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, auto) !important;
+    align-items: center !important;
+    gap: 18px !important;
+    border: 1px solid #1c374e !important;
+    border-radius: 12px !important;
+    background: linear-gradient(145deg, #0c1d2c, #081520) !important;
+  }
+
+  #detailScreen .detail-topbar > .detail-header {
+    min-height: 60px !important;
+    padding: 0 !important;
+    display: grid !important;
+    grid-template-columns: 40px minmax(0,1fr) 40px !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  #detailScreen .detail-title-wrap {
+    position: static !important;
+    left: auto !important;
+    transform: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+
+  #detailScreen .detail-header h1 {
+    position: static !important;
+    left: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    font-size: 21px !important;
+    white-space: nowrap !important;
+  }
+
+  #detailScreen .detail-topbar > .phone-card {
+    min-width: 280px !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 0 0 18px !important;
+    border: 0 !important;
+    border-left: 1px solid #1c374e !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    text-align: right !important;
+  }
+
+  #detailScreen .detail-topbar .phone-number {
+    margin: 0 !important;
+    font-size: clamp(23px,2.15vw,31px) !important;
+    line-height: 1.08 !important;
+  }
+
+  #detailScreen .detail-topbar .phone-called-by,
+  #detailScreen .detail-topbar .sold-by-detail {
+    margin-top: 3px !important;
+    font-size: 10px !important;
+  }
+
+  #detailScreen .detail-topbar .sound-line {
+    display: none !important;
+  }
+
+  #detailScreen > .tabs {
+    display: grid !important;
+    width: min(100%,760px) !important;
+    grid-template-columns: repeat(3,minmax(0,1fr)) !important;
+    gap: 8px !important;
+    margin: 0 0 16px !important;
+    padding: 4px !important;
+  }
+
+  #detailScreen > .tabs .tab {
+    min-height: 48px !important;
+  }
+
+  #detailScreen > .panel,
+  #detailScreen > .panel.active {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #detailScreen > .panel {
+    display: none !important;
+  }
+
+  #detailScreen > .panel.active {
+    display: grid !important;
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    gap: 14px !important;
+    align-items: start !important;
+  }
+
+  #detailScreen > .panel.active > .details-intro,
+  #detailScreen > .panel.active > .followup-intro,
+  #detailScreen > .panel.active > .business-quick-intro {
+    grid-column: 1 / -1 !important;
+    margin: 0 !important;
+  }
+
+  #detailsPanel.active > .details-card,
+  #detailsPanel.active > .status-card {
+    grid-column: 1 !important;
+  }
+
+  #detailsPanel.active > .lead-notes-card,
+  #detailsPanel.active > .history-card {
+    grid-column: 2 !important;
+  }
+
+  #followupPanel.active > .followup-card,
+  #quickPanel.active > .business-script-card {
+    grid-column: auto !important;
+    margin: 0 !important;
+  }
+
+  #quickPanel.active > .pricing-reference-card {
+    grid-column: 1 / -1 !important;
+    margin: 0 !important;
+  }
+
+  #quickPanel.active .price-reference-list {
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+  }
+
+  #detailScreen > .bottom-actions {
+    position: fixed !important;
+    z-index: 50 !important;
+    left: 236px !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: auto !important;
+    padding: 10px clamp(28px,3vw,52px) 12px !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    border-top: 1px solid #1a3043 !important;
+    background: rgba(5,13,22,.96) !important;
+  }
+}
+
+/* DESKTOP PIPELINE SWITCHER — single sidebar tab + category controls */
+@media (min-width: 960px) {
+  #leadsScreen > .summary-row.pipeline-switcher {
+    display: grid !important;
+    width: min(100%, 760px) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin: 0 0 26px !important;
+  }
+
+  #leadsScreen .pipeline-summary {
+    min-width: 0 !important;
+    min-height: 52px !important;
+    padding: 0 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    border: 1px solid #203a50 !important;
+    border-radius: 11px !important;
+    background: linear-gradient(180deg, #0a1927, #07131f) !important;
+    color: #9db2c5 !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    transition: border-color .15s ease, background .15s ease, transform .15s ease !important;
+  }
+
+  #leadsScreen .pipeline-summary:hover {
+    border-color: #315e82 !important;
+    background: #0c2032 !important;
+    transform: translateY(-1px) !important;
+  }
+
+  #leadsScreen .pipeline-summary span {
+    min-width: 0 !important;
+    color: inherit !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+  }
+
+  #leadsScreen .pipeline-summary strong {
+    flex: 0 0 auto !important;
+    min-width: 30px !important;
+    height: 30px !important;
+    padding: 0 8px !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 1px solid #294b66 !important;
+    border-radius: 999px !important;
+    background: #06111c !important;
+    color: #d9e9f8 !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+  }
+
+  #leadsScreen .pipeline-summary.active {
+    border-color: #2d7fd2 !important;
+    background: linear-gradient(180deg, #10345a, #0b2743) !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 0 1px rgba(89,169,255,.08), 0 8px 22px rgba(0,0,0,.12) !important;
+  }
+
+  #leadsScreen .pipeline-summary.active strong {
+    border-color: #4a91d4 !important;
+    background: #0a3158 !important;
+    color: #ffffff !important;
+  }
+}
+
+/* =========================================================
+   DESKTOP DETAIL POLISH — EVEN CARDS + TOOLBAR + TOP CARD
+   ========================================================= */
+@media (min-width: 960px) {
+  /* Top card */
+  #detailScreen > .detail-topbar {
+    min-height: 92px !important;
+    padding: 12px 16px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(310px, 420px) !important;
+    gap: 20px !important;
+    border: 1px solid #23435d !important;
+    border-radius: 14px !important;
+    background:
+      linear-gradient(135deg, rgba(14, 35, 54, .98), rgba(7, 19, 31, .99)) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.025),
+      0 10px 28px rgba(0,0,0,.16) !important;
+  }
+
+  #detailScreen .detail-topbar > .detail-header {
+    min-height: 66px !important;
+    grid-template-columns: 40px minmax(0, 1fr) 40px !important;
+  }
+
+  #detailScreen .detail-title-wrap {
+    justify-content: flex-start !important;
+    padding-left: 4px !important;
+  }
+
+  #detailScreen .detail-header h1 {
+    font-size: 24px !important;
+    letter-spacing: -.025em !important;
+  }
+
+  #detailScreen .edit-lead-icon {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 9px !important;
+  }
+
+  #detailScreen .detail-topbar > .phone-card {
+    min-width: 0 !important;
+    padding: 10px 14px 10px 18px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-content: center !important;
+    justify-items: start !important;
+    border-left: 1px solid #28506c !important;
+    text-align: left !important;
+  }
+
+  #detailScreen .detail-topbar .phone-card-label {
+    margin: 0 0 5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    color: #78a8d2 !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    letter-spacing: .14em !important;
+  }
+
+  #detailScreen .detail-topbar .phone-card-label i {
+    color: #5da4ff !important;
+    font-size: 11px !important;
+  }
+
+  #detailScreen .detail-topbar .phone-number {
+    margin: 0 !important;
+    color: #ffffff !important;
+    font-size: clamp(24px, 2vw, 31px) !important;
+    font-weight: 800 !important;
+    letter-spacing: -.015em !important;
+  }
+
+  #detailScreen .detail-topbar .phone-called-by,
+  #detailScreen .detail-topbar .sold-by-detail {
+    width: fit-content !important;
+    margin: 6px 0 0 !important;
+    padding: 4px 8px !important;
+    border: 1px solid #29485f !important;
+    border-radius: 999px !important;
+    background: #081725 !important;
+    color: #8fa7bd !important;
+    font-size: 10px !important;
+    font-weight: 750 !important;
+  }
+
+  #detailScreen .detail-topbar .sold-by-detail {
+    border-color: #2d6346 !important;
+    background: #092116 !important;
+    color: #89dfaa !important;
+  }
+
+  /* Tabs + Quick Notes + Done on the same row */
+  #detailScreen > .detail-toolbar {
+    width: 100% !important;
+    margin: 0 0 16px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 760px) auto !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+  }
+
+  #detailScreen > .detail-toolbar > .tabs {
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 4px !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  #detailScreen > .detail-toolbar > .tabs .tab {
+    min-height: 46px !important;
+  }
+
+  #detailScreen > .detail-toolbar > .bottom-actions {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    border: 0 !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: none !important;
+  }
+
+  #detailScreen > .detail-toolbar > .bottom-actions button {
+    width: auto !important;
+    min-width: 132px !important;
+    min-height: 46px !important;
+    padding: 0 15px !important;
+    border-radius: 10px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Equal card sizing inside each active tab */
+  #detailScreen > .panel.active {
+    align-items: stretch !important;
+    grid-auto-flow: row !important;
+  }
+
+  #detailScreen > .panel.active > .card,
+  #detailScreen > .panel.active > .followup-card,
+  #detailScreen > .panel.active > .business-script-card {
+    height: 100% !important;
+    align-self: stretch !important;
+  }
+
+  /* Details row pairs */
+  #detailsPanel.active > .details-card,
+  #detailsPanel.active > .lead-notes-card {
+    grid-row: 2 !important;
+  }
+
+  #detailsPanel.active > .status-card,
+  #detailsPanel.active > .history-card {
+    grid-row: 3 !important;
+  }
+
+  /* Follow-up: force clean paired rows */
+  #followupPanel.active > .outcome-card {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+
+  #followupPanel.active > .outcome-card + .followup-card {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+  }
+
+  #followupPanel.active > .outcome-card + .followup-card + .followup-card {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+  }
+
+  #followupPanel.active > .availability-card {
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+  }
+
+  /* Quick Info script cards: two even pairs, pricing full width */
+  #quickPanel.active > .script-outdated,
+  #quickPanel.active > .script-nosite {
+    grid-row: 2 !important;
+  }
+
+  #quickPanel.active > .script-broken,
+  #quickPanel.active > .script-spanish {
+    grid-row: 3 !important;
+  }
+
+  #quickPanel.active > .pricing-reference-card {
+    grid-row: 4 !important;
+  }
+}
+
+@media (min-width: 960px) and (max-width: 1120px) {
+  #detailScreen > .detail-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  #detailScreen > .detail-toolbar > .bottom-actions button {
+    min-width: 112px !important;
+    padding-inline: 12px !important;
+  }
+}
+
+/* =========================================================
+   DESKTOP DETAIL UI V3 — INTENTIONAL TWO-COLUMN CARD LAYOUTS
+   ========================================================= */
+
+.desktop-panel-grid {
+  display: contents;
+}
+
+@media (min-width: 960px) {
+  #detailScreen.active {
+    max-width: 1480px !important;
+  }
+
+  /* Cleaner top summary card */
+  #detailScreen > .detail-topbar {
+    min-height: 88px !important;
+    padding: 12px 18px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 390px) !important;
+    gap: 18px !important;
+    border-radius: 15px !important;
+  }
+
+  #detailScreen .detail-title-wrap {
+    justify-content: flex-start !important;
+  }
+
+  #detailScreen .detail-header h1 {
+    font-size: 23px !important;
+  }
+
+  /* Tabs + actions become one clean control row */
+  #detailScreen > .detail-toolbar {
+    grid-template-columns: minmax(520px, 760px) auto !important;
+    gap: 16px !important;
+    margin-bottom: 18px !important;
+  }
+
+  #detailScreen > .detail-toolbar > .tabs {
+    border-radius: 12px !important;
+  }
+
+  #detailScreen > .detail-toolbar > .bottom-actions button {
+    min-width: 126px !important;
+  }
+
+  /* Panel itself is now simple; the internal layout controls columns */
+  #detailScreen > .panel.active {
+    display: block !important;
+  }
+
+  #detailScreen > .panel.active > .details-intro,
+  #detailScreen > .panel.active > .followup-intro,
+  #detailScreen > .panel.active > .business-quick-intro {
+    margin: 0 0 14px !important;
+    padding: 0 2px 10px !important;
+    border-bottom: 1px solid #172c3e !important;
+  }
+
+  .desktop-panel-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    align-items: start !important;
+  }
+
+  .panel-column {
+    min-width: 0 !important;
+    display: grid !important;
+    gap: 16px !important;
+    align-content: start !important;
+  }
+
+  /* Let cards size naturally instead of forcing awkward equal heights */
+  #detailScreen .panel-column > .card,
+  #detailScreen .panel-column > .followup-card,
+  #detailScreen .panel-column > .business-script-card {
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    align-self: start !important;
+  }
+
+  /* DETAILS */
+  #detailsPanel .details-layout {
+    grid-template-columns: minmax(360px, .92fr) minmax(460px, 1.08fr) !important;
+  }
+
+  #detailsPanel .details-card {
+    padding: 4px 14px !important;
+  }
+
+  #detailsPanel .detail-row {
+    min-height: 58px !important;
+  }
+
+  #detailsPanel .status-card {
+    padding: 14px !important;
+  }
+
+  #detailsPanel .lead-notes-card {
+    padding: 14px !important;
+  }
+
+  #detailsPanel .history-card {
+    padding: 14px !important;
+  }
+
+  /* FOLLOW-UP */
+  #followupPanel .followup-layout {
+    grid-template-columns: minmax(420px, .92fr) minmax(500px, 1.08fr) !important;
+  }
+
+  #followupPanel .followup-card {
+    padding: 14px !important;
+  }
+
+  #followupPanel .followup-card-body {
+    margin-top: 12px !important;
+  }
+
+  /* Keep the larger preference card in the wider right column */
+  #followupPanel .panel-column:last-child .followup-card:first-child {
+    min-height: 100% !important;
+  }
+
+  /* QUICK INFO */
+  #quickPanel .quick-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    margin-bottom: 16px !important;
+  }
+
+  #quickPanel .business-script-card {
+    padding: 20px 16px 16px !important;
+  }
+
+  #quickPanel > .pricing-reference-card {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 16px !important;
+  }
+
+  #quickPanel .pricing-group {
+    margin-top: 14px !important;
+  }
+
+  #quickPanel .price-reference-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  #quickPanel .price-reference-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 960px) and (max-width: 1120px) {
+  #detailScreen > .detail-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  #detailsPanel .details-layout,
+  #followupPanel .followup-layout,
+  #quickPanel .quick-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 959px) {
+  .desktop-panel-grid {
+    display: contents !important;
+  }
+}
+
+
+/* =========================================================
+   DESKTOP DETAIL UI V4 — COMPACT, BALANCED, FITS THE VIEWPORT
+   ========================================================= */
+@media (min-width: 960px) {
+  /* Give the workspace more room without making it feel stretched. */
+  .app-shell {
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+  }
+
+  .desktop-sidebar {
+    width: 220px !important;
+    padding: 18px 12px !important;
+    gap: 14px !important;
+  }
+
+  .screen {
+    grid-column: 2 !important;
+    padding: 18px clamp(22px, 2.25vw, 38px) 48px !important;
+  }
+
+  #detailScreen.active {
+    width: 100% !important;
+    max-width: 1440px !important;
+  }
+
+  /* Compact lead summary. */
+  #detailScreen > .detail-topbar {
+    min-height: 76px !important;
+    margin-bottom: 10px !important;
+    padding: 8px 14px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 390px) !important;
+    gap: 14px !important;
+    border-radius: 13px !important;
+  }
+
+  #detailScreen .detail-topbar > .detail-header {
+    min-height: 58px !important;
+    grid-template-columns: 34px minmax(0, 1fr) 34px !important;
+    gap: 10px !important;
+  }
+
+  #detailScreen .detail-header h1 {
+    font-size: 22px !important;
+    line-height: 1.05 !important;
+  }
+
+  #detailScreen .detail-header .icon-button,
+  #detailScreen .edit-lead-icon {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  #detailScreen .detail-topbar > .phone-card {
+    min-height: 58px !important;
+    padding: 5px 10px 5px 16px !important;
+  }
+
+  #detailScreen .detail-topbar .phone-card-label {
+    margin-bottom: 2px !important;
+    font-size: 8px !important;
+  }
+
+  #detailScreen .detail-topbar .phone-number {
+    font-size: clamp(22px, 1.75vw, 28px) !important;
+    line-height: 1 !important;
+  }
+
+  #detailScreen .detail-topbar .phone-called-by,
+  #detailScreen .detail-topbar .sold-by-detail {
+    margin-top: 4px !important;
+    padding: 3px 7px !important;
+    font-size: 9px !important;
+  }
+
+  /* One compact control strip: tabs + Quick Notes + Done. */
+  #detailScreen > .detail-toolbar {
+    min-height: 46px !important;
+    margin-bottom: 12px !important;
+    grid-template-columns: minmax(460px, 1fr) auto !important;
+    gap: 10px !important;
+  }
+
+  #detailScreen > .detail-toolbar > .tabs {
+    min-height: 46px !important;
+    padding: 3px !important;
+    gap: 4px !important;
+    border-radius: 11px !important;
+  }
+
+  #detailScreen > .detail-toolbar > .tabs .tab {
+    min-height: 38px !important;
+    padding: 0 16px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+  }
+
+  #detailScreen > .detail-toolbar > .bottom-actions {
+    gap: 7px !important;
+  }
+
+  #detailScreen > .detail-toolbar > .bottom-actions button {
+    min-width: 0 !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 0 15px !important;
+    border-radius: 9px !important;
+    font-size: 12px !important;
+  }
+
+  #quickNotesButton { min-width: 122px !important; }
+  #doneButton { min-width: 102px !important; }
+
+  /* Section title becomes a slim divider rather than a tall block. */
+  #detailScreen > .panel.active > .details-intro,
+  #detailScreen > .panel.active > .followup-intro,
+  #detailScreen > .panel.active > .business-quick-intro {
+    min-height: 0 !important;
+    margin: 0 0 10px !important;
+    padding: 0 2px 8px !important;
+  }
+
+  #detailScreen .followup-kicker,
+  #detailScreen .business-quick-intro .followup-kicker {
+    font-size: 8px !important;
+    letter-spacing: .16em !important;
+  }
+
+  #detailScreen .followup-intro h2,
+  #detailScreen .business-quick-intro h2 {
+    margin: 2px 0 0 !important;
+    font-size: 20px !important;
+    line-height: 1.1 !important;
+  }
+
+  #detailScreen .followup-intro p,
+  #detailScreen .business-quick-intro p {
+    margin: 3px 0 0 !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  .desktop-panel-grid,
+  #detailsPanel .details-layout,
+  #followupPanel .followup-layout,
+  #quickPanel .quick-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .panel-column {
+    gap: 12px !important;
+  }
+
+  /* Make cards visually consistent and less vertically wasteful. */
+  #detailScreen .card,
+  #detailScreen .followup-card,
+  #detailScreen .business-script-card,
+  #detailScreen .pricing-reference-card {
+    border-radius: 13px !important;
+  }
+
+  #detailsPanel .details-card,
+  #detailsPanel .status-card,
+  #detailsPanel .lead-notes-card,
+  #detailsPanel .history-card,
+  #followupPanel .followup-card,
+  #followupPanel .outcome-card,
+  #quickPanel .business-script-card,
+  #quickPanel > .pricing-reference-card {
+    padding: 12px !important;
+  }
+
+  /* Contact details become a true 2-column information card. */
+  #detailsPanel .details-card {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    column-gap: 14px !important;
+    row-gap: 0 !important;
+  }
+
+  #detailsPanel .detail-row {
+    min-height: 51px !important;
+    padding: 7px 2px !important;
+  }
+
+  #detailsPanel .detail-row:nth-child(odd) {
+    border-right: 1px solid #172c3e !important;
+    padding-right: 13px !important;
+  }
+
+  #detailsPanel .detail-row:nth-child(even) {
+    padding-left: 13px !important;
+  }
+
+  #detailsPanel .detail-row:nth-last-child(-n+2) {
+    border-bottom: 0 !important;
+  }
+
+  #detailsPanel .row-icon {
+    width: 31px !important;
+    height: 31px !important;
+    min-width: 31px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+  }
+
+  #detailsPanel .detail-row > div > span {
+    font-size: 10px !important;
+  }
+
+  #detailsPanel .detail-row strong,
+  #detailsPanel .detail-row a {
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Answer + mood side by side. */
+  #detailsPanel .status-card {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .72fr) !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+  }
+
+  #detailsPanel .status-card .card-divider {
+    display: none !important;
+  }
+
+  #detailsPanel .status-section + .status-section {
+    border-left: 1px solid #172c3e !important;
+    padding-left: 12px !important;
+  }
+
+  #detailsPanel .status-section h2 {
+    margin-bottom: 8px !important;
+    font-size: 12px !important;
+  }
+
+  #detailsPanel .status-grid.two,
+  #detailsPanel .mood-grid {
+    gap: 7px !important;
+  }
+
+  #detailsPanel .select-button,
+  #detailsPanel .mood-button {
+    min-height: 38px !important;
+  }
+
+  /* Form cards: tighter headings and fields. */
+  #detailScreen .card-heading {
+    margin-bottom: 10px !important;
+  }
+
+  #detailScreen .card-heading h2 {
+    font-size: 15px !important;
+  }
+
+  #detailScreen .heading-icon {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 8px !important;
+  }
+
+  #detailScreen .stacked-field,
+  #detailScreen .field-group {
+    gap: 5px !important;
+  }
+
+  #detailScreen textarea {
+    min-height: 78px !important;
+  }
+
+  /* Follow-up cards keep two columns and fit more above the fold. */
+  #followupPanel .followup-card-body {
+    margin-top: 9px !important;
+  }
+
+  #followupPanel .choice-grid,
+  #followupPanel .status-grid,
+  #followupPanel .time-grid,
+  #followupPanel .preferred-days {
+    gap: 7px !important;
+  }
+
+  #followupPanel button,
+  #followupPanel select,
+  #followupPanel input {
+    min-height: 38px;
+  }
+
+  /* Quick info scripts stay readable without giant cards. */
+  #quickPanel .business-script-card {
+    padding: 14px !important;
+  }
+
+  #quickPanel .business-script-card h3 {
+    margin-bottom: 8px !important;
+  }
+
+  #quickPanel .script-copy,
+  #quickPanel .business-script-card p {
+    font-size: 12px !important;
+    line-height: 1.48 !important;
+  }
+
+  #quickPanel > .pricing-reference-card {
+    margin-top: 12px !important;
+  }
+
+  #quickPanel .price-reference-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+}
+
+@media (min-width: 960px) and (max-width: 1180px) {
+  .app-shell {
+    grid-template-columns: 196px minmax(0, 1fr) !important;
+  }
+
+  .desktop-sidebar {
+    width: 196px !important;
+  }
+
+  #detailScreen > .detail-topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(270px, 330px) !important;
+  }
+
+  #detailScreen > .detail-toolbar {
+    grid-template-columns: minmax(390px, 1fr) auto !important;
+  }
+
+  #quickNotesButton {
+    min-width: 110px !important;
+  }
+
+  #doneButton {
+    min-width: 90px !important;
+  }
+
+  #quickPanel .price-reference-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+
+/* DETAILS — Mood card on the left column */
+#detailsPanel .mood-card {
+  padding: 12px !important;
+}
+
+#detailsPanel .mood-card .status-section {
+  width: 100%;
+}
+
+#detailsPanel .mood-card h2 {
+  margin: 0 0 8px !important;
+  font-size: 12px !important;
+}
+
+#detailsPanel .mood-card .mood-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+}
+
+#detailsPanel .mood-card .mood-button {
+  min-height: 38px !important;
+}
+
+@media (min-width: 960px) {
+  /* The right status card now contains only Answer Status, so let it use full width. */
+  #detailsPanel .status-card {
+    display: block !important;
+  }
+
+  #detailsPanel .status-card .status-section {
+    width: 100% !important;
+  }
+
+  #detailsPanel .status-card .status-grid.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+
+/* DETAILS — final desktop arrangement:
+   LEFT: Details → Answer Status → Mood → History
+   RIGHT: Lead Info only */
+@media (min-width: 960px) {
+  #detailsPanel .details-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    align-items: start !important;
+  }
+
+  #detailsPanel .panel-column:first-child {
+    display: grid !important;
+    gap: 12px !important;
+    align-content: start !important;
+  }
+
+  #detailsPanel .panel-column:last-child {
+    display: block !important;
+  }
+
+  #detailsPanel .panel-column:last-child > .lead-notes-card {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #detailsPanel .status-card {
+    display: block !important;
+    width: 100% !important;
+    padding: 12px !important;
+  }
+
+  #detailsPanel .status-card .status-grid.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #detailsPanel .mood-card,
+  #detailsPanel .history-card {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+
+/* FOLLOW-UP — final desktop arrangement:
+   LEFT: Call Outcome → Callback → Contact Preference
+   RIGHT: Day / Time Preferences only */
+@media (min-width: 960px) {
+  #followupPanel .followup-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    align-items: start !important;
+  }
+
+  #followupPanel .followup-layout > .panel-column:first-child {
+    display: grid !important;
+    gap: 12px !important;
+    align-content: start !important;
+  }
+
+  #followupPanel .followup-preferences-column {
+    display: block !important;
+  }
+
+  #followupPanel .followup-preferences-column > .availability-card {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #followupPanel .contact-preference-card {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Keep the day/time card compact while making it the only right-side card. */
+  #followupPanel .availability-card .followup-card-body {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 16px !important;
+    align-items: start !important;
+  }
+
+  #followupPanel .availability-card .followup-fieldset {
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  #followupPanel .availability-card .day-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+
+  #followupPanel .availability-card .followup-time-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+
+/* FOLLOW-UP — restore General Availability proportions */
+@media (min-width: 960px) {
+  /* Keep all call/contact cards on the left and give Availability more breathing room. */
+  #followupPanel .followup-layout {
+    grid-template-columns: minmax(420px, .9fr) minmax(560px, 1.1fr) !important;
+    gap: 16px !important;
+    align-items: start !important;
+  }
+
+  #followupPanel .followup-preferences-column {
+    display: block !important;
+    min-width: 0 !important;
+  }
+
+  /* Restore the wide, shallow General Availability card styling. */
+  #followupPanel .followup-preferences-column > .availability-card {
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 12px 14px !important;
+    align-self: start !important;
+  }
+
+  #followupPanel .availability-card .followup-card-head {
+    margin-bottom: 8px !important;
+  }
+
+  #followupPanel .availability-card .followup-card-head p {
+    margin-top: 2px !important;
+  }
+
+  #followupPanel .availability-card .followup-card-body {
+    display: grid !important;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr) !important;
+    gap: 18px !important;
+    align-items: start !important;
+    margin-top: 8px !important;
+  }
+
+  #followupPanel .availability-card .followup-fieldset {
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  #followupPanel .availability-card .followup-fieldset + .followup-fieldset {
+    border-left: 1px solid #172c3e !important;
+    padding-left: 18px !important;
+  }
+
+  #followupPanel .availability-card legend {
+    margin-bottom: 7px !important;
+    font-size: 11px !important;
+  }
+
+  /* Best days stays on one row. */
+  #followupPanel .availability-card .day-grid {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  #followupPanel .availability-card .day-grid .multi-choice {
+    min-width: 0 !important;
+    min-height: 38px !important;
+    padding: 0 6px !important;
+  }
+
+  /* Morning / Noon / Night / Specific stays on one row like before. */
+  #followupPanel .availability-card .followup-time-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  #followupPanel .availability-card .followup-time-grid .choice-button {
+    min-width: 0 !important;
+    min-height: 38px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  #followupPanel .availability-card .specific-time-control {
+    margin-top: 8px !important;
+  }
+}
+
+
+/* FOLLOW-UP — General Availability: Best Days top, Best Time bottom */
+@media (min-width: 960px) {
+  #followupPanel .availability-card .followup-card-body {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    align-items: start !important;
+  }
+
+  #followupPanel .availability-card .followup-fieldset {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  #followupPanel .availability-card .followup-fieldset + .followup-fieldset {
+    border-left: 0 !important;
+    border-top: 1px solid #172c3e !important;
+    padding-left: 0 !important;
+    padding-top: 12px !important;
+  }
+
+  /* BEST DAYS — top row */
+  #followupPanel .availability-card .day-grid {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  /* BEST TIME — bottom row */
+  #followupPanel .availability-card .followup-time-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  #followupPanel .availability-card .day-grid .multi-choice,
+  #followupPanel .availability-card .followup-time-grid .choice-button {
+    min-height: 38px !important;
+  }
+}
+
+
+/* FOLLOW-UP — equal 50/50 columns + taller General Availability */
+@media (min-width: 960px) {
+  #followupPanel .followup-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 16px !important;
+    align-items: start !important;
+  }
+
+  #followupPanel .followup-layout > .panel-column {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #followupPanel .followup-preferences-column > .availability-card {
+    width: 100% !important;
+    min-height: 320px !important;
+    padding: 18px !important;
+  }
+
+  #followupPanel .availability-card .followup-card-head {
+    margin-bottom: 14px !important;
+  }
+
+  #followupPanel .availability-card .followup-card-body {
+    gap: 18px !important;
+  }
+
+  #followupPanel .availability-card .followup-fieldset + .followup-fieldset {
+    padding-top: 18px !important;
+  }
+
+  #followupPanel .availability-card .day-grid .multi-choice,
+  #followupPanel .availability-card .followup-time-grid .choice-button {
+    min-height: 44px !important;
+  }
+}
+
+
+/* PRIORITY LEADS + CALL FLOW */
+.lead-item {
+  position: relative;
+}
+
+.lead-priority-tags {
+  position: absolute;
+  top: 10px;
+  right: 38px;
+  display: flex;
+  gap: 6px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.priority-corner-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
+
+.hot-lead-tag {
+  color: #fff3df;
+  background: #b84f08;
+  border: 1px solid #f18a2a;
+  box-shadow: 0 0 0 1px rgba(255,145,43,.08), 0 5px 16px rgba(184,79,8,.22);
+}
+
+.wrong-number-tag {
+  color: #ffe9e9;
+  background: #8e2027;
+  border: 1px solid #d84a53;
+  box-shadow: 0 5px 16px rgba(142,32,39,.2);
+}
+
+.lead-item.hot-lead-card {
+  border-color: rgba(240,126,30,.8) !important;
+  box-shadow: inset 4px 0 0 #e86f10, 0 8px 24px rgba(0,0,0,.12) !important;
+}
+
+.lead-item.wrong-number-card {
+  border-color: rgba(194,53,62,.9) !important;
+  background:
+    linear-gradient(90deg, rgba(138,28,35,.2), rgba(138,28,35,.06) 45%, transparent 100%),
+    var(--card, #0b1721) !important;
+  box-shadow: inset 4px 0 0 #c7353e, 0 8px 24px rgba(0,0,0,.12) !important;
+}
+
+.call-flow-modal {
+  width: min(680px, calc(100vw - 28px));
+}
+
+.precall-lead-name {
+  margin: -2px 0 14px;
+  color: var(--muted, #8ea0ad);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.call-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+
+.call-preview-card {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid rgba(126,155,174,.18);
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
+}
+
+.call-preview-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+  color: var(--muted, #8ea0ad);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.call-preview-value {
+  color: var(--text, #f4f7f8);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.call-preview-notes {
+  max-height: 150px;
+  overflow: auto;
+}
+
+.call-prompt-toggle {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(126,155,174,.24);
+  border-radius: 11px;
+  background: rgba(255,255,255,.035);
+  color: var(--text, #f4f7f8);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.call-prompt-box {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid rgba(62,166,255,.26);
+  border-radius: 12px;
+  background: rgba(47,127,191,.08);
+}
+
+.call-prompt-type {
+  margin-bottom: 7px;
+  color: #74bdf2;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+
+.call-prompt-box p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.call-flow-actions {
+  margin-top: 15px;
+}
+
+.call-now-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.post-call-modal {
+  max-height: min(780px, calc(100vh - 28px));
+  overflow: auto;
+}
+
+.mini-question {
+  padding: 13px 0;
+  border-top: 1px solid rgba(126,155,174,.14);
+}
+
+.mini-question:first-of-type {
+  border-top: 0;
+  padding-top: 3px;
+}
+
+.mini-question-label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+
+.mini-choice-row {
+  display: grid;
+  gap: 8px;
+}
+
+.mini-choice-row.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.mini-choice-row.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+
+.mini-choice,
+.mini-tag {
+  min-height: 40px;
+  border: 1px solid rgba(126,155,174,.22);
+  border-radius: 10px;
+  background: rgba(255,255,255,.03);
+  color: var(--text, #f4f7f8);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mini-choice.selected,
+.mini-tag.selected {
+  border-color: #3d9dd8;
+  background: rgba(61,157,216,.16);
+  box-shadow: inset 0 0 0 1px rgba(61,157,216,.18);
+}
+
+.mini-tag.hot.selected {
+  border-color: #ed7b20;
+  background: rgba(237,123,32,.18);
+}
+
+.mini-tag.danger.selected {
+  border-color: #d84a53;
+  background: rgba(216,74,83,.16);
+}
+
+.mood-mini {
+  font-size: 18px;
+}
+
+.post-call-tags {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 7px;
+}
+
+.post-call-notes {
+  margin-top: 6px;
+}
+
+@media (max-width: 700px) {
+  .call-preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lead-priority-tags {
+    top: 8px;
+    right: 34px;
+  }
+
+  .priority-corner-tag {
+    font-size: 9px;
+    padding: 5px 7px;
+  }
+
+  .lead-item.hot-lead-card,
+  .lead-item.wrong-number-card {
+    padding-top: 42px !important;
+  }
+}
+
+
+/* CONDITIONAL DONE QUESTIONS + SOLD FLOW */
+.mini-question[hidden],
+.post-call-notes[hidden] {
+  display: none !important;
+}
+
+.mini-tag.sold {
+  border-color: rgba(228, 178, 72, .28);
+}
+
+.mini-tag.sold.selected {
+  border-color: #d9a62f;
+  background: rgba(217, 166, 47, .17);
+}
+
+.sold-flow-modal {
+  width: min(640px, calc(100vw - 28px));
+}
+
+.sold-confirm-summary {
+  margin: 14px 0 4px;
+  padding: 13px 14px;
+  border: 1px solid rgba(221, 166, 56, .25);
+  border-radius: 12px;
+  background: rgba(221, 166, 56, .07);
+  color: var(--text, #f4f7f8);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sold-confirm-button {
+  background: #b67a12 !important;
+  border-color: #d49927 !important;
+}
+
+.sold-product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin: 14px 0 4px;
+}
+
+.sold-product-choice {
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 13px;
+  border: 1px solid rgba(126,155,174,.2);
+  border-radius: 12px;
+  background: rgba(255,255,255,.03);
+  color: var(--text, #f4f7f8);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sold-product-choice i {
+  font-size: 18px;
+  color: #d7a437;
+}
+
+.sold-product-choice.selected {
+  border-color: #d7a437;
+  background: rgba(215,164,55,.13);
+  box-shadow: inset 0 0 0 1px rgba(215,164,55,.14);
+}
+
+@media (max-width: 620px) {
+  .sold-product-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* QUICK INFO TAG GROUPS — sorted, related, color coordinated */
+#quickTagsList {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 12px !important;
+}
+
+.lead-tag-group {
+  padding: 11px;
+  border: 1px solid rgba(126,155,174,.14);
+  border-radius: 12px;
+  background: rgba(255,255,255,.018);
+}
+
+.lead-tag-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.lead-tag-group-heading strong {
+  display: block;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.lead-tag-group-heading small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted, #8ea0ad);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.lead-tag-group-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.quick-tag-chip.lead-tag-option {
+  min-height: 34px;
+  border-width: 1px !important;
+  border-style: solid !important;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.quick-tag-chip.lead-tag-option:active {
+  transform: scale(.98);
+}
+
+/* Website condition: blue family. These three are mutually exclusive. */
+.quick-tag-chip.tag-group-site {
+  border-color: rgba(73, 151, 207, .3) !important;
+  background: rgba(73, 151, 207, .07) !important;
+  color: #a8d9f5 !important;
+}
+
+.quick-tag-chip.tag-group-site.selected {
+  border-color: #4d9ed5 !important;
+  background: rgba(77, 158, 213, .22) !important;
+  color: #e7f7ff !important;
+  box-shadow: inset 0 0 0 1px rgba(77,158,213,.18);
+}
+
+/* Contact / accessibility: violet family. */
+.quick-tag-chip.tag-group-contact {
+  border-color: rgba(151, 112, 204, .3) !important;
+  background: rgba(151, 112, 204, .07) !important;
+  color: #d8c0f4 !important;
+}
+
+.quick-tag-chip.tag-group-contact.selected {
+  border-color: #9b72cf !important;
+  background: rgba(155,114,207,.2) !important;
+  color: #f1e7ff !important;
+}
+
+/* Interest / next step: warm orange family. */
+.quick-tag-chip.tag-group-interest {
+  border-color: rgba(223, 137, 48, .3) !important;
+  background: rgba(223, 137, 48, .07) !important;
+  color: #f1c28d !important;
+}
+
+.quick-tag-chip.tag-group-interest.selected {
+  border-color: #dc8733 !important;
+  background: rgba(220,135,51,.2) !important;
+  color: #fff0db !important;
+}
+
+/* Negative call outcomes: red family. */
+.quick-tag-chip.tag-group-outcome {
+  border-color: rgba(203, 76, 84, .3) !important;
+  background: rgba(203, 76, 84, .07) !important;
+  color: #efb1b6 !important;
+}
+
+.quick-tag-chip.tag-group-outcome.selected {
+  border-color: #cb4c54 !important;
+  background: rgba(203,76,84,.2) !important;
+  color: #ffe8ea !important;
+}
+
+/* Conversion: gold/green treatment. */
+.quick-tag-chip.tag-group-conversion {
+  border-color: rgba(193, 159, 58, .34) !important;
+  background: rgba(193, 159, 58, .08) !important;
+  color: #efd98c !important;
+}
+
+.quick-tag-chip.tag-group-conversion.selected {
+  border-color: #c7a642 !important;
+  background: rgba(199,166,66,.2) !important;
+  color: #fff5c9 !important;
+}
+
+/* Custom tags remain neutral. */
+.quick-tag-chip.tag-group-custom {
+  border-color: rgba(126,155,174,.24) !important;
+  background: rgba(126,155,174,.06) !important;
+}
+
+/* Match the pre-call prompt to the selected website-condition tag. */
+.call-prompt-box.prompt-no-site {
+  border-color: rgba(61,157,216,.35) !important;
+  background: rgba(61,157,216,.09) !important;
+}
+
+.call-prompt-box.prompt-broken-site {
+  border-color: rgba(205,84,84,.34) !important;
+  background: rgba(205,84,84,.08) !important;
+}
+
+.call-prompt-box.prompt-outdated-site {
+  border-color: rgba(208,144,58,.34) !important;
+  background: rgba(208,144,58,.08) !important;
+}
+
+.call-prompt-box.prompt-generic-site {
+  border-color: rgba(126,155,174,.28) !important;
+  background: rgba(126,155,174,.07) !important;
+}
+
+@media (min-width: 960px) {
+  #detailsPanel .lead-notes-card .lead-tag-group-options {
+    gap: 6px !important;
+  }
+}
+
+
+/* ADD SITE PROMPT */
+.add-site-prompt-modal {
+  width: min(520px, calc(100vw - 28px));
+}
+
+.add-site-prompt-field {
+  margin-top: 15px;
+}
+
+.add-site-prompt-field input {
+  width: 100%;
+  min-height: 46px;
+}
+
+
+/* ADD LEAD — beside pipeline categories */
+.pipeline-switcher .pipeline-add-lead {
+  min-width: 0;
+  min-height: 52px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #2e83ff;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #1266e8, #0a3f9b);
+  box-shadow: 0 0 18px rgba(30,117,255,.18);
+  color: #fff;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pipeline-switcher .pipeline-add-lead:hover {
+  border-color: #62a5ff;
+  background: linear-gradient(180deg, #1972f0, #0d4aad);
+  transform: translateY(-1px);
+}
+
+@media (min-width: 960px) {
+  #leadsScreen > .summary-row.pipeline-switcher {
+    width: min(100%, 980px) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(130px, .72fr) !important;
+  }
+}
+
+@media (max-width: 959px) {
+  #leadsScreen > .summary-row.pipeline-switcher {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .pipeline-switcher .pipeline-add-lead {
+    padding: 0 8px;
+  }
+
+  .pipeline-switcher .pipeline-add-lead span {
+    font-size: 11px;
+  }
+}
+
+
+/* PRE-CALL PROMPT — neutral box + Quick Info-style highlights */
+.call-prompt-box,
+.call-prompt-box.prompt-no-site,
+.call-prompt-box.prompt-broken-site,
+.call-prompt-box.prompt-outdated-site,
+.call-prompt-box.prompt-generic-site {
+  border-color: rgba(126, 155, 174, .22) !important;
+  background: rgba(255, 255, 255, .035) !important;
+  box-shadow: none !important;
+}
+
+#callPromptType {
+  color: var(--muted, #8ea0ad) !important;
+}
+
+#callPromptText mark {
+  padding: 0 2px;
+  border-radius: 4px;
+  background: rgba(74, 144, 226, .16);
+  color: #bdddff;
+  font-weight: 800;
+}
+
+#callPromptText {
+  color: var(--text, #f4f7f8);
+  line-height: 1.65;
+}
+
+
+/* HISTORY + MAIN LEAD DELETE */
+.compact-confirm-modal {
+  width: min(500px, calc(100vw - 28px));
+}
+
+.modal-danger {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid rgba(226, 74, 84, .62);
+  border-radius: 10px;
+  background: rgba(196, 48, 58, .18);
+  color: #ffd9dc;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.modal-danger:hover {
+  background: rgba(196, 48, 58, .28);
+  border-color: rgba(238, 91, 101, .82);
+}
+
+.lead-item-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.lead-item-wrap > .lead-item {
+  width: 100%;
+}
+
+.lead-card-delete {
+  position: absolute;
+  right: 38px;
+  bottom: 10px;
+  z-index: 8;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(218, 76, 84, .20);
+  border-radius: 8px;
+  background: rgba(145, 34, 42, .08);
+  color: rgba(231, 141, 147, .62);
+  cursor: pointer;
+  opacity: .46;
+  transition: opacity .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.lead-item-wrap:hover .lead-card-delete,
+.lead-card-delete:focus-visible {
+  opacity: 1;
+}
+
+.lead-card-delete:hover {
+  color: #ffd7da;
+  border-color: rgba(229, 76, 87, .55);
+  background: rgba(177, 39, 49, .22);
+}
+
+@media (max-width: 700px) {
+  .lead-card-delete {
+    right: 35px;
+    bottom: 8px;
+    opacity: .72;
+  }
+}
+
+
+/* MOBILE HOT LEAD + PRE-CALL DETAILS */
+.mobile-hot-lead-badge,
+.mobile-call-details-button {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  /* Guarantee HOT LEAD is visible on the main mobile lead cards. */
+  .mobile-hot-lead-badge {
+    display: inline-flex !important;
+    align-items: center;
+    flex: none;
+    min-height: 23px;
+    padding: 4px 7px;
+    border: 1px solid #f18a2a;
+    border-radius: 999px;
+    background: #b84f08;
+    color: #fff3df;
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: .045em;
+    white-space: nowrap;
+  }
+
+  /* The corner priority tag stays visible too, but never gets clipped. */
+  .lead-item-wrap,
+  .lead-item {
+    overflow: visible !important;
+  }
+
+  .lead-priority-tags {
+    display: flex !important;
+    z-index: 12 !important;
+  }
+
+  /* Mobile gets an obvious call action that ALWAYS opens the pre-call details first. */
+  .mobile-call-details-button {
+    margin: 10px 0 2px auto;
+    min-height: 38px;
+    padding: 0 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid #2e82fb;
+    border-radius: 10px;
+    background: rgba(28, 103, 218, .14);
+    color: #a9d0ff;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 850;
+    cursor: pointer;
+  }
+
+  .mobile-call-details-button[hidden] {
+    display: none !important;
+  }
+
+  /* Make the call-details popup work like a proper mobile bottom sheet. */
+  #preCallModal {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  #preCallModal .call-flow-modal {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
+    padding: 15px;
+    border-radius: 20px 20px 14px 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #preCallModal .call-preview-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  #preCallModal .call-preview-card {
+    padding: 11px 12px;
+  }
+
+  #preCallModal .call-preview-notes {
+    max-height: 105px;
+  }
+
+  #preCallModal .call-prompt-toggle {
+    min-height: 42px;
+  }
+
+  #preCallModal .call-prompt-box {
+    max-height: 34vh;
+    overflow-y: auto;
+  }
+
+  #preCallModal .call-flow-actions {
+    position: sticky;
+    bottom: -15px;
+    margin: 14px -15px -15px;
+    padding: 10px 15px calc(10px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(6,16,27,.90), #06101b 28%);
+    border-top: 1px solid rgba(126,155,174,.14);
+  }
+
+  #preCallModal .call-now-button {
+    min-height: 50px;
+  }
+}
+
+
+/* MOBILE QUICK INFO TAG ORGANIZATION */
+@media (max-width: 700px) {
+  #quickTagsList {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+
+  #quickTagsList .lead-tag-group {
+    display: block !important;
+    width: 100% !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(126,155,174,.14) !important;
+    background: rgba(255,255,255,.018) !important;
+  }
+
+  #quickTagsList .lead-tag-group-heading {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  #quickTagsList .lead-tag-group-heading strong {
+    display: block !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    font-weight: 900 !important;
+    letter-spacing: .055em !important;
+    text-transform: uppercase !important;
+  }
+
+  #quickTagsList .lead-tag-group-heading small {
+    display: block !important;
+    margin-top: 2px !important;
+    font-size: 9px !important;
+    line-height: 1.3 !important;
+    color: var(--muted, #8ea0ad) !important;
+  }
+
+  #quickTagsList .lead-tag-group-options {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    width: 100% !important;
+  }
+
+  #quickTagsList .quick-tag-chip.lead-tag-option {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 38px !important;
+    padding: 0 9px !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    border-radius: 9px !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+  }
+
+  #quickTagsList .quick-tag-chip .tag-state-check {
+    margin-left: auto !important;
+  }
+
+  /* Website choices stay together and fill the row cleanly. */
+  #quickTagsList .lead-tag-group-site .lead-tag-group-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  #quickTagsList .lead-tag-group-site .quick-tag-chip {
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 0 5px !important;
+  }
+
+  /* Sold gets its own full-width conversion action. */
+  #quickTagsList .lead-tag-group-conversion .lead-tag-group-options {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Preserve the same category color system on mobile. */
+  #quickTagsList .lead-tag-group-site {
+    border-color: rgba(73,151,207,.18) !important;
+  }
+
+  #quickTagsList .lead-tag-group-contact {
+    border-color: rgba(151,112,204,.18) !important;
+  }
+
+  #quickTagsList .lead-tag-group-interest {
+    border-color: rgba(223,137,48,.18) !important;
+  }
+
+  #quickTagsList .lead-tag-group-outcome {
+    border-color: rgba(203,76,84,.18) !important;
+  }
+
+  #quickTagsList .lead-tag-group-conversion {
+    border-color: rgba(193,159,58,.20) !important;
+  }
+}
+
+@media (max-width: 430px) {
+  #quickTagsList .lead-tag-group-options {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  #quickTagsList .lead-tag-group-site .lead-tag-group-options {
+    grid-template-columns: 1fr !important;
+  }
+
+  #quickTagsList .lead-tag-group-site .quick-tag-chip {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    padding: 0 9px !important;
+  }
+}
+
+
+/* MOBILE — Quick Notes is the only notes editor */
+@media (max-width: 700px) {
+  #quickNotesButton {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    min-width: 0 !important;
+    min-height: 42px !important;
+    padding: 0 12px !important;
+    white-space: nowrap !important;
+  }
+
+  #quickNotesButton i {
+    font-size: 14px !important;
+  }
+
+  #quickNotesModal .modal-card {
+    width: calc(100vw - 20px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    margin: auto 0 0 !important;
+    border-radius: 18px 18px 12px 12px !important;
+  }
+
+  #quickNotesInput {
+    min-height: 180px !important;
+    font-size: 16px !important; /* prevents iOS zoom */
+    line-height: 1.45 !important;
+  }
+
+  #quickNotesModal .modal-actions {
+    position: sticky !important;
+    bottom: 0 !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+
+  /* There is no second editable Notes field on mobile. */
+  #postNotesQuestion,
+  .post-call-notes {
+    display: none !important;
+  }
+}
+
+
+/* KIARA-ONLY main-list delete control — desktop + mobile */
+@media (max-width: 700px) {
+  .lead-item-wrap .lead-card-delete {
+    display: grid !important;
+    width: 34px !important;
+    height: 34px !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    z-index: 20 !important;
+    opacity: .88 !important;
+    border-radius: 9px !important;
+  }
+
+  .lead-item-wrap > .lead-item {
+    padding-right: 48px !important;
+  }
+}
+
+
+/* =========================================================
+   MOBILE PIPELINE — NEW / FOLLOW-UPS / SOLD ARE SEPARATE VIEWS
+   ========================================================= */
+@media (max-width: 959px) {
+  /* Keep the category/count controls visible and clickable. */
+  #leadsScreen > .summary-row.pipeline-switcher {
+    display: grid !important;
+    width: 100% !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    margin: 10px 0 14px !important;
+    padding: 0 !important;
+  }
+
+  #leadsScreen > .summary-row.pipeline-switcher .pipeline-summary {
+    min-width: 0 !important;
+    min-height: 52px !important;
+    padding: 7px 5px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    border-radius: 11px !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #leadsScreen > .summary-row.pipeline-switcher .pipeline-summary span {
+    max-width: 100% !important;
+    font-size: 9.5px !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  #leadsScreen > .summary-row.pipeline-switcher .pipeline-summary strong {
+    font-size: 16px !important;
+    line-height: 1 !important;
+  }
+
+  #leadsScreen > .summary-row.pipeline-switcher .pipeline-summary.active {
+    border-color: #3e8de8 !important;
+    background: rgba(42, 119, 207, .17) !important;
+    box-shadow: inset 0 0 0 1px rgba(76, 151, 235, .10) !important;
+  }
+
+  /* Add Lead gets its own full-width row beneath the three pipeline categories. */
+  #leadsScreen > .summary-row.pipeline-switcher .pipeline-add-lead {
+    grid-column: 1 / -1 !important;
+    min-height: 42px !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Never stack all three categories underneath one another on mobile. */
+  #leadsScreen > .section-heading,
+  #leadsScreen > #newLeadList,
+  #leadsScreen > #followLeadList,
+  #leadsScreen > #soldLeadList {
+    display: none !important;
+  }
+
+  /* NEW LEADS */
+  #leadsScreen.desktop-leads-view > .section-heading:not(.follow-heading):not(.sold-heading) {
+    display: flex !important;
+  }
+
+  #leadsScreen.desktop-leads-view > #newLeadList {
+    display: grid !important;
+  }
+
+  /* FOLLOW-UPS */
+  #leadsScreen.desktop-followups-view > .follow-heading {
+    display: flex !important;
+  }
+
+  #leadsScreen.desktop-followups-view > #followLeadList {
+    display: grid !important;
+  }
+
+  /* SOLD */
+  #leadsScreen.desktop-sold-view > .sold-heading {
+    display: flex !important;
+  }
+
+  #leadsScreen.desktop-sold-view > #soldLeadList {
+    display: grid !important;
+  }
+
+  #leadsScreen.desktop-leads-view > #newLeadList,
+  #leadsScreen.desktop-followups-view > #followLeadList,
+  #leadsScreen.desktop-sold-view > #soldLeadList {
+    width: 100% !important;
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+    align-content: start !important;
+  }
+
+  #leadsScreen.desktop-leads-view > .section-heading:not(.follow-heading):not(.sold-heading),
+  #leadsScreen.desktop-followups-view > .follow-heading,
+  #leadsScreen.desktop-sold-view > .sold-heading {
+    width: 100% !important;
+    margin: 4px 0 10px !important;
+    padding: 0 1px 9px !important;
+    align-items: end !important;
+    justify-content: space-between !important;
+    border-bottom: 1px solid rgba(126, 155, 174, .14) !important;
+  }
+
+  /* The separate section count chip is redundant on mobile; the top count is the switcher. */
+  #leadsScreen .section-heading .count-chip {
+    display: none !important;
+  }
+}
+
+
+/* =====================================================================
+   FINAL MOBILE OVERRIDE — THIS BLOCK MUST STAY LAST
+   One pipeline at a time + desktop-identical grouped/color-coded tags.
+   ===================================================================== */
+@media (max-width: 959px) {
+  /* CATEGORY SWITCHER */
+  #leadsScreen > .summary-row.pipeline-switcher {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin: 10px 0 10px !important;
+    position: relative !important;
+    z-index: 100 !important;
+    overflow: visible !important;
+  }
+
+  #leadsScreen > .summary-row.pipeline-switcher > .pipeline-summary {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    padding: 7px 4px !important;
+    position: relative !important;
+    z-index: 101 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    cursor: pointer !important;
+    border: 1px solid #27445d !important;
+    border-radius: 12px !important;
+    background: linear-gradient(145deg, #091724, #06101a) !important;
+  }
+
+  #leadsScreen > .summary-row.pipeline-switcher > .pipeline-summary span {
+    pointer-events: none !important;
+    color: #91a6ba !important;
+    font-size: 10px !important;
+    font-weight: 850 !important;
+    letter-spacing: .04em !important;
+    white-space: nowrap !important;
+  }
+
+  #leadsScreen > .summary-row.pipeline-switcher > .pipeline-summary strong {
+    pointer-events: none !important;
+    margin-top: 2px !important;
+    color: #f5f8fc !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+  }
+
+  #leadsScreen > .summary-row.pipeline-switcher > .pipeline-summary.active {
+    border-color: #2e86ff !important;
+    background: linear-gradient(180deg, rgba(24,101,212,.28), rgba(9,40,76,.55)) !important;
+    box-shadow: inset 0 0 0 1px rgba(75,151,238,.12), 0 0 16px rgba(46,134,255,.10) !important;
+  }
+
+  /* Add Lead stays separate instead of stealing a category column. */
+  #leadsScreen > .summary-row.pipeline-switcher > .pipeline-add-lead {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-height: 43px !important;
+    margin-top: 0 !important;
+  }
+
+  /* Pipeline visibility is also enforced inline by JS; these are the CSS fallback. */
+  #leadsScreen > .section-heading,
+  #leadsScreen > #newLeadList,
+  #leadsScreen > #followLeadList,
+  #leadsScreen > #soldLeadList {
+    display: none !important;
+  }
+
+  #leadsScreen[data-pipeline-view="leads"] > .section-heading:not(.follow-heading):not(.sold-heading),
+  #leadsScreen.desktop-leads-view > .section-heading:not(.follow-heading):not(.sold-heading) {
+    display: flex !important;
+  }
+
+  #leadsScreen[data-pipeline-view="leads"] > #newLeadList,
+  #leadsScreen.desktop-leads-view > #newLeadList {
+    display: grid !important;
+  }
+
+  #leadsScreen[data-pipeline-view="followups"] > .follow-heading,
+  #leadsScreen.desktop-followups-view > .follow-heading {
+    display: flex !important;
+  }
+
+  #leadsScreen[data-pipeline-view="followups"] > #followLeadList,
+  #leadsScreen.desktop-followups-view > #followLeadList {
+    display: grid !important;
+  }
+
+  #leadsScreen[data-pipeline-view="sold"] > .sold-heading,
+  #leadsScreen.desktop-sold-view > .sold-heading {
+    display: flex !important;
+  }
+
+  #leadsScreen[data-pipeline-view="sold"] > #soldLeadList,
+  #leadsScreen.desktop-sold-view > #soldLeadList {
+    display: grid !important;
+  }
+
+  /* HOT LEAD ON MAIN MOBILE LIST */
+  .lead-item.hot-lead-card {
+    border-color: rgba(240,126,30,.8) !important;
+    box-shadow: inset 4px 0 0 #e86f10, 0 8px 24px rgba(0,0,0,.12) !important;
+  }
+
+  .lead-item.hot-lead-card .lead-priority-tags,
+  .lead-item.hot-lead-card .mobile-hot-lead-badge,
+  .lead-item.hot-lead-card .hot-lead-tag {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* TAGS — SAME GROUPS AND SAME COLORS AS COMPUTER */
+  #quickTagsList {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  #quickTagsList .lead-tag-group {
+    display: block !important;
+    width: 100% !important;
+    padding: 11px !important;
+    border: 1px solid rgba(126,155,174,.14) !important;
+    border-radius: 12px !important;
+    background: rgba(255,255,255,.018) !important;
+  }
+
+  #quickTagsList .lead-tag-group-heading {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 9px !important;
+  }
+
+  #quickTagsList .lead-tag-group-heading strong {
+    display: block !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    font-weight: 900 !important;
+    letter-spacing: .055em !important;
+    text-transform: uppercase !important;
+  }
+
+  #quickTagsList .lead-tag-group-heading small {
+    display: block !important;
+    margin-top: 3px !important;
+    color: var(--muted, #8ea0ad) !important;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+  }
+
+  #quickTagsList .lead-tag-group-options {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    grid-template-columns: none !important;
+    gap: 7px !important;
+    width: 100% !important;
+  }
+
+  #quickTagsList .quick-tag-chip.lead-tag-option {
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    padding: 0 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    border-radius: 999px !important;
+    font-size: 10.5px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+  }
+
+  /* Website */
+  #quickTagsList .quick-tag-chip.tag-group-site {
+    border-color: rgba(73,151,207,.3) !important;
+    background: rgba(73,151,207,.07) !important;
+    color: #a8d9f5 !important;
+  }
+  #quickTagsList .quick-tag-chip.tag-group-site.selected {
+    border-color: #4d9ed5 !important;
+    background: rgba(77,158,213,.22) !important;
+    color: #e7f7ff !important;
+  }
+
+  /* Contact */
+  #quickTagsList .quick-tag-chip.tag-group-contact {
+    border-color: rgba(151,112,204,.3) !important;
+    background: rgba(151,112,204,.07) !important;
+    color: #d8c0f4 !important;
+  }
+  #quickTagsList .quick-tag-chip.tag-group-contact.selected {
+    border-color: #9b72cf !important;
+    background: rgba(155,114,207,.2) !important;
+    color: #f1e7ff !important;
+  }
+
+  /* Lead Status — includes HOT LEAD */
+  #quickTagsList .quick-tag-chip.tag-group-interest {
+    border-color: rgba(223,137,48,.3) !important;
+    background: rgba(223,137,48,.07) !important;
+    color: #f1c28d !important;
+  }
+  #quickTagsList .quick-tag-chip.tag-group-interest.selected {
+    border-color: #dc8733 !important;
+    background: rgba(220,135,51,.2) !important;
+    color: #fff0db !important;
+  }
+
+  /* Call Outcome */
+  #quickTagsList .quick-tag-chip.tag-group-outcome {
+    border-color: rgba(203,76,84,.3) !important;
+    background: rgba(203,76,84,.07) !important;
+    color: #efb1b6 !important;
+  }
+  #quickTagsList .quick-tag-chip.tag-group-outcome.selected {
+    border-color: #cb4c54 !important;
+    background: rgba(203,76,84,.2) !important;
+    color: #ffe8ea !important;
+  }
+
+  /* Sold */
+  #quickTagsList .quick-tag-chip.tag-group-conversion {
+    border-color: rgba(193,159,58,.34) !important;
+    background: rgba(193,159,58,.08) !important;
+    color: #efd98c !important;
+  }
+  #quickTagsList .quick-tag-chip.tag-group-conversion.selected {
+    border-color: #c7a642 !important;
+    background: rgba(199,166,66,.2) !important;
+    color: #fff5c9 !important;
+  }
+}

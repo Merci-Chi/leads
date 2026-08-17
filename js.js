@@ -20,7 +20,7 @@ function ensureUuidIds() {
       changed = true;
     }
   });
-  if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
 }
 
 function leadToSupabaseRow(lead) {
@@ -51,9 +51,17 @@ function leadToSupabaseRow(lead) {
     preferred_days: Array.isArray(lead.days) ? lead.days : [],
     time_preference: lead.timePreference || '',
     specific_time: lead.specificTime || null,
-    tag: lead.tag || '',
+    // Hot Lead is stored in the SQL `tags` array. Keep it out of the legacy
+    // single-value `tag` column so older Supabase constraints cannot reject
+    // the whole upsert. The UI reads priority tags from both `tag` and `tags`.
+    tag: String(lead.tag || '').trim().toLowerCase() === 'hot lead'
+      ? ((Array.isArray(lead.tags) ? lead.tags : [])
+          .map(tag => String(tag || '').trim())
+          .find(tag => tag && tag.toLowerCase() !== 'hot lead' && FOLLOWUP_TAGS.has(tag)) || '')
+      : (lead.tag || ''),
     last_called: lead.lastCalled || null,
     history: Array.isArray(lead.history) ? lead.history : [],
+    sold_by: lead.soldBy || '',
     updated_at: new Date().toISOString()
   };
 }
@@ -89,16 +97,31 @@ function supabaseRowToLead(row, status = 'new') {
     timePreference: row.time_preference || '',
     specificTime: row.specific_time || '',
     concerns: row.concerns || '',
-    notes: row.notes || ''
+    notes: row.notes || '',
+    soldBy: row.sold_by || ((Array.isArray(row.history) ? row.history : []).slice().reverse().find(item => item?.type === 'sold')?.actor || '')
   });
 }
 
 function tableForLead(lead) {
+  if (lead?.status === 'sold') return 'sold_leads';
   return lead?.status === 'followup' ? 'follow_ups' : 'new_leads';
 }
 
-function otherTableForLead(lead) {
-  return lead?.status === 'followup' ? 'new_leads' : 'follow_ups';
+function otherTablesForLead(lead) {
+  return ['new_leads', 'follow_ups', 'sold_leads'].filter(table => table !== tableForLead(lead));
+}
+
+function soldPublicRow(lead) {
+  return { ...leadToSupabaseRow(lead), phone: '' };
+}
+
+async function storeSoldPhoneSecurely(lead) {
+  if (!lead || lead.status !== 'sold') return;
+  const { error } = await supabaseClient.rpc('set_sold_phone', {
+    p_lead_id: lead.id,
+    p_phone: lead.phone || ''
+  });
+  if (error) throw error;
 }
 
 function showSyncStatus(text) {
@@ -116,24 +139,29 @@ function showSyncStatus(text) {
 }
 
 async function upsertLeadsByTable(leads) {
-  const newRows = leads.filter(lead => lead.status !== 'followup').map(leadToSupabaseRow);
-  const followRows = leads.filter(lead => lead.status === 'followup').map(leadToSupabaseRow);
+  const newLeads = leads.filter(lead => lead.status === 'new');
+  const followLeads = leads.filter(lead => lead.status === 'followup');
+  const soldLeads = leads.filter(lead => lead.status === 'sold');
 
-  if (newRows.length) {
-    const { error } = await supabaseClient.from('new_leads').upsert(newRows, { onConflict: 'id' });
+  const groups = [
+    ['new_leads', newLeads, leadToSupabaseRow],
+    ['follow_ups', followLeads, leadToSupabaseRow],
+    ['sold_leads', soldLeads, soldPublicRow]
+  ];
+
+  for (const [table, group, mapper] of groups) {
+    if (!group.length) continue;
+    const rows = group.map(mapper);
+    const { error } = await supabaseClient.from(table).upsert(rows, { onConflict: 'id' });
     if (error) throw error;
-    const ids = newRows.map(row => row.id);
-    const { error: cleanupError } = await supabaseClient.from('follow_ups').delete().in('id', ids);
-    if (cleanupError) throw cleanupError;
+    const ids = rows.map(row => row.id);
+    for (const otherTable of ['new_leads', 'follow_ups', 'sold_leads'].filter(name => name !== table)) {
+      const { error: cleanupError } = await supabaseClient.from(otherTable).delete().in('id', ids);
+      if (cleanupError) throw cleanupError;
+    }
   }
 
-  if (followRows.length) {
-    const { error } = await supabaseClient.from('follow_ups').upsert(followRows, { onConflict: 'id' });
-    if (error) throw error;
-    const ids = followRows.map(row => row.id);
-    const { error: cleanupError } = await supabaseClient.from('new_leads').delete().in('id', ids);
-    if (cleanupError) throw cleanupError;
-  }
+  for (const lead of soldLeads) await storeSoldPhoneSecurely(lead);
 }
 
 async function syncAllLeadsToSupabase() {
@@ -186,11 +214,36 @@ async function syncLeadNow(lead) {
   if (!supabaseSession || !lead) return;
   pendingSyncIds.delete(lead.id);
   const table = tableForLead(lead);
-  const otherTable = otherTableForLead(lead);
-  const { error } = await supabaseClient.from(table).upsert(leadToSupabaseRow(lead), { onConflict: 'id' });
+  const row = lead.status === 'sold' ? soldPublicRow(lead) : leadToSupabaseRow(lead);
+  const { error } = await supabaseClient.from(table).upsert(row, { onConflict: 'id' });
   if (error) throw error;
-  const { error: cleanupError } = await supabaseClient.from(otherTable).delete().eq('id', lead.id);
-  if (cleanupError) throw cleanupError;
+  for (const otherTable of otherTablesForLead(lead)) {
+    const { error: cleanupError } = await supabaseClient.from(otherTable).delete().eq('id', lead.id);
+    if (cleanupError) throw cleanupError;
+  }
+  if (lead.status === 'sold') await storeSoldPhoneSecurely(lead);
+}
+
+async function syncLeadTagsOnly(lead) {
+  if (!supabaseSession || !lead) return;
+
+  const table = tableForLead(lead);
+  const tags = Array.isArray(lead.tags)
+    ? [...new Set(lead.tags.map(tag => String(tag || '').trim()).filter(Boolean))]
+    : [];
+
+  const { data, error } = await supabaseClient
+    .from(table)
+    .update({ tags })
+    .eq('id', lead.id)
+    .select('id,tags')
+    .single();
+
+  if (error) throw error;
+
+  const savedTags = Array.isArray(data?.tags) ? data.tags : [];
+  lead.tags = savedTags;
+  return savedTags;
 }
 
 function applyRealtimeLeadChange(payload, status) {
@@ -203,11 +256,15 @@ function applyRealtimeLeadChange(payload, status) {
     const incoming = supabaseRowToLead(payload.new || {}, status);
     if (!incoming.id) return;
     const index = state.leads.findIndex(lead => lead.id === incoming.id);
+    // sold_leads never contains the private phone. Preserve Kiara's already-loaded
+    // private copy when realtime updates the public sold record.
+    if (status === 'sold' && currentUserIsKiara() && index >= 0 && state.leads[index].phone && !incoming.phone) {
+      incoming.phone = state.leads[index].phone;
+    }
     if (index >= 0) state.leads[index] = incoming;
     else state.leads.push(incoming);
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   renderLists();
   if (currentLeadId && state.leads.some(lead => lead.id === currentLeadId)) renderCurrentLead();
   else if (currentLeadId) {
@@ -223,6 +280,7 @@ function subscribeToLeadChanges() {
     .channel('steady-hands-leads-live-v2')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'new_leads' }, payload => applyRealtimeLeadChange(payload, 'new'))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'follow_ups' }, payload => applyRealtimeLeadChange(payload, 'followup'))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sold_leads' }, payload => applyRealtimeLeadChange(payload, 'sold'))
     .subscribe();
 }
 
@@ -236,37 +294,46 @@ async function hydrateFromSupabase() {
   if (!supabaseSession) return;
   ensureUuidIds();
 
-  const [{ data: newData, error: newError }, { data: followData, error: followError }] = await Promise.all([
+  const [newResult, followResult, soldResult] = await Promise.all([
     supabaseClient.from('new_leads').select('*').order('created_at', { ascending: true }),
-    supabaseClient.from('follow_ups').select('*').order('created_at', { ascending: true })
+    supabaseClient.from('follow_ups').select('*').order('created_at', { ascending: true }),
+    supabaseClient.from('sold_leads').select('id,name,company,email,site,lead_type,tags,source_tags,spanish_possible,age,issue,concerns,notes,answer_status,mood,outcome,callback_date,callback_time,preferred_contact,preferred_date,preferred_time,preferred_days,time_preference,specific_time,tag,last_called,history,sold_by,created_at,updated_at').order('created_at', { ascending: true })
   ]);
 
-  if (newError) throw newError;
-  if (followError) throw followError;
+  if (newResult.error) throw newResult.error;
+  if (followResult.error) throw followResult.error;
+  if (soldResult.error) throw soldResult.error;
 
   const remoteLeads = [
-    ...(newData || []).map(row => supabaseRowToLead(row, 'new')),
-    ...(followData || []).map(row => supabaseRowToLead(row, 'followup'))
+    ...(newResult.data || []).map(row => supabaseRowToLead(row, 'new')),
+    ...(followResult.data || []).map(row => supabaseRowToLead(row, 'followup')),
+    ...(soldResult.data || []).map(row => supabaseRowToLead(row, 'sold'))
   ];
 
-  // A note that arrived with the original database/import record belongs to
-  // System, not whichever user happened to open the lead first. Persist that
-  // attribution so every device sees the same history.
-  const systemNoteLeads = remoteLeads.filter(addInitialSystemNoteHistory);
-  if (systemNoteLeads.length) {
-    await upsertLeadsByTable(systemNoteLeads);
+  if (currentUserIsKiara()) {
+    const { data: privatePhones, error: privateError } = await supabaseClient.rpc('get_sold_phones');
+    if (privateError) {
+      console.error('Could not load Kiara-only sold phone numbers:', privateError);
+    } else {
+      const phoneById = new Map((privatePhones || []).map(row => [row.lead_id, row.phone || '']));
+      remoteLeads.forEach(lead => {
+        if (lead.status === 'sold' && phoneById.has(lead.id)) lead.phone = phoneById.get(lead.id);
+      });
+    }
   }
 
-  // The database is the source of truth once the two-table setup is in use.
-  // Only migrate browser-local leads if both database tables are completely empty.
-  if (!remoteLeads.length && state.leads.length) {
-    await upsertLeadsByTable(state.leads);
-    return hydrateFromSupabase();
-  }
+  const systemNoteLeads = remoteLeads.filter(addInitialSystemNoteHistory);
+  if (systemNoteLeads.length) await upsertLeadsByTable(systemNoteLeads);
 
   state.leads = remoteLeads;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   renderLists();
+  const savedPage = loadPageState();
+  if (savedPage.screen === 'detail' && savedPage.leadId && state.leads.some(lead => lead.id === savedPage.leadId)) {
+    currentLeadId = savedPage.leadId;
+    renderCurrentLead();
+    setTab(savedPage.tab || 'detailsPanel');
+    showScreen('detail');
+  }
 }
 
 function getUserDisplayName(session = supabaseSession) {
@@ -291,9 +358,8 @@ function updateSignedInUserUi() {
 }
 
 function currentUserIsKiara() {
-  const displayName = String(currentUserName || '').trim().toLowerCase();
-  const emailName = String(supabaseSession?.user?.email || '').split('@')[0].trim().toLowerCase();
-  return displayName === 'kiara' || emailName === 'kiara';
+  const email = String(supabaseSession?.user?.email || '').trim().toLowerCase();
+  return email === 'kiara@steadyhandsop.com';
 }
 
 function addLeadHistory(lead, type, actor = currentUserName, at = new Date().toISOString(), details = {}) {
@@ -306,6 +372,20 @@ function addLeadHistory(lead, type, actor = currentUserName, at = new Date().toI
     at,
     ...details
   });
+}
+
+function activeUserName() {
+  const fromUi = String(currentUserName || '').trim();
+  if (fromUi && !['user', 'unknown'].includes(fromUi.toLowerCase())) return fromUi;
+  const email = String(supabaseSession?.user?.email || '').trim();
+  if (email) return email.split('@')[0] || email;
+  return fromUi || 'User';
+}
+
+function latestSoldActor(lead) {
+  if (!Array.isArray(lead?.history)) return '';
+  const item = [...lead.history].reverse().find(entry => entry?.type === 'sold' && String(entry?.actor || '').trim());
+  return String(item?.actor || '').trim();
 }
 
 function addInitialSystemNoteHistory(lead) {
@@ -360,6 +440,7 @@ function historyText(item) {
   if (item.type === 'called') return `Called by ${actor}${when ? ` on ${when}` : ''}`;
   if (item.type === 'added') return `Lead added by ${actor}${when ? ` on ${when}` : ''}`;
   if (item.type === 'note') return `Note added by ${actor}${when ? ` on ${when}` : ''}${item.note ? ` — \"${item.note}\"` : ''}`;
+  if (item.type === 'sold') return `Sold by ${actor}${when ? ` on ${when}` : ''}`;
   return `${item.label || 'Updated'} by ${actor}${when ? ` on ${when}` : ''}`;
 }
 
@@ -405,9 +486,9 @@ function renderLeadHistory() {
   }
   const canDeleteHistory = currentUserIsKiara();
   list.innerHTML = items.map(item => {
-    const dotClass = item.type === 'called' ? 'called' : item.type === 'note' ? 'note' : 'added';
-    const iconClass = item.type === 'called' ? 'bi-telephone-fill' : item.type === 'note' ? 'bi-journal-text' : 'bi-person-plus-fill';
-    const title = item.type === 'called' ? 'Called' : item.type === 'added' ? 'Lead added' : item.type === 'note' ? 'Note added' : (item.label || 'Updated');
+    const dotClass = item.type === 'called' ? 'called' : item.type === 'note' ? 'note' : item.type === 'sold' ? 'sold' : 'added';
+    const iconClass = item.type === 'called' ? 'bi-telephone-fill' : item.type === 'note' ? 'bi-journal-text' : item.type === 'sold' ? 'bi-trophy-fill' : 'bi-person-plus-fill';
+    const title = item.type === 'called' ? 'Called' : item.type === 'added' ? 'Lead added' : item.type === 'note' ? 'Note added' : item.type === 'sold' ? `Sold by ${escapeHTML(item.actor || 'Unknown')}` : (item.label || 'Updated');
     const noteText = item.type === 'note' && item.note ? `<p class="history-note-text">${escapeHTML(item.note)}</p>` : '';
     const deleteButton = canDeleteHistory && (item.type === 'note' || item.type === 'called')
       ? `<button class="history-note-delete" type="button" data-delete-history="${escapeHTML(item.id || '')}" aria-label="Delete ${item.type === 'called' ? 'call log' : 'note'}" title="Delete ${item.type === 'called' ? 'call log' : 'note'}"><i class="bi bi-x-lg"></i></button>`
@@ -457,8 +538,7 @@ async function deleteHistoryEntry(historyId) {
 
   if (item.type === 'note') {
     removeNoteTextFromLead(lead, item.note || '');
-    $('#notesField').value = lead.notes || '';
-  }
+    }
 
   lead.history = (lead.history || []).filter(entry => entry.id !== historyId);
 
@@ -469,6 +549,10 @@ async function deleteHistoryEntry(historyId) {
       .filter(entry => entry.type === 'called' && entry.at)
       .sort((a, b) => new Date(a.at) - new Date(b.at));
     lead.lastCalled = remainingCalls.length ? remainingCalls[remainingCalls.length - 1].at : '';
+
+    if (!remainingCalls.length && lead.status === 'followup') {
+      lead.status = 'new';
+    }
   }
 
   saveState(lead.id);
@@ -476,7 +560,7 @@ async function deleteHistoryEntry(historyId) {
   renderLists();
   try {
     await syncLeadNow(lead);
-    showSyncStatus(item.type === 'called' ? 'Call log deleted' : 'Note deleted');
+    showSyncStatus(item.type === 'called' && lead.status === 'new' ? 'Call deleted · moved to New Leads' : (item.type === 'called' ? 'Call log deleted' : 'Note deleted'));
   } catch (error) {
     console.error('Could not delete history entry in Supabase:', error);
     showSyncStatus('Sync failed');
@@ -498,8 +582,6 @@ async function initializeSupabaseAuth() {
   }
 }
 
-const STORAGE_KEY = 'steadyHandsLeadApp_v5_two_tables';
-
 const seedLeads = [];
 
 let state = loadState();
@@ -507,29 +589,31 @@ let currentLeadId = null;
 let editingLeadId = null;
 let selectedDoneTag = '';
 let selectedSpanishPossible = false;
+let currentPipelineView = 'leads';
+let pageState = { screen: 'leads', leadId: null, tab: 'detailsPanel' };
+
+function loadPageState() {
+  return { ...pageState };
+}
+
+function savePageState(patch = {}) {
+  pageState = { ...pageState, ...patch };
+  return { ...pageState };
+}
+
+function clearDetailPageState() {
+  savePageState({ screen: 'leads', leadId: null, tab: 'detailsPanel' });
+}
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
 function loadState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved && Array.isArray(saved.leads)) {
-      // Remove the old addedAt field from previously saved leads.
-      saved.leads = saved.leads.map(lead => {
-        const { addedAt, AddedAt, addedat, ...cleanLead } = lead || {};
-        cleanLead.sourceTags = Array.isArray(cleanLead.sourceTags) ? cleanLead.sourceTags.filter(tag => String(tag || '').trim().toLowerCase() !== 'other') : [];
-        return cleanLead;
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-      return saved;
-    }
-  } catch (_) {}
+  // Supabase is the only persistent source of truth.
   return { leads: structuredClone(seedLeads) };
 }
 
 function saveState(...leadIds) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   const ids = leadIds.filter(Boolean);
   if (ids.length) queueLeadSync(...ids);
   else if (currentLeadId) queueLeadSync(currentLeadId);
@@ -562,8 +646,32 @@ function formatDateTime(value) {
 }
 
 function showScreen(name) {
-  $('#leadsScreen').classList.toggle('active', name === 'leads');
-  $('#detailScreen').classList.toggle('active', name === 'detail');
+  const leadsScreen = $('#leadsScreen');
+  const detailScreen = $('#detailScreen');
+  const showingDetail = name === 'detail';
+
+  savePageState({
+    screen: showingDetail ? 'detail' : 'leads',
+    leadId: showingDetail ? currentLeadId : null
+  });
+
+  leadsScreen.classList.toggle('active', !showingDetail);
+  detailScreen.classList.toggle('active', showingDetail);
+
+  // Force a true one-screen-at-a-time layout on desktop too.
+  // This prevents older desktop CSS from keeping the lead board visible.
+  if (showingDetail) {
+    leadsScreen.style.setProperty('display', 'none', 'important');
+    detailScreen.style.removeProperty('display');
+    leadsScreen.setAttribute('aria-hidden', 'true');
+    detailScreen.removeAttribute('aria-hidden');
+  } else {
+    detailScreen.style.setProperty('display', 'none', 'important');
+    leadsScreen.style.removeProperty('display');
+    detailScreen.setAttribute('aria-hidden', 'true');
+    leadsScreen.removeAttribute('aria-hidden');
+  }
+
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
@@ -578,11 +686,25 @@ function normalizeLeadType(value) {
   return text;
 }
 
+function getActiveSiteTag(lead) {
+  if (!lead) return '';
+  const siteTags = Array.isArray(lead.tags)
+    ? lead.tags.map(normalizeLeadType).filter(tag => LEAD_TYPE_TAGS.has(tag))
+    : [];
+
+  // Prefer the explicit currently selected leadType when it is a website tag.
+  const explicit = normalizeLeadType(lead.leadType);
+  if (LEAD_TYPE_TAGS.has(explicit)) return explicit;
+
+  return siteTags[0] || '';
+}
+
 function getLeadType(lead) {
-  const tagType = Array.isArray(lead.tags)
-    ? lead.tags.map(normalizeLeadType).find(value => value && value !== 'Spanish?')
-    : '';
-  return normalizeLeadType(lead.leadType || lead.type || lead.reason || tagType);
+  const activeSite = getActiveSiteTag(lead);
+  if (activeSite) return activeSite;
+
+  const fallback = normalizeLeadType(lead?.type || lead?.reason || '');
+  return LEAD_TYPE_TAGS.has(fallback) ? fallback : fallback;
 }
 
 function hasPossibleSpanishTag(lead) {
@@ -591,18 +713,57 @@ function hasPossibleSpanishTag(lead) {
 
 const AVAILABLE_LEAD_TAGS = [
   'No Site',
-  'Outdated Site',
   'Broken Site',
+  'Outdated Site',
   'Spanish?',
   'No Phone',
+  'Hot Lead',
   'Interested',
   'Call Back',
   'Needs More Info',
-  'No Answer',
   'Skeptical',
+  'No Answer',
   'Not Interested',
+  'Wrong Number',
   'Sold'
 ];
+
+const LEAD_TAG_GROUPS = [
+  {
+    key: 'site',
+    title: 'Website',
+    description: 'Optional — choose one, switch it, or leave blank',
+    tags: ['No Site', 'Broken Site', 'Outdated Site']
+  },
+  {
+    key: 'contact',
+    title: 'Contact',
+    description: 'Language and contact limitations',
+    tags: ['Spanish?', 'No Phone']
+  },
+  {
+    key: 'interest',
+    title: 'Lead Status',
+    description: 'Interest and next-step signals',
+    tags: ['Hot Lead', 'Interested', 'Call Back', 'Needs More Info', 'Skeptical']
+  },
+  {
+    key: 'outcome',
+    title: 'Call Outcome',
+    description: 'Negative or unreachable outcomes',
+    tags: ['No Answer', 'Not Interested', 'Wrong Number']
+  },
+  {
+    key: 'conversion',
+    title: 'Conversion',
+    description: 'Completed sales',
+    tags: ['Sold']
+  }
+];
+
+const LEAD_TAG_GROUP_BY_LABEL = Object.fromEntries(
+  LEAD_TAG_GROUPS.flatMap(group => group.tags.map(tag => [tag, group.key]))
+);
 
 const LEAD_TAG_ICONS = {
   'No Site': 'bi-globe2',
@@ -610,12 +771,14 @@ const LEAD_TAG_ICONS = {
   'Broken Site': 'bi-exclamation-triangle',
   'Spanish?': 'bi-translate',
   'No Phone': 'bi-telephone-x',
+  'Hot Lead': 'bi-fire',
   'Interested': 'bi-star',
   'Call Back': 'bi-telephone-forward',
   'Needs More Info': 'bi-info-circle',
   'No Answer': 'bi-phone-vibrate',
   'Skeptical': 'bi-question-circle',
   'Not Interested': 'bi-slash-circle',
+  'Wrong Number': 'bi-exclamation-octagon',
   'Sold': 'bi-trophy'
 };
 
@@ -645,7 +808,7 @@ function getSourceTagMeta(label) {
 }
 
 const LEAD_TYPE_TAGS = new Set(['Outdated Site', 'No Site', 'Broken Site']);
-const FOLLOWUP_TAGS = new Set(['Interested', 'Needs More Info', 'Skeptical', 'Call Back', 'No Answer', 'Not Interested', 'Sold']);
+const FOLLOWUP_TAGS = new Set(['Hot Lead', 'Interested', 'Needs More Info', 'Skeptical', 'Call Back', 'No Answer', 'Wrong Number', 'Not Interested', 'Sold']);
 
 const POPULAR_SOURCE_TAGS = [
   'Google',
@@ -749,13 +912,23 @@ async function toggleSourceTag(label) {
 function ensureNoSiteTag(lead) {
   if (!lead) return lead;
   lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
-  const hasSite = Boolean(String(lead.site || '').trim());
-  const hasNoSite = lead.tags.some(tag => normalizeLeadType(tag) === 'No Site') || normalizeLeadType(lead.leadType) === 'No Site';
 
-  if (!hasSite && !hasNoSite) {
-    lead.tags.push('No Site');
-    if (!normalizeLeadType(lead.leadType)) lead.leadType = 'No Site';
-  }
+  // Website-condition tags are now completely user-controlled.
+  // A lead is allowed to have NO website-condition tag selected.
+  // We only normalize old data so at most one of the three site tags survives.
+  const selectedSiteTags = lead.tags
+    .map(tag => normalizeLeadType(tag))
+    .filter(tag => LEAD_TYPE_TAGS.has(tag));
+
+  const explicit = normalizeLeadType(lead.leadType);
+  const keep = LEAD_TYPE_TAGS.has(explicit) ? explicit : (selectedSiteTags[0] || '');
+
+  lead.tags = lead.tags.filter(tag => !LEAD_TYPE_TAGS.has(normalizeLeadType(tag)));
+  if (keep) lead.tags.push(keep);
+
+  if (!keep && LEAD_TYPE_TAGS.has(explicit)) lead.leadType = '';
+  if (keep) lead.leadType = keep;
+
   return lead;
 }
 
@@ -800,31 +973,64 @@ function renderQuickInfoTags() {
 
   const selected = selectedLeadTags(lead);
   const knownKeys = new Set(AVAILABLE_LEAD_TAGS.map(tag => normalizeLeadType(tag).toLowerCase()));
-  const customTags = Array.from(selected.values()).filter(tag => !knownKeys.has(normalizeLeadType(tag).toLowerCase()));
-  // Keep the requested built-in order, but move every selected/checkmarked tag
-  // to the front while preserving relative order within each group.
-  const allTags = [...AVAILABLE_LEAD_TAGS, ...customTags];
-  allTags.sort((a, b) => {
-    const aSelected = selected.has(normalizeLeadType(a).toLowerCase()) ? 1 : 0;
-    const bSelected = selected.has(normalizeLeadType(b).toLowerCase()) ? 1 : 0;
-    return bSelected - aSelected;
-  });
+  const customTags = Array.from(selected.values())
+    .filter(tag => !knownKeys.has(normalizeLeadType(tag).toLowerCase()));
 
-  list.innerHTML = allTags.map(label => {
+  const renderChip = (label, groupKey = 'custom') => {
     const key = normalizeLeadType(label).toLowerCase();
     const isSelected = selected.has(key);
     const normalizedLabel = normalizeLeadType(label);
-    const spanishClass = normalizedLabel === 'Spanish?' ? ' spanish' : '';
     const icon = LEAD_TAG_ICONS[normalizedLabel] || 'bi-tag';
+    const isSiteChoice = LEAD_TYPE_TAGS.has(normalizedLabel);
+
     return `
-      <button class="quick-tag-chip lead-tag-option${isSelected ? ' selected' : ''}${spanishClass}" type="button"
-        data-toggle-lead-tag="${escapeHTML(label)}" aria-pressed="${isSelected ? 'true' : 'false'}"
-        aria-label="${isSelected ? 'Remove' : 'Add'} ${escapeHTML(label)} tag">
+      <button
+        class="quick-tag-chip lead-tag-option tag-group-${escapeHTML(groupKey)}${isSelected ? ' selected' : ''}"
+        type="button"
+        data-toggle-lead-tag="${escapeHTML(label)}"
+        data-tag-group="${escapeHTML(groupKey)}"
+        aria-pressed="${isSelected ? 'true' : 'false'}"
+        ${isSiteChoice ? 'role="radio"' : ''}
+        ${isSiteChoice ? `aria-checked="${isSelected ? 'true' : 'false'}"` : ''}
+        aria-label="${isSiteChoice ? 'Select' : (isSelected ? 'Remove' : 'Add')} ${escapeHTML(label)} tag">
         <i class="bi ${icon}" aria-hidden="true"></i>
         <span>${escapeHTML(label)}</span>
         ${isSelected ? '<i class="bi bi-check-lg tag-state-check" aria-hidden="true"></i>' : ''}
       </button>`;
+  };
+
+  const groupHtml = LEAD_TAG_GROUPS.map(group => {
+    const chips = group.tags.map(label => renderChip(label, group.key)).join('');
+    return `
+      <section class="lead-tag-group lead-tag-group-${escapeHTML(group.key)}">
+        <div class="lead-tag-group-heading">
+          <div>
+            <strong>${escapeHTML(group.title)}</strong>
+            <small>${escapeHTML(group.description)}</small>
+          </div>
+        </div>
+        <div class="lead-tag-group-options" ${group.key === 'site' ? 'role="radiogroup" aria-label="Website condition"' : ''}>
+          ${chips}
+        </div>
+      </section>`;
   }).join('');
+
+  const customHtml = customTags.length
+    ? `
+      <section class="lead-tag-group lead-tag-group-custom">
+        <div class="lead-tag-group-heading">
+          <div>
+            <strong>Other</strong>
+            <small>Custom tags on this lead</small>
+          </div>
+        </div>
+        <div class="lead-tag-group-options">
+          ${customTags.map(label => renderChip(label, 'custom')).join('')}
+        </div>
+      </section>`
+    : '';
+
+  list.innerHTML = groupHtml + customHtml;
 }
 
 async function toggleQuickInfoTag(label) {
@@ -833,6 +1039,12 @@ async function toggleQuickInfoTag(label) {
 
   const cleanLabel = String(label || '').trim();
   const normalized = normalizeLeadType(cleanLabel);
+
+  // Sold is consequential: never add it directly from Quick Info.
+  if (normalized === 'Sold' && !leadHasTag(lead, 'Sold')) {
+    beginSoldFlow();
+    return;
+  }
   const key = normalized.toLowerCase();
   const selected = selectedLeadTags(lead);
   const isSelected = selected.has(key);
@@ -850,30 +1062,46 @@ async function toggleQuickInfoTag(label) {
     if (isSelected) removeMatchingTag();
     else addTagIfMissing();
   } else if (LEAD_TYPE_TAGS.has(normalized)) {
-    if (isSelected) {
-      removeMatchingTag();
-      if (normalizeLeadType(lead.leadType) === normalized) {
-        const replacement = lead.tags.map(normalizeLeadType).find(tag => LEAD_TYPE_TAGS.has(tag)) || '';
-        lead.leadType = replacement;
-      }
+    // Website condition is optional: zero OR one can be active.
+    // Clicking a different site condition switches to it and removes the old one.
+    // Clicking the currently selected condition untoggles it.
+    const removingCurrentSiteTag = isSelected;
+
+    lead.tags = lead.tags.filter(tag => !LEAD_TYPE_TAGS.has(normalizeLeadType(tag)));
+
+    if (removingCurrentSiteTag) {
+      lead.leadType = '';
     } else {
-      // Preserve an existing lead-type selection before adding another one.
-      const existingType = normalizeLeadType(lead.leadType);
-      if (existingType && LEAD_TYPE_TAGS.has(existingType) && !lead.tags.some(tag => normalizeLeadType(tag) === existingType)) {
-        lead.tags.push(existingType);
-      }
-      addTagIfMissing();
-      if (!existingType) lead.leadType = normalized;
+      lead.tags.push(normalized);
+      lead.leadType = normalized;
+    }
+
+    // Removing No Site offers a chance to add the actual website.
+    if (normalized === 'No Site' && removingCurrentSiteTag) {
+      setTimeout(() => openAddSitePrompt(), 0);
     }
   } else {
     if (isSelected) {
       removeMatchingTag();
       if (normalizeLeadType(lead.tag).toLowerCase() === key) {
-        lead.tag = lead.tags.map(tag => String(tag).trim()).find(tag => FOLLOWUP_TAGS.has(tag)) || '';
+        lead.tag = lead.tags
+          .map(tag => normalizeLeadType(tag))
+          .find(tag => FOLLOWUP_TAGS.has(tag) && tag !== 'Hot Lead') || '';
       }
     } else {
       addTagIfMissing();
-      if (FOLLOWUP_TAGS.has(cleanLabel) && !lead.tag) lead.tag = cleanLabel;
+
+      // A selected status tag should also be the lead's primary SQL `tag`.
+      // This is important for priority tags such as Hot Lead and Wrong Number:
+      // Supabase stores the full tag list in `tags`, but the main status badge
+      // and SQL `tag` column come from lead.tag.
+      if (FOLLOWUP_TAGS.has(cleanLabel)) {
+        // Hot Lead is a priority flag, not the legacy single-value status.
+        // Persist it in `tags` so Supabase keeps it across refreshes.
+        if (normalized !== 'Hot Lead') {
+          lead.tag = cleanLabel;
+        }
+      }
     }
   }
 
@@ -883,24 +1111,64 @@ async function toggleQuickInfoTag(label) {
   renderLeadHistory();
   renderLists();
   try {
-    await syncLeadNow(lead);
-    showSyncStatus(isSelected ? 'Tag removed' : 'Tag added');
+    if (normalized === 'Hot Lead') {
+      // Hot Lead is intentionally persisted DIRECTLY to the SQL `tags` array.
+      // Do not depend on the legacy single-value `tag` column or a whole-row upsert.
+      const savedTags = await syncLeadTagsOnly(lead);
+      const remoteHasHot = savedTags.some(
+        tag => String(tag || '').trim().toLowerCase() === 'hot lead'
+      );
+
+      if (!isSelected && !remoteHasHot) {
+        throw new Error('Supabase did not save Hot Lead inside tags');
+      }
+      if (isSelected && remoteHasHot) {
+        throw new Error('Supabase did not remove Hot Lead from tags');
+      }
+
+      renderQuickInfoTags();
+      renderLists();
+      showSyncStatus(isSelected ? 'Hot Lead removed' : 'Hot Lead saved');
+    } else {
+      await syncLeadNow(lead);
+      showSyncStatus(
+        LEAD_TYPE_TAGS.has(normalized)
+          ? (isSelected ? `${normalized} removed` : `${normalized} selected`)
+          : (isSelected ? 'Tag removed' : 'Tag added')
+      );
+    }
   } catch (error) {
     console.error('Could not update tag in Supabase:', error);
+    queueLeadSync(lead.id);
     showSyncStatus('Sync failed');
   }
 }
 
+function leadHasTag(lead, label) {
+  const key = String(label || '').trim().toLowerCase();
+  return String(lead?.tag || '').trim().toLowerCase() === key ||
+    (Array.isArray(lead?.tags) && lead.tags.some(tag => String(tag || '').trim().toLowerCase() === key));
+}
+
+function leadPriority(lead) {
+  if (leadHasTag(lead, 'Hot Lead')) return 2;
+  if (leadHasTag(lead, 'Wrong Number') || String(lead?.outcome || '').trim().toLowerCase() === 'wrong number') return 1;
+  return 0;
+}
+
 function leadCard(lead) {
   const isNew = lead.status === 'new';
+  const isSold = lead.status === 'sold';
   const leadType = getLeadType(lead);
   ensureAutomaticTags(lead);
+  const isHot = leadHasTag(lead, 'Hot Lead');
+  const isWrongNumber = leadHasTag(lead, 'Wrong Number') || String(lead.outcome || '').trim().toLowerCase() === 'wrong number';
   const hasNoPhone = Array.isArray(lead.tags) && lead.tags.some(tag => String(tag || '').trim().toLowerCase() === 'no phone');
   const badges = [
     leadType && leadType !== 'Spanish?' ? `<span class="lead-type-badge">${escapeHTML(leadType)}</span>` : '',
     hasNoPhone ? '<span class="lead-type-badge no-phone-badge">No Phone</span>' : '',
     hasPossibleSpanishTag(lead) || leadType === 'Spanish?' ? '<span class="lead-type-badge spanish-badge">Spanish?</span>' : '',
-    !isNew && lead.tag ? `<span class="tag-badge">${escapeHTML(lead.tag)}</span>` : ''
+    !isNew && lead.tag && !isHot && !isWrongNumber ? `<span class="tag-badge${isSold ? ' sold-tag-badge' : ''}">${escapeHTML(lead.tag)}</span>` : ''
   ].filter(Boolean).join('');
   const initial = (lead.name || '?').trim().charAt(0).toUpperCase();
   const visibleSourceTags = (Array.isArray(lead.sourceTags) ? lead.sourceTags : [])
@@ -912,37 +1180,122 @@ function leadCard(lead) {
     const meta = getSourceTagMeta(clean);
     return `<span class="lead-source-chip ${meta.className}"><i class="bi ${meta.icon}" aria-hidden="true"></i><span>${escapeHTML(clean)}</span></span>`;
   }).join('');
+  const cornerTags = [
+    isHot ? '<span class="priority-corner-tag hot-lead-tag">🔥 HOT LEAD</span>' : '',
+    isWrongNumber ? '<span class="priority-corner-tag wrong-number-tag">WRONG NUMBER</span>' : ''
+  ].filter(Boolean).join('');
+
+  const deleteLeadButton = currentUserIsKiara()
+    ? `<button class="lead-card-delete" type="button" data-delete-lead="${lead.id}" aria-label="Delete lead" title="Delete lead"><i class="bi bi-trash3"></i></button>`
+    : '';
 
   return `
-    <button class="lead-item" type="button" data-open-lead="${lead.id}">
-      <span class="lead-avatar">${escapeHTML(initial)}</span>
-      <span class="lead-copy">
-        <span class="lead-name-line"><strong>${escapeHTML(lead.company || 'No company')}</strong>${badges}</span>
-        <span class="lead-company">${escapeHTML(lead.name || 'No contact name')}</span>
-        <span class="lead-called-by ${latestCallHistory(lead) ? 'has-call' : 'no-call'}"><i class="bi bi-telephone-fill" aria-hidden="true"></i>${escapeHTML(callerSummary(lead, false))}</span>
-        ${sourceBadges ? `<span class="lead-source-tags">${sourceBadges}</span>` : ''}
-      </span>
-      <i class="bi bi-chevron-right"></i>
-    </button>`;
+    <div class="lead-item-wrap">
+      <button class="lead-item${isHot ? ' hot-lead-card' : ''}${isWrongNumber ? ' wrong-number-card' : ''}" type="button" data-open-lead="${lead.id}">
+        ${cornerTags ? `<span class="lead-priority-tags">${cornerTags}</span>` : ''}
+        <span class="lead-avatar">${escapeHTML(initial)}</span>
+        <span class="lead-copy">
+          <span class="lead-name-line"><strong>${escapeHTML(lead.company || 'No company')}</strong>${badges}${isHot ? '<span class="mobile-hot-lead-badge">🔥 HOT LEAD</span>' : ''}</span>
+          <span class="lead-company">${escapeHTML(lead.name || 'No contact name')}</span>
+          ${isSold
+            ? `<span class="lead-called-by sold-by-card"><i class="bi bi-trophy-fill" aria-hidden="true"></i>Sold by ${escapeHTML(lead.soldBy || latestSoldActor(lead) || 'Unassigned')}</span>`
+            : `<span class="lead-called-by ${latestCallHistory(lead) ? 'has-call' : 'no-call'}"><i class="bi bi-telephone-fill" aria-hidden="true"></i>${escapeHTML(callerSummary(lead, false))}</span>`}
+          ${sourceBadges ? `<span class="lead-source-tags">${sourceBadges}</span>` : ''}
+        </span>
+        <i class="bi bi-chevron-right"></i>
+      </button>
+      ${deleteLeadButton}
+    </div>`;
+}
+
+
+function enforcePipelineView(requestedView = 'leads') {
+  const view = ['leads', 'followups', 'sold'].includes(requestedView) ? requestedView : 'leads';
+  currentPipelineView = view;
+
+  const screen = document.getElementById('leadsScreen');
+  if (!screen) return;
+
+  screen.classList.remove('desktop-leads-view', 'desktop-followups-view', 'desktop-sold-view');
+  screen.classList.add(
+    view === 'followups' ? 'desktop-followups-view' :
+    view === 'sold' ? 'desktop-sold-view' :
+    'desktop-leads-view'
+  );
+  screen.dataset.pipelineView = view;
+
+  const selectors = {
+    leads: {
+      heading: '#leadsScreen > .section-heading:not(.follow-heading):not(.sold-heading)',
+      list: '#newLeadList'
+    },
+    followups: {
+      heading: '#leadsScreen > .follow-heading',
+      list: '#followLeadList'
+    },
+    sold: {
+      heading: '#leadsScreen > .sold-heading',
+      list: '#soldLeadList'
+    }
+  };
+
+  Object.entries(selectors).forEach(([key, refs]) => {
+    const visible = key === view;
+    const heading = document.querySelector(refs.heading);
+    const list = document.querySelector(refs.list);
+
+    if (heading) {
+      heading.hidden = !visible;
+      heading.style.setProperty('display', visible ? 'flex' : 'none', 'important');
+    }
+
+    if (list) {
+      list.hidden = !visible;
+      list.style.setProperty('display', visible ? 'grid' : 'none', 'important');
+    }
+  });
+
+  document.querySelectorAll('[data-pipeline-view]').forEach(button => {
+    const active = button.dataset.pipelineView === view;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
 }
 
 function renderLists() {
   const query = ($('#leadSearch').value || '').trim().toLowerCase();
   const matches = lead => !query || [lead.name, lead.company, lead.phone, lead.email, lead.tag, getLeadType(lead), hasPossibleSpanishTag(lead) ? 'Spanish?' : '', ...(Array.isArray(lead.sourceTags) ? lead.sourceTags : [])].some(v => String(v || '').toLowerCase().includes(query));
-  const fresh = state.leads.filter(l => l.status === 'new' && matches(l)).slice().reverse();
-  const follow = state.leads.filter(l => l.status === 'followup' && matches(l)).sort((a,b) => new Date(b.lastCalled || 0) - new Date(a.lastCalled || 0));
+  const sortPriority = (a, b, fallback) => {
+    const priorityDiff = leadPriority(b) - leadPriority(a);
+    return priorityDiff || fallback(a, b);
+  };
+  const fresh = state.leads
+    .filter(l => l.status === 'new' && matches(l))
+    .slice()
+    .sort((a, b) => sortPriority(a, b, (x, y) => state.leads.indexOf(y) - state.leads.indexOf(x)));
+  const follow = state.leads
+    .filter(l => l.status === 'followup' && matches(l))
+    .sort((a,b) => sortPriority(a, b, (x, y) => new Date(y.lastCalled || 0) - new Date(x.lastCalled || 0)));
+  const sold = state.leads
+    .filter(l => l.status === 'sold' && matches(l))
+    .sort((a,b) => sortPriority(a, b, (x, y) => new Date(y.soldAt || y.updatedAt || y.lastCalled || 0) - new Date(x.soldAt || x.updatedAt || x.lastCalled || 0)));
 
   $('#newLeadList').innerHTML = fresh.length ? fresh.map(leadCard).join('') : '<div class="empty-state">No new leads here.</div>';
   $('#followLeadList').innerHTML = follow.length ? follow.map(leadCard).join('') : '<div class="empty-state">No follow-ups yet.</div>';
+  $('#soldLeadList').innerHTML = sold.length ? sold.map(leadCard).join('') : '<div class="empty-state sold-empty-state">No sold leads yet.</div>';
 
   const newCount = state.leads.filter(l => l.status === 'new').length;
   const followCount = state.leads.filter(l => l.status === 'followup').length;
-  const soldCount = state.leads.filter(l => l.tag === 'Sold').length;
+  const soldCount = state.leads.filter(l => l.status === 'sold').length;
   $('#newCount').textContent = newCount;
   $('#followCount').textContent = followCount;
   $('#soldCount').textContent = soldCount;
   $('#newCountChip').textContent = newCount;
   $('#followCountChip').textContent = followCount;
+  $('#soldCountChip').textContent = soldCount;
+
+  // Re-apply the selected category after every render.
+  enforcePipelineView(currentPipelineView);
 }
 
 function openLead(id) {
@@ -951,6 +1304,7 @@ function openLead(id) {
   historyExpanded = true;
   updateHistoryVisibility();
   renderCurrentLead();
+  setTab('detailsPanel');
   showScreen('detail');
 }
 
@@ -958,13 +1312,39 @@ function renderCurrentLead() {
   const lead = currentLead();
   if (!lead) return;
 
-  $('#leadPhone').textContent = lead.phone ? formatPhoneNumber(lead.phone) : 'No phone';
+  const soldLead = lead.status === 'sold';
+  const kiaraCanSeeSoldPhone = soldLead && currentUserIsKiara();
+  const phoneIsHidden = soldLead && !kiaraCanSeeSoldPhone;
+  $('#leadPhone').textContent = phoneIsHidden ? 'Hidden after sale' : (lead.phone ? formatPhoneNumber(lead.phone) : 'No phone');
+  const phoneLabel = document.querySelector('.phone-card-label');
+  if (phoneLabel) phoneLabel.textContent = phoneIsHidden ? 'PHONE NUMBER · KIARA ONLY' : 'PHONE NUMBER';
   const calledByEl = $('#leadCalledBy');
   if (calledByEl) {
+    calledByEl.hidden = soldLead;
     calledByEl.textContent = callerSummary(lead, true);
     calledByEl.classList.toggle('has-call', Boolean(latestCallHistory(lead)));
   }
-  $('#topCallButton').href = `tel:${String(lead.phone || '').replace(/[^\d+]/g, '')}`;
+  const soldByEl = $('#soldByDetail');
+  if (soldByEl) {
+    soldByEl.hidden = !soldLead;
+    soldByEl.textContent = soldLead ? `Sold by ${lead.soldBy || latestSoldActor(lead) || 'Unassigned'}` : '';
+  }
+  const callButton = $('#topCallButton');
+  const mobileCallButton = $('#mobilePreCallButton');
+  const canCall = Boolean(lead.phone) && (!soldLead || kiaraCanSeeSoldPhone);
+
+  if (callButton) {
+    callButton.hidden = !canCall;
+    callButton.href = '#';
+    callButton.dataset.tel = canCall ? `tel:${String(lead.phone || '').replace(/[^\d+]/g, '')}` : '';
+    callButton.setAttribute('aria-disabled', canCall ? 'false' : 'true');
+  }
+
+  if (mobileCallButton) {
+    mobileCallButton.hidden = !canCall;
+    mobileCallButton.disabled = !canCall;
+    mobileCallButton.setAttribute('aria-disabled', canCall ? 'false' : 'true');
+  }
   $('#leadName').textContent = lead.name || 'No contact name';
   $('#leadCompany').textContent = lead.company || '—';
   $('#leadEmail').textContent = lead.email || 'No email';
@@ -982,7 +1362,6 @@ function renderCurrentLead() {
   if (specificControl) specificControl.hidden = lead.timePreference !== 'Specific Time';
   loadSpecificTime(lead.specificTime || '');
   $('#concernsField').value = lead.concerns || '';
-  $('#notesField').value = lead.notes || '';
   renderQuickInfoTags();
   renderSourceTags();
   renderLeadHistory();
@@ -999,8 +1378,33 @@ function renderCurrentLead() {
 }
 
 function setTab(panelId) {
-  $$('.tab').forEach(tab => tab.classList.toggle('active', tab.dataset.tab === panelId));
-  $$('.panel').forEach(panel => panel.classList.toggle('active', panel.id === panelId));
+  const validTabs = new Set(['detailsPanel', 'followupPanel', 'quickPanel']);
+  const safePanelId = validTabs.has(panelId) ? panelId : 'detailsPanel';
+  $$('.tab').forEach(tab => tab.classList.toggle('active', tab.dataset.tab === safePanelId));
+  $$('.panel').forEach(panel => panel.classList.toggle('active', panel.id === safePanelId));
+  savePageState({ tab: safePanelId });
+}
+
+function restorePageState() {
+  const saved = loadPageState();
+  const validTabs = new Set(['detailsPanel', 'followupPanel', 'quickPanel']);
+  const savedTab = validTabs.has(saved.tab) ? saved.tab : 'detailsPanel';
+
+  if (saved.screen === 'detail' && saved.leadId && state.leads.some(lead => lead.id === saved.leadId)) {
+    currentLeadId = saved.leadId;
+    sourceTagsExpanded = false;
+    historyExpanded = true;
+    updateHistoryVisibility();
+    renderCurrentLead();
+    setTab(savedTab);
+    showScreen('detail');
+    return true;
+  }
+
+  setTab(savedTab);
+  clearDetailPageState();
+  showScreen('leads');
+  return false;
 }
 
 function autosaveField(element) {
@@ -1010,7 +1414,7 @@ function autosaveField(element) {
   saveState();
 }
 
-let notesBeforeEdit = '';
+let quickNotesBeforeEdit = '';
 let historyExpanded = true;
 function noteAddedText(before, after) {
   const previous = String(before || '').trim();
@@ -1280,14 +1684,75 @@ function escapeHTML(text) {
   return String(text ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
 }
 
+async function deleteLeadPermanently(leadId) {
+  if (!currentUserIsKiara()) return toast('Only Kiara can delete leads');
+
+  const lead = state.leads.find(item => item.id === leadId);
+  if (!lead) return;
+
+  if (supabaseSession) {
+    for (const table of ['new_leads', 'follow_ups', 'sold_leads']) {
+      const { error } = await supabaseClient.from(table).delete().eq('id', leadId);
+      if (error) throw error;
+    }
+  }
+
+  state.leads = state.leads.filter(item => item.id !== leadId);
+  pendingSyncIds.delete(leadId);
+  if (currentLeadId === leadId) currentLeadId = null;
+  renderLists();
+  showSyncStatus('Lead deleted');
+  toast('Lead deleted');
+}
+
+function openLeadDeleteConfirmation(leadId) {
+  if (!currentUserIsKiara()) return toast('Only Kiara can delete leads');
+
+  const lead = state.leads.find(item => item.id === leadId);
+  if (!lead) return;
+
+  pendingLeadDeleteId = leadId;
+  const label = lead.company || lead.name || 'this lead';
+  $('#leadDeleteConfirmText').textContent = `Are you sure you want to permanently delete ${label}? This cannot be undone.`;
+  openModal('leadDeleteConfirmModal');
+}
+
+$('#confirmLeadDeleteButton')?.addEventListener('click', async () => {
+  const id = pendingLeadDeleteId;
+  pendingLeadDeleteId = '';
+  closeModal('leadDeleteConfirmModal');
+  if (!id) return;
+
+  try {
+    await deleteLeadPermanently(id);
+  } catch (error) {
+    console.error('Could not delete lead from Supabase:', error);
+    showSyncStatus('Delete failed');
+    toast('Could not delete lead');
+  }
+});
+
 // Navigation / lists
-$('#backButton').addEventListener('click', () => { renderLists(); showScreen('leads'); });
+$('#backButton').addEventListener('click', () => { renderLists(); clearDetailPageState(); showScreen('leads'); });
 $('#leadSearch').addEventListener('input', renderLists);
 $('#addLeadBottomButton').addEventListener('click', openNewLeadModal);
+document.getElementById('desktopHeaderAddLeadButton')?.addEventListener('click', openNewLeadModal);
 $('#editLeadButton')?.addEventListener('click', openEditLeadModal);
 document.addEventListener('click', event => {
+  const deleteLeadButton = event.target.closest('[data-delete-lead]');
+  if (deleteLeadButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    openLeadDeleteConfirmation(deleteLeadButton.dataset.deleteLead);
+    return;
+  }
+
   const leadButton = event.target.closest('[data-open-lead]');
-  if (leadButton) openLead(leadButton.dataset.openLead);
+  if (!leadButton) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  openLead(leadButton.dataset.openLead);
 });
 
 document.querySelectorAll('[data-close="newLeadModal"]').forEach(button => button.addEventListener('click', () => {
@@ -1414,15 +1879,227 @@ $$('[data-save]').forEach(element => {
   element.addEventListener('change', () => autosaveField(element));
 });
 
-// Record a call only when the actual phone button is clicked.
-$('#topCallButton')?.addEventListener('click', () => {
+// Call flow: show lead context first, launch phone call, then ask a few quick questions.
+let postCallAnswer = '';
+let postCallMood = '';
+let postCallTag = '';
+let pendingCallLeadId = '';
+let callLaunchAt = 0;
+
+function callPromptForLead(lead) {
+  const type = getActiveSiteTag(lead);
+  const rawFirstName = String(lead?.name || '').trim().split(/\s+/)[0] || '';
+  const firstName = rawFirstName || '____';
+  const callerName = activeUserName();
+
+  const safeLeadName = escapeHTML(firstName);
+  const safeCallerName = escapeHTML(callerName);
+
+  if (type === 'No Site') {
+    return {
+      type: 'NO SITE',
+      className: 'prompt-no-site',
+      html: `Hey <mark>${safeLeadName}</mark>, my name is <mark>${safeCallerName}</mark>. I was looking into your business earlier and I <mark>couldn’t find</mark> a website. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with a <mark>professional site</mark>. I just wanted to see if that’s something <mark>you’re considering</mark>.`
+    };
+  }
+
+  if (type === 'Broken Site') {
+    return {
+      type: 'BROKEN SITE',
+      className: 'prompt-broken-site',
+      html: `Hey <mark>${safeLeadName}</mark>, my name is <mark>${safeCallerName}</mark>. I was looking at your website earlier and I <mark>noticed</mark> a couple parts <mark>weren’t working properly</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with <mark>professional sites</mark>; or if you’re just looking for a <mark>quick fix</mark> I can look to <mark>get you a quote</mark>. Is that something you’d be <mark>interested in getting fixed</mark>?`
+    };
+  }
+
+  if (type === 'Outdated Site') {
+    return {
+      type: 'OUTDATED SITE',
+      className: 'prompt-outdated-site',
+      html: `Hey <mark>${safeLeadName}</mark>, my name is <mark>${safeCallerName}</mark>. I was <mark>looking</mark> at your website earlier and <mark>noticed</mark> a couple things that seem pretty <mark>dated</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>redesign</mark> and <mark>upgrade</mark> older sites. I just wanted to see if that’s something you’d be <mark>open</mark> to talking about.`
+    };
+  }
+
+  return {
+    type: 'WEBSITE LEAD',
+    className: 'prompt-generic-site',
+    html: `Hey <mark>${safeLeadName}</mark>, my name is <mark>${safeCallerName}</mark>. I was <mark>looking into your business</mark> earlier and wanted to reach out about your website. I work with <mark>Steady Hands Operations</mark> — we help businesses <mark>improve</mark>, <mark>build</mark>, and <mark>maintain</mark> professional websites. I just wanted to see if that’s something you’d be <mark>open</mark> to talking about.`
+  };
+}
+
+function openPreCallModal() {
   const lead = currentLead();
-  if (!lead || !lead.phone) return;
+  if (!lead || !lead.phone || (lead.status === 'sold' && !currentUserIsKiara())) return;
+
+  $('#preCallLeadName').textContent = `${lead.company || 'No company'}${lead.name ? ` · ${lead.name}` : ''}`;
+  $('#preCallNotes').textContent = String(lead.notes || '').trim() || 'No notes yet.';
+  const sources = (Array.isArray(lead.sourceTags) ? lead.sourceTags : [])
+    .filter(tag => String(tag || '').trim() && String(tag || '').trim().toLowerCase() !== 'other');
+  $('#preCallSources').textContent = sources.length ? sources.join(' · ') : 'No source saved.';
+
+  const prompt = callPromptForLead(lead);
+  $('#callPromptType').textContent = prompt.type;
+  $('#callPromptText').innerHTML = prompt.html;
+  const promptBox = $('#callPromptBox');
+  promptBox.classList.remove('prompt-no-site', 'prompt-broken-site', 'prompt-outdated-site', 'prompt-generic-site');
+  promptBox.classList.add(prompt.className || 'prompt-generic-site');
+  $('#callPromptBox').hidden = true;
+  $('#callPromptToggle').setAttribute('aria-expanded', 'false');
+  $('#callPromptToggle').innerHTML = '<i class="bi bi-chat-quote"></i><span>Show Call Prompt</span><i class="bi bi-chevron-down"></i>';
+
+  openModal('preCallModal');
+}
+
+$('#topCallButton')?.addEventListener('click', event => {
+  event.preventDefault();
+  openPreCallModal();
+});
+
+$('#mobilePreCallButton')?.addEventListener('click', event => {
+  event.preventDefault();
+  openPreCallModal();
+});
+
+$('#callPromptToggle')?.addEventListener('click', () => {
+  const box = $('#callPromptBox');
+  if (!box) return;
+  const opening = box.hidden;
+  box.hidden = !opening;
+  $('#callPromptToggle').setAttribute('aria-expanded', opening ? 'true' : 'false');
+  $('#callPromptToggle').innerHTML = opening
+    ? '<i class="bi bi-chat-quote"></i><span>Hide Call Prompt</span><i class="bi bi-chevron-up"></i>'
+    : '<i class="bi bi-chat-quote"></i><span>Show Call Prompt</span><i class="bi bi-chevron-down"></i>';
+});
+
+function resetPostCallForm(lead) {
+  postCallAnswer = '';
+  postCallMood = '';
+  postCallTag = '';
+  $$('[data-post-answer], [data-post-mood], [data-post-tag]').forEach(button => button.classList.remove('selected'));
+  const missingAnswer = !String(lead?.answerStatus || '').trim();
+  const missingMood = !String(lead?.mood || '').trim();
+  const missingStatus = !String(lead?.tag || '').trim();
+
+  $('#postAnswerQuestion').hidden = !missingAnswer;
+  $('#postMoodQuestion').hidden = !missingMood;
+  $('#postStatusQuestion').hidden = !missingStatus;
+
+  return { missingAnswer, missingMood, missingStatus };
+}
+
+function openPostCallCheckIn() {
+  const lead = currentLead();
+  if (!lead) return false;
+  const missing = resetPostCallForm(lead);
+  const hasMissing = Object.values(missing).some(Boolean);
+  if (!hasMissing) return false;
+  openModal('postCallModal');
+  return true;
+}
+
+$('#startActualCallButton')?.addEventListener('click', () => {
+  const lead = currentLead();
+  if (!lead || !lead.phone || (lead.status === 'sold' && !currentUserIsKiara())) return;
+
+  const tel = `tel:${String(lead.phone || '').replace(/[^\d+]/g, '')}`;
   lead.lastCalled = new Date().toISOString();
   addLeadHistory(lead, 'called', currentUserName, lead.lastCalled);
   saveState(lead.id);
   renderCurrentLead();
   renderLists();
+
+  closeModal('preCallModal');
+  window.location.href = tel;
+});
+
+
+$$('[data-post-answer]').forEach(button => {
+  button.addEventListener('click', () => {
+    postCallAnswer = button.dataset.postAnswer || '';
+    $$('[data-post-answer]').forEach(btn => btn.classList.toggle('selected', btn === button));
+  });
+});
+$$('[data-post-mood]').forEach(button => {
+  button.addEventListener('click', () => {
+    postCallMood = button.dataset.postMood || '';
+    $$('[data-post-mood]').forEach(btn => btn.classList.toggle('selected', btn === button));
+  });
+});
+$$('[data-post-tag]').forEach(button => {
+  button.addEventListener('click', () => {
+    const value = button.dataset.postTag || '';
+    postCallTag = postCallTag === value ? '' : value;
+    $$('[data-post-tag]').forEach(btn => btn.classList.toggle('selected', btn.dataset.postTag === postCallTag));
+  });
+});
+
+async function saveVisiblePostCallAnswers() {
+  const lead = currentLead();
+  if (!lead) return;
+
+  if (!$('#postAnswerQuestion').hidden && postCallAnswer) lead.answerStatus = postCallAnswer;
+  if (!$('#postMoodQuestion').hidden && postCallMood) lead.mood = postCallMood;
+
+  if (!$('#postStatusQuestion').hidden && postCallTag) {
+    if (postCallTag === 'Sold') {
+      closeModal('postCallModal');
+      beginSoldFlow();
+      return 'sold-flow';
+    }
+
+    lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
+    const key = postCallTag.toLowerCase();
+    lead.tags = lead.tags.filter(tag => String(tag || '').trim().toLowerCase() !== key);
+    lead.tags.push(postCallTag);
+    lead.tag = postCallTag;
+
+    if (postCallTag === 'Wrong Number') lead.outcome = 'Wrong Number';
+    if (postCallTag === 'No Answer') lead.outcome = 'No Answer';
+    if (postCallTag === 'Interested' || postCallTag === 'Hot Lead') lead.outcome = 'Interested';
+  }
+
+
+  saveState(lead.id);
+  renderCurrentLead();
+  renderLists();
+
+  try {
+    await syncLeadNow(lead);
+    showSyncStatus('Call details synced');
+  } catch (error) {
+    console.error('Could not sync call details:', error);
+    queueLeadSync(lead.id);
+    showSyncStatus('Sync failed');
+  }
+
+  return 'saved';
+}
+
+$('#skipPostCallButton')?.addEventListener('click', async () => {
+  closeModal('postCallModal');
+  const lead = currentLead();
+  await finishLeadAndExit(lead?.tag || '');
+});
+
+$('#savePostCallButton')?.addEventListener('click', async () => {
+  const result = await saveVisiblePostCallAnswers();
+  if (result === 'sold-flow') return;
+  closeModal('postCallModal');
+  const lead = currentLead();
+  await finishLeadAndExit(lead?.tag || '');
+});
+
+
+$('#outcomeField')?.addEventListener('change', async () => {
+  const lead = currentLead();
+  if (!lead) return;
+  if ($('#outcomeField').value === 'Wrong Number') {
+    lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
+    if (!leadHasTag(lead, 'Wrong Number')) lead.tags.push('Wrong Number');
+    lead.tag = 'Wrong Number';
+    saveState(lead.id);
+    renderLists();
+    try { await syncLeadNow(lead); } catch (error) { console.error('Could not sync Wrong Number tag:', error); }
+  }
 });
 
 // History is expanded by default; the user can still collapse it with the History button.
@@ -1431,27 +2108,80 @@ $('#historyToggleButton')?.addEventListener('click', () => {
   renderLeadHistory();
 });
 
+let pendingHistoryDeleteId = '';
+let pendingLeadDeleteId = '';
+
 // Only Kiara gets X buttons for removable note and call history entries.
 $('#leadHistoryList')?.addEventListener('click', event => {
   const button = event.target.closest('[data-delete-history]');
-  if (!button) return;
-  deleteHistoryEntry(button.dataset.deleteHistory);
+  if (!button || !currentUserIsKiara()) return;
+
+  const lead = currentLead();
+  const id = button.dataset.deleteHistory || '';
+  const item = (lead?.history || []).find(entry => entry.id === id);
+  if (!item) return;
+
+  pendingHistoryDeleteId = id;
+  $('#historyDeleteConfirmTitle').textContent = item.type === 'called' ? 'Delete call history?' : 'Delete note history?';
+  $('#historyDeleteConfirmText').textContent = item.type === 'called'
+    ? 'Are you sure you want to delete this call from History? If it is the only call on a Follow-up lead, the lead will move back to New Leads.'
+    : 'Are you sure you want to delete this note from History?';
+  openModal('historyDeleteConfirmModal');
 });
 
-// Record meaningful Notes edits once when the user leaves the field, not on every keystroke.
-$('#notesField')?.addEventListener('focus', event => {
-  notesBeforeEdit = event.currentTarget.value || '';
+$('#confirmHistoryDeleteButton')?.addEventListener('click', async () => {
+  const id = pendingHistoryDeleteId;
+  pendingHistoryDeleteId = '';
+  closeModal('historyDeleteConfirmModal');
+  if (id) await deleteHistoryEntry(id);
 });
-$('#notesField')?.addEventListener('blur', event => {
+
+
+function openAddSitePrompt() {
   const lead = currentLead();
   if (!lead) return;
-  const addedText = noteAddedText(notesBeforeEdit, event.currentTarget.value);
-  if (!addedText) return;
-  addLeadHistory(lead, 'note', currentUserName, new Date().toISOString(), { note: addedText });
+  const input = $('#addSitePromptInput');
+  if (input) input.value = String(lead.site || '').trim();
+  openModal('addSitePromptModal');
+  setTimeout(() => input?.focus(), 50);
+}
+
+async function saveSiteFromPrompt() {
+  const lead = currentLead();
+  if (!lead) return;
+
+  const input = $('#addSitePromptInput');
+  const site = String(input?.value || '').trim();
+
+  lead.site = site;
   saveState(lead.id);
-  renderLeadHistory();
+  renderCurrentLead();
   renderLists();
-  notesBeforeEdit = event.currentTarget.value || '';
+  closeModal('addSitePromptModal');
+
+  try {
+    await syncLeadNow(lead);
+    showSyncStatus(site ? 'Site saved' : 'Site left blank');
+    toast(site ? 'Website saved' : 'Website left blank');
+  } catch (error) {
+    console.error('Could not save website:', error);
+    queueLeadSync(lead.id);
+    showSyncStatus('Sync failed');
+    toast('Saved locally — sync pending');
+  }
+}
+
+$('#saveAddedSiteButton')?.addEventListener('click', saveSiteFromPrompt);
+
+$('#addSitePromptInput')?.addEventListener('keydown', event => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    saveSiteFromPrompt();
+  }
+});
+
+$('#addSiteNotNowButton')?.addEventListener('click', () => {
+  closeModal('addSitePromptModal');
 });
 
 // Lead tags: every available tag is visible and can be toggled on/off.
@@ -1513,24 +2243,45 @@ $('#customSourceInput')?.addEventListener('keydown', event => {
   }
 });
 
-// Quick Notes popup
-$('#quickNotesButton').addEventListener('click', () => {
-  $('#quickNotesInput').value = '';
-  openModal('quickNotesModal');
-  setTimeout(() => $('#quickNotesInput').focus(), 50);
-});
-$('#saveQuickNote').addEventListener('click', () => {
+// Quick Notes is the single notes editor for every lead.
+// It always opens with every saved note so notes are never split between screens.
+$('#quickNotesButton')?.addEventListener('click', () => {
   const lead = currentLead();
-  const note = $('#quickNotesInput').value.trim();
-  if (!lead || !note) return toast('Type a note first');
-  lead.notes = lead.notes ? `${lead.notes}\n${note}` : note;
-  $('#notesField').value = lead.notes;
-  addLeadHistory(lead, 'note', currentUserName, new Date().toISOString(), { note });
+  if (!lead) return;
+  quickNotesBeforeEdit = String(lead.notes || '');
+  $('#quickNotesInput').value = quickNotesBeforeEdit;
+  openModal('quickNotesModal');
+  setTimeout(() => $('#quickNotesInput')?.focus(), 50);
+});
+
+$('#saveQuickNote')?.addEventListener('click', async () => {
+  const lead = currentLead();
+  if (!lead) return;
+
+  const updatedNotes = $('#quickNotesInput').value.trim();
+  const addedText = noteAddedText(quickNotesBeforeEdit, updatedNotes);
+  lead.notes = updatedNotes;
+
+  if (addedText) {
+    addLeadHistory(lead, 'note', currentUserName, new Date().toISOString(), { note: addedText });
+  }
+
+  quickNotesBeforeEdit = updatedNotes;
   saveState(lead.id);
   renderLeadHistory();
   renderLists();
   closeModal('quickNotesModal');
-  toast('Quick note added');
+
+  try {
+    await syncLeadNow(lead);
+    showSyncStatus('Notes synced');
+    toast(updatedNotes ? 'Notes saved' : 'Notes cleared');
+  } catch (error) {
+    console.error('Could not sync notes:', error);
+    queueLeadSync(lead.id);
+    showSyncStatus('Sync failed');
+    toast('Notes saved locally — sync pending');
+  }
 });
 
 // Done -> choose label -> move to follow-ups
@@ -1541,23 +2292,26 @@ function leadHasBeenCalled(lead) {
   return Array.isArray(lead.history) && lead.history.some(item => item?.type === 'called');
 }
 
-$('#doneButton').addEventListener('click', () => {
+$('#doneButton').addEventListener('click', async () => {
   const lead = currentLead();
   if (!leadHasBeenCalled(lead)) {
     toast('Call this prospect before moving to Follow-ups');
     return;
   }
-  selectedDoneTag = '';
-  selectedSpanishPossible = Boolean(lead?.spanishPossible);
-  $$('.tag-choice[data-tag]').forEach(btn => btn.classList.remove('selected'));
-  const spanishChoice = $('#spanishTagChoice');
-  if (spanishChoice) spanishChoice.classList.toggle('selected', selectedSpanishPossible);
-  $('#finishLeadButton').disabled = true;
-  openModal('doneModal');
+
+  // Only ask the mini questions that are still empty.
+  if (openPostCallCheckIn()) return;
+
+  // Nothing is missing, so finish immediately with the lead's existing status tag.
+  await finishLeadAndExit(lead?.tag || '');
 });
 $$('.tag-choice[data-tag]').forEach(button => {
   button.addEventListener('click', () => {
     const value = button.dataset.tag;
+    if (value === 'Sold') {
+      beginSoldFlow();
+      return;
+    }
     selectedDoneTag = selectedDoneTag === value ? '' : value;
     $$('.tag-choice[data-tag]').forEach(btn => {
       btn.classList.toggle('selected', selectedDoneTag !== '' && btn.dataset.tag === selectedDoneTag);
@@ -1573,25 +2327,26 @@ if (spanishTagChoice) {
     spanishTagChoice.classList.toggle('selected', selectedSpanishPossible);
   });
 }
-async function finishLeadAndExit(tag = '') {
+async function completeLeadMove(tag = '') {
   const lead = currentLead();
   if (!lead) return;
 
-  // Guard this path too so no alternate Done-modal action can move an
-  // uncalled prospect into Follow-ups.
   if (!leadHasBeenCalled(lead)) {
     closeModal('doneModal');
     toast('Call this prospect before moving to Follow-ups');
     return;
   }
 
-  // A tag is optional. Clicking the X in the Done modal finishes the call
-  // and moves the lead to Follow-ups without adding/changing a tag.
-  if (tag) lead.tag = tag;
+  if (tag) {
+    lead.tag = tag;
+    lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
+    if (!lead.tags.some(existing => String(existing || '').trim().toLowerCase() === String(tag).trim().toLowerCase())) {
+      lead.tags.push(tag);
+    }
+  }
+
   lead.spanishPossible = selectedSpanishPossible;
   lead.status = 'followup';
-  // Moving a lead to Follow-ups does not count as a call.
-  // Call history is recorded only when the phone/call button itself is clicked.
   saveState(lead.id);
 
   try {
@@ -1607,6 +2362,133 @@ async function finishLeadAndExit(tag = '') {
   showScreen('leads');
   toast(tag ? `Moved to Follow-ups · ${tag}` : 'Moved to Follow-ups');
 }
+
+let soldFlowSelectedProducts = new Set();
+
+function beginSoldFlow() {
+  const lead = currentLead();
+  if (!lead) return;
+
+  const seller = activeUserName();
+  $('#soldConfirmSummary').textContent =
+    `${lead.company || 'No company'}${lead.name ? ` · ${lead.name}` : ''} will be marked Sold by ${seller}.`;
+
+  closeModal('doneModal');
+  closeModal('postCallModal');
+  openModal('soldConfirmModal');
+}
+
+function soldEmailBody(lead, products, seller) {
+  const sources = (Array.isArray(lead.sourceTags) ? lead.sourceTags : [])
+    .filter(tag => String(tag || '').trim() && String(tag || '').trim().toLowerCase() !== 'other')
+    .join(', ') || 'Not provided';
+
+  const selected = products.length ? products.map(item => `- ${item}`).join('\n') : '- Not specified';
+
+  return [
+    'This person wants to purchase:',
+    '',
+    selected,
+    '',
+    'CLIENT INFORMATION',
+    `Name: ${lead.name || 'Not provided'}`,
+    `Company: ${lead.company || 'Not provided'}`,
+    `Phone: ${lead.phone || 'Not provided'}`,
+    `Email: ${lead.email || 'Not provided'}`,
+    `Website: ${lead.site || 'Not provided'}`,
+    `Found On: ${sources}`,
+    `Lead Type: ${getLeadType(lead) || 'Not provided'}`,
+    `Main Issue: ${lead.issue || 'Not provided'}`,
+    `Concerns: ${lead.concerns || 'Not provided'}`,
+    `Answer Status: ${lead.answerStatus || 'Not provided'}`,
+    `Mood: ${lead.mood || 'Not provided'}`,
+    `Call Outcome: ${lead.outcome || 'Not provided'}`,
+    `Status Tag: Sold`,
+    '',
+    'NOTES',
+    lead.notes || 'No notes.',
+    '',
+    `Sold by: ${seller}`
+  ].join('\n');
+}
+
+function finalizeSoldAndDraftEmail() {
+  const lead = currentLead();
+  if (!lead) return;
+
+  const products = [...soldFlowSelectedProducts];
+  if (!products.length) {
+    toast('Select at least one product');
+    return;
+  }
+
+  const seller = activeUserName();
+  const phoneForDraft = lead.phone || '';
+
+  lead.tag = 'Sold';
+  lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
+  if (!lead.tags.some(tag => String(tag || '').trim().toLowerCase() === 'sold')) lead.tags.push('Sold');
+  lead.status = 'sold';
+  lead.soldBy = seller;
+  lead.soldAt = new Date().toISOString();
+  addLeadHistory(lead, 'sold', seller, lead.soldAt, { soldBy: seller, products });
+
+  const bodyLead = { ...lead, phone: phoneForDraft };
+  const subject = `New Sale — ${lead.company || lead.name || 'Client'}`;
+  const body = soldEmailBody(bodyLead, products, seller);
+  const mailto = `mailto:kiara@steadyhands.op?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  saveState(lead.id);
+  closeModal('soldProductsModal');
+  renderLists();
+  showScreen('leads');
+  toast(`Sold · Sold by ${seller}`);
+
+  // Start the sync, but do not block the email draft behind an async wait.
+  syncLeadNow(lead).then(() => {
+    if (!currentUserIsKiara()) {
+      lead.phone = '';
+      renderLists();
+    }
+    showSyncStatus('Sold lead synced');
+  }).catch(error => {
+    console.error('Could not sync sold lead:', error);
+    queueLeadSync(lead.id);
+    showSyncStatus('Sync failed');
+  });
+
+  window.location.href = mailto;
+}
+
+async function finishLeadAndExit(tag = '') {
+  if (tag === 'Sold') {
+    beginSoldFlow();
+    return;
+  }
+  await completeLeadMove(tag);
+}
+
+
+$('#confirmSoldButton')?.addEventListener('click', () => {
+  closeModal('soldConfirmModal');
+  soldFlowSelectedProducts = new Set();
+  $$('.sold-product-choice').forEach(button => button.classList.remove('selected'));
+  $('#createSoldEmailButton').disabled = true;
+  openModal('soldProductsModal');
+});
+
+$$('.sold-product-choice').forEach(button => {
+  button.addEventListener('click', () => {
+    const product = button.dataset.soldProduct || '';
+    if (soldFlowSelectedProducts.has(product)) soldFlowSelectedProducts.delete(product);
+    else soldFlowSelectedProducts.add(product);
+
+    button.classList.toggle('selected', soldFlowSelectedProducts.has(product));
+    $('#createSoldEmailButton').disabled = soldFlowSelectedProducts.size === 0;
+  });
+});
+
+$('#createSoldEmailButton')?.addEventListener('click', finalizeSoldAndDraftEmail);
 
 $('#finishLeadButton').addEventListener('click', async () => {
   if (!selectedDoneTag) return;
@@ -1941,6 +2823,7 @@ $$('.modal-backdrop').forEach(backdrop => {
 });
 
 renderLists();
+restorePageState();
 
 $('#authSignIn').addEventListener('click', async () => {
   const email = $('#authEmail').value.trim();
@@ -2093,11 +2976,28 @@ $('#signOutButton').addEventListener('click', async () => {
 });
 
 supabaseClient.auth.onAuthStateChange((event, session) => {
+  const hadSession = Boolean(supabaseSession);
   supabaseSession = session;
+
   if (session) updateSignedInUserUi();
-  if (!session) unsubscribeFromLeadChanges();
-  else if (event === 'SIGNED_IN') subscribeToLeadChanges();
+
+  if (!session) {
+    unsubscribeFromLeadChanges();
+    state.leads = [];
+    renderLists();
+  }
+
   setAuthenticatedUi(Boolean(session));
+
+  if (session && (!hadSession || ['SIGNED_IN', 'INITIAL_SESSION', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event))) {
+    hydrateFromSupabase()
+      .then(() => subscribeToLeadChanges())
+      .catch(error => {
+        console.error('Could not hydrate leads after auth restore:', error);
+        showSyncStatus('Sync failed');
+      });
+  }
+
   if (event === 'PASSWORD_RECOVERY') {
     $('#recoveryNewPassword').value = '';
     $('#recoveryConfirmPassword').value = '';
@@ -2193,3 +3093,135 @@ initializeSupabaseAuth().then(async () => {
 
   document.addEventListener('touchcancel', resetIndicator, { passive: true });
 })();
+
+// Desktop dashboard navigation. Reuses the same underlying actions as mobile.
+
+// Escape key navigation: close the most recently opened UI first.
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+
+  // 1) Close an open modal (Quick Notes, Add/Edit Lead, Account, Done, etc.).
+  const openModals = [...document.querySelectorAll('.modal-backdrop.open')];
+  if (openModals.length) {
+    event.preventDefault();
+    event.stopPropagation();
+    closeModal(openModals[openModals.length - 1].id);
+    return;
+  }
+
+  // 2) Close any open time picker/dropdown before navigating away.
+  let closedPicker = false;
+  ['callback', 'preferred'].forEach(prefix => {
+    const ids = scheduleIds(prefix);
+    if (ids?.timePicker && !ids.timePicker.hidden) {
+      closeTimePicker(prefix);
+      closedPicker = true;
+    }
+  });
+
+  const specificPicker = document.getElementById('specificTimePicker');
+  if (specificPicker && !specificPicker.hidden) {
+    specificPicker.hidden = true;
+    document.getElementById('specificTimeButton')?.setAttribute('aria-expanded', 'false');
+    closedPicker = true;
+  }
+
+  if (closedPicker) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+
+  // 3) If a lead is open, Escape behaves exactly like the Back button.
+  const detailScreen = document.getElementById('detailScreen');
+  if (detailScreen?.classList.contains('active')) {
+    event.preventDefault();
+    event.stopPropagation();
+    document.getElementById('backButton')?.click();
+  }
+});
+
+(() => {
+  const leadsNav = document.getElementById('desktopLeadsNav');
+  const followNav = document.getElementById('desktopFollowupsNav');
+  const soldNav = document.getElementById('desktopSoldNav');
+  const addNav = document.getElementById('desktopAddLeadNav');
+  const accountNav = document.getElementById('desktopAccountNav');
+  const pipelineButtons = [...document.querySelectorAll('[data-pipeline-view]')];
+
+  const setDesktopActive = view => {
+    [leadsNav, followNav, soldNav, addNav, accountNav].forEach(btn => btn?.classList.remove('active'));
+    const target = view === 'followups' ? followNav : view === 'sold' ? soldNav : leadsNav;
+    target?.classList.add('active');
+  };
+
+  const switchPipeline = async view => {
+    showScreen('leads');
+    enforcePipelineView(view);
+    setDesktopActive(view);
+
+    // Pull the current database state every time a category is selected.
+    if (supabaseSession) {
+      try {
+        await hydrateFromSupabase();
+        enforcePipelineView(view);
+      } catch (error) {
+        console.error('Could not refresh pipeline from Supabase:', error);
+        showSyncStatus('Sync failed');
+      }
+    }
+
+    if (window.matchMedia('(max-width: 959px)').matches) {
+      document.getElementById('leadsScreen')?.scrollIntoView({ block: 'start' });
+    }
+  };
+
+  pipelineButtons.forEach(button => {
+    button.setAttribute('role', 'tab');
+    button.style.setProperty('pointer-events', 'auto', 'important');
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      switchPipeline(button.dataset.pipelineView);
+    });
+  });
+
+  leadsNav?.addEventListener('click', () => switchPipeline('leads'));
+  followNav?.addEventListener('click', () => switchPipeline('followups'));
+  soldNav?.addEventListener('click', () => switchPipeline('sold'));
+
+  addNav?.addEventListener('click', () => {
+    document.getElementById('addLeadBottomButton')?.click();
+  });
+
+  accountNav?.addEventListener('click', () => {
+    document.getElementById('accountButton')?.click();
+  });
+
+  document.getElementById('backButton')?.addEventListener('click', () => {
+    enforcePipelineView(currentPipelineView);
+    setDesktopActive(currentPipelineView);
+  });
+
+  enforcePipelineView('leads');
+  setDesktopActive('leads');
+})();
+
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && supabaseSession) {
+    const view = currentPipelineView;
+    hydrateFromSupabase()
+      .then(() => enforcePipelineView(view))
+      .catch(error => console.error('Mobile visibility refresh failed:', error));
+  }
+});
+
+window.addEventListener('pageshow', () => {
+  if (supabaseSession) {
+    const view = currentPipelineView;
+    hydrateFromSupabase()
+      .then(() => enforcePipelineView(view))
+      .catch(error => console.error('Mobile page refresh failed:', error));
+  }
+});
