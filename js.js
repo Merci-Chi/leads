@@ -98,7 +98,8 @@ function supabaseRowToLead(row, status = 'new') {
     specificTime: row.specific_time || '',
     concerns: row.concerns || '',
     notes: row.notes || '',
-    soldBy: row.sold_by || ((Array.isArray(row.history) ? row.history : []).slice().reverse().find(item => item?.type === 'sold')?.actor || '')
+    soldBy: row.sold_by || ((Array.isArray(row.history) ? row.history : []).slice().reverse().find(item => item?.type === 'sold')?.actor || ''),
+    updatedAt: row.updated_at || row.created_at || ''
   });
 }
 
@@ -295,11 +296,22 @@ async function hydrateFromSupabase() {
   if (followResult.error) throw followResult.error;
   if (soldResult.error) throw soldResult.error;
 
-  const remoteLeads = [
+  const loadedLeads = [
     ...(newResult.data || []).map(row => supabaseRowToLead(row, 'new')),
     ...(followResult.data || []).map(row => supabaseRowToLead(row, 'followup')),
     ...(soldResult.data || []).map(row => supabaseRowToLead(row, 'sold'))
   ];
+
+  // Older status moves could leave the same lead in two pipeline tables.
+  // Keep only the newest saved copy so refresh cannot resurrect a stale status.
+  const dedupedById = new Map();
+  for (const lead of loadedLeads) {
+    const existing = dedupedById.get(lead.id);
+    const leadTime = Date.parse(lead.updatedAt || lead.createdAt || 0) || 0;
+    const existingTime = existing ? (Date.parse(existing.updatedAt || existing.createdAt || 0) || 0) : -1;
+    if (!existing || leadTime >= existingTime) dedupedById.set(lead.id, lead);
+  }
+  const remoteLeads = [...dedupedById.values()];
 
   if (currentUserIsKiara()) {
     const { data: privatePhones, error: privateError } = await supabaseClient
@@ -2575,11 +2587,18 @@ async function setLeadPipelineStatus(leadId, nextStatus) {
   if (!['new', 'followup', 'sold'].includes(nextStatus)) return;
   const lead = state.leads.find(item => item.id === leadId);
   if (!lead) return toast('Lead not found');
+
   const previousStatus = lead.status || 'new';
   if (previousStatus === nextStatus) {
     closeModal('leadStatusEditModal');
     return;
   }
+
+  const previousSoldBy = lead.soldBy || '';
+  const previousSoldAt = lead.soldAt || '';
+  const previousHistory = Array.isArray(lead.history) ? [...lead.history] : [];
+  const sourceTable = previousStatus === 'sold' ? 'sold_leads' : (previousStatus === 'followup' ? 'follow_ups' : 'new_leads');
+  const targetTable = nextStatus === 'sold' ? 'sold_leads' : (nextStatus === 'followup' ? 'follow_ups' : 'new_leads');
 
   lead.status = nextStatus;
   lead.updatedAt = new Date().toISOString();
@@ -2592,19 +2611,57 @@ async function setLeadPipelineStatus(leadId, nextStatus) {
     lead.soldAt = '';
   }
 
-  saveState(lead.id);
+  // Do not queue the normal autosync here. A status move must be one ordered
+  // database operation: save target first, then remove the old table row.
+  pendingSyncIds.delete(lead.id);
+  clearTimeout(syncTimer);
+
   renderLists();
   if (currentLeadId === lead.id) renderCurrentLead();
 
-  await syncLeadNow(lead);
-  if (previousStatus === 'sold' && nextStatus !== 'sold') {
-    try { await supabaseClient.from('sold_private_phones').delete().eq('lead_id', lead.id); } catch (error) { console.warn('Could not clean sold private phone:', error); }
+  try {
+    const row = nextStatus === 'sold' ? soldPublicRow(lead) : leadToSupabaseRow(lead);
+    const { error: saveError } = await supabaseClient.from(targetTable).upsert(row, { onConflict: 'id' });
+    if (saveError) throw saveError;
+
+    if (nextStatus === 'sold') {
+      await storeSoldPhoneSecurely(lead);
+    }
+
+    if (sourceTable !== targetTable) {
+      const { error: deleteError } = await supabaseClient.from(sourceTable).delete().eq('id', lead.id);
+      if (deleteError) throw deleteError;
+    }
+
+    // Clean up any duplicate left by an older failed move. These are best-effort
+    // because the actual source row above is the one required for this move.
+    for (const table of ['new_leads', 'follow_ups', 'sold_leads']) {
+      if (table === targetTable || table === sourceTable) continue;
+      const { error } = await supabaseClient.from(table).delete().eq('id', lead.id);
+      if (error) console.warn(`Could not clean duplicate lead from ${table}:`, error);
+    }
+
+    if (previousStatus === 'sold' && nextStatus !== 'sold') {
+      const { error } = await supabaseClient.from('sold_private_phones').delete().eq('lead_id', lead.id);
+      if (error) console.warn('Could not clean sold private phone:', error);
+    }
+
+    closeModal('leadStatusEditModal');
+    const labels = { new: 'New Lead', followup: 'Follow-up', sold: 'Sold' };
+    toast(`Moved to ${labels[nextStatus]}`);
+  } catch (error) {
+    // Never leave the UI showing a status that failed to save.
+    lead.status = previousStatus;
+    lead.soldBy = previousSoldBy;
+    lead.soldAt = previousSoldAt;
+    lead.history = previousHistory;
+    lead.updatedAt = new Date().toISOString();
+    renderLists();
+    if (currentLeadId === lead.id) renderCurrentLead();
+    throw error;
   }
-  closeModal('leadStatusEditModal');
-  const labels = { new: 'New Lead', followup: 'Follow-up', sold: 'Sold' };
-  showSyncStatus(`Moved to ${labels[nextStatus]}`);
-  toast(`Moved to ${labels[nextStatus]}`);
 }
+
 
 
 function makeLead(raw = {}) {
