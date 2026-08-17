@@ -1544,6 +1544,12 @@ function renderScheduleEditor(prefix, dateValue, timeValue) {
   const hasData = Boolean(dateValue || timeValue);
   ids.editor.hidden = !hasData;
   ids.add.hidden = hasData;
+
+  if (prefix === 'callback') {
+    const calendarButton = $('#addCallbackToCalendarButton');
+    if (calendarButton) calendarButton.hidden = !dateValue;
+  }
+
   if (!hasData) return;
 
   const now = localDateParts();
@@ -1584,6 +1590,11 @@ function saveSchedule(prefix) {
   }
   updateTimeDisplay(prefix);
   saveState();
+
+  if (prefix === 'callback') {
+    const calendarButton = $('#addCallbackToCalendarButton');
+    if (calendarButton) calendarButton.hidden = !lead.callbackDate;
+  }
 }
 
 function addSchedule(prefix) {
@@ -1659,6 +1670,163 @@ document.addEventListener('click', () => {
   const picker = $('#specificTimePicker');
   if (picker) picker.hidden = true;
   $('#specificTimeButton')?.setAttribute('aria-expanded', 'false');
+});
+
+
+
+function escapeICS(value) {
+  return String(value || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;');
+}
+
+function callbackCalendarDateTime(dateValue, timeValue) {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateValue || ''));
+  if (!dateMatch) return null;
+
+  const timeMatch = /^(\d{2}):(\d{2})/.exec(String(timeValue || ''));
+  const hour = timeMatch ? timeMatch[1] : '09';
+  const minute = timeMatch ? timeMatch[2] : '00';
+
+  return `${dateMatch[1]}${dateMatch[2]}${dateMatch[3]}T${hour}${minute}00`;
+}
+
+$('#addCallbackToCalendarButton')?.addEventListener('click', () => {
+  const lead = currentLead();
+  if (!lead?.callbackDate) return toast('Add a callback date first');
+
+  const start = callbackCalendarDateTime(lead.callbackDate, lead.callbackTime);
+  if (!start) return toast('Callback date is invalid');
+
+  const date = new Date(
+    `${lead.callbackDate}T${lead.callbackTime || '09:00'}:00`
+  );
+  const endDate = new Date(date.getTime() + 30 * 60 * 1000);
+  const end = [
+    endDate.getFullYear(),
+    pad2(endDate.getMonth() + 1),
+    pad2(endDate.getDate())
+  ].join('') + 'T' + [
+    pad2(endDate.getHours()),
+    pad2(endDate.getMinutes()),
+    '00'
+  ].join('');
+
+  const leadLabel = lead.company || lead.name || lead.phone || 'Lead';
+  const descriptionParts = [
+    lead.name ? `Name: ${lead.name}` : '',
+    lead.company ? `Company: ${lead.company}` : '',
+    lead.phone ? `Phone: ${lead.phone}` : '',
+    lead.outcome ? `Last outcome: ${lead.outcome}` : '',
+    lead.concerns ? `Notes: ${lead.concerns}` : ''
+  ].filter(Boolean);
+
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Steady Hands Operations//Lead Callback//EN',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:${crypto.randomUUID()}@steadyhandsop.com`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')}`,
+    `DTSTART:${start}`,
+    `DTEND:${end}`,
+    `SUMMARY:${escapeICS(`Callback — ${leadLabel}`)}`,
+    `DESCRIPTION:${escapeICS(descriptionParts.join('\n'))}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `callback-${String(leadLabel).replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'lead'}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+});
+
+const mobileScriptContent = {
+  outdated: {
+    title: 'Outdated',
+    className: 'outdated',
+    html: `“Hey — my name is <mark class="script-user-name">${escapeHTML(currentUserName || 'User')}</mark>. I was <mark>looking</mark> at your website earlier and <mark>noticed</mark> a couple things that seem pretty <mark>dated</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>redesign</mark> and <mark>upgrade</mark> older sites. I just wanted to see if that’s something you’d be <mark>open</mark> to talking about.”`
+  },
+  broken: {
+    title: 'Broken Site',
+    className: 'broken',
+    html: `“Hey — my name is <mark class="script-user-name">${escapeHTML(currentUserName || 'User')}</mark>, I was looking at your website earlier and I <mark>noticed</mark> a couple parts <mark>weren’t working properly</mark>. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with <mark>professional sites</mark>; or if you’re just looking for a <mark>quick fix</mark> I can look to <mark>get you a quote</mark>. Is that something you’d be <mark>interested in getting fixed</mark>?”`
+  },
+  nosite: {
+    title: 'No Site',
+    className: 'nosite',
+    html: `“Hey — my name is <mark class="script-user-name">${escapeHTML(currentUserName || 'User')}</mark>. I was looking into your business earlier and I <mark>couldn’t find</mark> a website. I actually work with <mark>Steady Hands Operations</mark> — we help businesses <mark>get set up</mark> with a <mark>professional site</mark>. I just wanted to see if that’s something <mark>you’re considering</mark>.”`
+  },
+  spanish: {
+    title: 'Spanish',
+    className: 'spanish',
+    html: `“No hay problema. Un <mark>miembro de mi equipo habla español</mark>. Puedo pedirle que la llame?”`
+  }
+};
+
+const mobilePriceContent = {
+  new: {
+    title: 'New Site',
+    html: `
+      <div class="mobile-price-row"><div><strong>Personal Site</strong><span>Up to 3 pages</span></div><b>$349</b></div>
+      <div class="mobile-price-row"><div><strong>Business Site</strong><span>Up to 5 pages</span></div><b>$549</b></div>
+      <div class="mobile-price-row"><div><strong>Personal Site</strong><span>Statistics, Management, Users</span></div><b>$749</b></div>
+      <div class="mobile-price-row extra"><div><strong>Additional Pages</strong><span>Beyond included pages</span></div><b>+$50 / page</b></div>`
+  },
+  renewal: {
+    title: 'Renewal Site',
+    html: `
+      <div class="mobile-price-row"><div><strong>Personal Site Renewal</strong><span>Up to 3 pages</span></div><b>$279</b></div>
+      <div class="mobile-price-row"><div><strong>Business Site Renewal</strong><span>Up to 5 pages</span></div><b>$489</b></div>
+      <div class="mobile-price-row extra"><div><strong>Additional Pages</strong><span>Beyond included pages</span></div><b>+$50 / page</b></div>`
+  },
+  hosting: {
+    title: 'Hosting',
+    html: `
+      <div class="mobile-price-row"><div><strong>Standard Hosting</strong><span>Lowest plan</span></div><b>$10 / month</b></div>
+      <div class="mobile-price-row"><div><strong>Backend Hosting</strong><span>Live database — lowest plan</span></div><b>$20 / month</b></div>`
+  }
+};
+
+$('#mobileScriptsButton')?.addEventListener('click', () => openModal('mobileScriptMenuModal'));
+$('#mobilePricesButton')?.addEventListener('click', () => openModal('mobilePriceMenuModal'));
+
+$$('[data-mobile-script]').forEach(button => {
+  button.addEventListener('click', () => {
+    const item = mobileScriptContent[button.dataset.mobileScript];
+    if (!item) return;
+
+    $('#mobileScriptDisplayTitle').textContent = item.title;
+    const display = $('#mobileScriptDisplay');
+    display.className = `mobile-script-display ${item.className}`;
+    display.innerHTML = item.html;
+
+    closeModal('mobileScriptMenuModal');
+    openModal('mobileScriptDisplayModal');
+    updateSignedInUserUi();
+  });
+});
+
+$$('[data-mobile-price]').forEach(button => {
+  button.addEventListener('click', () => {
+    const item = mobilePriceContent[button.dataset.mobilePrice];
+    if (!item) return;
+
+    $('#mobilePriceDisplayTitle').textContent = item.title;
+    $('#mobilePriceDisplay').innerHTML = item.html;
+
+    closeModal('mobilePriceMenuModal');
+    openModal('mobilePriceDisplayModal');
+  });
 });
 
 
