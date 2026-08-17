@@ -125,18 +125,9 @@ async function storeSoldPhoneSecurely(lead) {
 }
 
 function showSyncStatus(text) {
-  let pill = document.getElementById('syncPill');
-  if (!pill) {
-    pill = document.createElement('div');
-    pill.id = 'syncPill';
-    pill.className = 'sync-pill';
-    document.body.appendChild(pill);
-  }
-  pill.textContent = text;
-  pill.classList.add('show');
-  clearTimeout(pill._timer);
-  pill._timer = setTimeout(() => pill.classList.remove('show'), 1400);
+  // Sync/status pill intentionally hidden. Data still saves normally.
 }
+
 
 async function upsertLeadsByTable(leads) {
   const newLeads = leads.filter(lead => lead.status === 'new');
@@ -539,29 +530,56 @@ async function deleteHistoryEntry(historyId) {
 
   if (item.type === 'note') {
     removeNoteTextFromLead(lead, item.note || '');
-    }
+  }
 
   lead.history = (lead.history || []).filter(entry => entry.id !== historyId);
 
-  // If a call log was removed, keep lastCalled consistent with the newest
-  // remaining call history entry. If no call logs remain, clear it.
+  // Call-history deletion must not change the lead's pipeline status.
+  // It only recalculates lastCalled from the remaining call entries.
   if (item.type === 'called') {
     const remainingCalls = (lead.history || [])
       .filter(entry => entry.type === 'called' && entry.at)
       .sort((a, b) => new Date(a.at) - new Date(b.at));
     lead.lastCalled = remainingCalls.length ? remainingCalls[remainingCalls.length - 1].at : '';
-
   }
 
   saveState(lead.id);
   renderLeadHistory();
   renderLists();
+
+  if (!supabaseSession) return;
+
   try {
-    await syncLeadNow(lead);
-    showSyncStatus(item.type === 'called' ? 'Call log deleted' : 'Note deleted');
+    // Persist only the fields affected by deleting history. A full-row upsert can
+    // fail because of an unrelated legacy tag/value and make the deleted entry
+    // come back after refresh.
+    const table = tableForLead(lead);
+    const patch = {
+      history: Array.isArray(lead.history) ? lead.history : [],
+      last_called: lead.lastCalled || null,
+      updated_at: new Date().toISOString()
+    };
+    if (item.type === 'note') patch.notes = lead.notes || '';
+
+    const { data, error } = await supabaseClient
+      .from(table)
+      .update(patch)
+      .eq('id', lead.id)
+      .select('id,history,last_called')
+      .single();
+
+    if (error) throw error;
+    if (!data?.id) throw new Error('History update did not match the lead row');
+
+    // Keep local state aligned with what Supabase confirms was saved.
+    lead.history = Array.isArray(data.history) ? data.history : [];
+    lead.lastCalled = data.last_called || '';
+    saveState(lead.id);
+    renderLeadHistory();
+    renderLists();
   } catch (error) {
     console.error('Could not delete history entry in Supabase:', error);
-    showSyncStatus('Sync failed');
+    toast('Could not save history deletion');
   }
 }
 
@@ -1201,7 +1219,7 @@ function leadCard(lead) {
         ${cornerTags ? `<span class="lead-priority-tags">${cornerTags}</span>` : ''}
         <span class="lead-avatar">${escapeHTML(initial)}</span>
         <span class="lead-copy">
-          <span class="lead-name-line"><strong>${escapeHTML(lead.company || 'No company')}</strong>${badges}${isHot ? '<span class="mobile-hot-lead-badge">🔥 HOT LEAD</span>' : ''}</span>
+          <span class="lead-name-line"><strong>${escapeHTML(lead.company || 'No company')}</strong>${badges}</span>
           <span class="lead-company">${escapeHTML(lead.name || 'No contact name')}</span>
           ${isSold
             ? `<span class="lead-called-by sold-by-card"><i class="bi bi-trophy-fill" aria-hidden="true"></i>Sold by ${escapeHTML(lead.soldBy || latestSoldActor(lead) || 'Unassigned')}</span>`
@@ -3308,3 +3326,9 @@ document.addEventListener('keydown', event => {
   // Always start on New Leads after a full reload.
   applyPipelineView('leads', { persist: false, scroll: false });
 })();
+
+
+// Mobile-only top-right scroll-to-top control.
+document.getElementById('mobileScrollTopButton')?.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
