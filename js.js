@@ -609,11 +609,26 @@ function setAuthenticatedUi(isAuthenticated) {
 }
 
 async function initializeSupabaseAuth() {
-  const { data } = await supabaseClient.auth.getSession();
-  supabaseSession = data.session || null;
-  setAuthenticatedUi(Boolean(supabaseSession));
-  if (supabaseSession) {
-    try { await hydrateFromSupabase(); subscribeToLeadChanges(); } catch (error) { console.error(error); showSyncStatus('Sync failed'); }
+  try {
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) throw error;
+    supabaseSession = data?.session || null;
+    setAuthenticatedUi(Boolean(supabaseSession));
+    if (supabaseSession) {
+      try {
+        await hydrateFromSupabase();
+        subscribeToLeadChanges();
+      } catch (error) {
+        console.error('Initial lead sync failed:', error);
+        showSyncStatus('Sync failed');
+      }
+    }
+  } catch (error) {
+    console.error('Auth initialization failed:', error);
+    supabaseSession = null;
+    setAuthenticatedUi(false);
+    const status = document.getElementById('authStatus');
+    if (status) status.textContent = 'Could not restore your session. Please sign in again.';
   }
 }
 
@@ -3099,13 +3114,22 @@ async function submitLogin() {
   $('#authSignIn').disabled = true;
   $('#authSignIn').textContent = 'Signing In…';
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  let data;
+  let error;
+  try {
+    const result = await supabaseClient.auth.signInWithPassword({ email, password });
+    data = result.data;
+    error = result.error;
+  } catch (loginError) {
+    error = loginError;
+  } finally {
+    $('#authSignIn').disabled = false;
+    $('#authSignIn').textContent = 'Sign In';
+  }
 
-  $('#authSignIn').disabled = false;
-  $('#authSignIn').textContent = 'Sign In';
-
-  if (error) {
-    status.textContent = error.message;
+  if (error || !data?.session) {
+    console.error('Sign-in failed:', error);
+    status.textContent = error?.message || 'Sign in failed. Please try again.';
     return;
   }
 
@@ -3149,7 +3173,7 @@ function currentRedirectUrl() {
   return `${window.location.origin}${window.location.pathname}`;
 }
 
-$('#forgotPasswordButton').addEventListener('click', async () => {
+$('#forgotPasswordButton')?.addEventListener('click', async () => {
   const email = $('#authEmail').value.trim();
   const status = $('#authStatus');
   status.textContent = '';
@@ -3175,7 +3199,7 @@ $('#forgotPasswordButton').addEventListener('click', async () => {
   status.textContent = 'Password reset email sent. Check your inbox.';
 });
 
-$('#accountButton').addEventListener('click', async () => {
+$('#accountButton')?.addEventListener('click', async () => {
   const { data } = await supabaseClient.auth.getUser();
   $('#accountEmailDisplay').textContent = data.user?.email ? `Signed in as ${data.user.email}` : 'Signed in account';
   $('#accountNewPassword').value = '';
@@ -3185,7 +3209,7 @@ $('#accountButton').addEventListener('click', async () => {
   openModal('accountModal');
 });
 
-$('#changePasswordButton').addEventListener('click', async () => {
+$('#changePasswordButton')?.addEventListener('click', async () => {
   const password = $('#accountNewPassword').value;
   const confirm = $('#accountConfirmPassword').value;
   const status = $('#accountPasswordStatus');
@@ -3217,7 +3241,7 @@ $('#changePasswordButton').addEventListener('click', async () => {
   $('#accountConfirmPassword').value = '';
 });
 
-$('#saveRecoveryPassword').addEventListener('click', async () => {
+$('#saveRecoveryPassword')?.addEventListener('click', async () => {
   const password = $('#recoveryNewPassword').value;
   const confirm = $('#recoveryConfirmPassword').value;
   const status = $('#recoveryPasswordStatus');
@@ -3253,7 +3277,7 @@ $('#saveRecoveryPassword').addEventListener('click', async () => {
   }, 700);
 });
 
-$('#signOutButton').addEventListener('click', async () => {
+$('#signOutButton')?.addEventListener('click', async () => {
   $('#signOutButton').disabled = true;
   unsubscribeFromLeadChanges();
   await supabaseClient.auth.signOut();

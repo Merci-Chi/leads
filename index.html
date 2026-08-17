@@ -17,7 +17,7 @@
 <link href="icons/favicon-64.png" rel="icon" sizes="64x64" type="image/png"/>
 <link href="https://cdn.jsdelivr.net" rel="preconnect"/>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
-<link href="css.css?v=20260817-0435" rel="stylesheet"/>
+<link href="css.css?v=20260817-0448" rel="stylesheet"/>
 </head>
 <body>
 <section aria-label="Sign in" class="auth-gate" id="authGate">
@@ -712,7 +712,36 @@
 </section>
 </div>
 
+<!-- ACCOUNT MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="accountModal">
+<section aria-labelledby="accountTitle" aria-modal="true" class="modal-card account-modal-card" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">ACCOUNT</span><h2 id="accountTitle">Account Settings</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="accountModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
+<p class="modal-help"><strong id="accountUserName">User</strong><br><span id="accountEmailDisplay">Signed in account</span></p>
+<label class="stacked-field">
+<span>New password</span>
+<input autocomplete="new-password" id="accountNewPassword" placeholder="New password" type="password"/>
+</label>
+<label class="stacked-field">
+<span>Confirm new password</span>
+<input autocomplete="new-password" id="accountConfirmPassword" placeholder="Confirm new password" type="password"/>
+</label>
+<div class="password-requirement">Use at least 8 characters.</div>
+<div aria-live="polite" class="auth-status account-auth-status" id="accountPasswordStatus"></div>
+<button class="auth-button" id="changePasswordButton" type="button">Change Password</button>
+<button class="auth-link-button" id="signOutButton" type="button">Sign Out</button>
+</section>
+</div>
 
+<!-- PASSWORD RECOVERY MODAL -->
+<div aria-hidden="true" class="modal-backdrop" id="passwordResetModal">
+<section aria-labelledby="passwordResetTitle" aria-modal="true" class="modal-card account-modal-card" role="dialog">
+<div class="modal-heading">
+<div><span class="section-kicker">PASSWORD RESET</span><h2 id="passwordResetTitle">Choose a New Password</h2></div>
+<button aria-label="Close" class="icon-button bare modal-close" data-close="passwordResetModal" type="button"><i class="bi bi-x-lg"></i></button>
+</div>
 <p class="modal-help">Enter a new password for your account.</p>
 <label class="stacked-field">
 <span>New password</span>
@@ -727,9 +756,10 @@
 <button class="auth-button" id="saveRecoveryPassword" type="button">Save New Password</button>
 </section>
 </div>
+
 <div aria-live="polite" class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js.js?v=20260817-0435"></script>
+<script src="js.js?v=20260817-0448"></script>
 <script>
     window.addEventListener('load', async () => {
       try {
