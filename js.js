@@ -551,9 +551,6 @@ async function deleteHistoryEntry(historyId) {
       .sort((a, b) => new Date(a.at) - new Date(b.at));
     lead.lastCalled = remainingCalls.length ? remainingCalls[remainingCalls.length - 1].at : '';
 
-    if (!remainingCalls.length && lead.status === 'followup') {
-      lead.status = 'new';
-    }
   }
 
   saveState(lead.id);
@@ -561,7 +558,7 @@ async function deleteHistoryEntry(historyId) {
   renderLists();
   try {
     await syncLeadNow(lead);
-    showSyncStatus(item.type === 'called' && lead.status === 'new' ? 'Call deleted · moved to New Leads' : (item.type === 'called' ? 'Call log deleted' : 'Note deleted'));
+    showSyncStatus(item.type === 'called' ? 'Call log deleted' : 'Note deleted');
   } catch (error) {
     console.error('Could not delete history entry in Supabase:', error);
     showSyncStatus('Sync failed');
@@ -590,6 +587,7 @@ const seedLeads = [];
 let state = loadState();
 let currentLeadId = null;
 let editingLeadId = null;
+let editingLeadStatusId = null;
 let selectedDoneTag = '';
 let selectedSpanishPossible = false;
 
@@ -1193,8 +1191,8 @@ function leadCard(lead) {
     isWrongNumber ? '<span class="priority-corner-tag wrong-number-tag">WRONG NUMBER</span>' : ''
   ].filter(Boolean).join('');
 
-  const deleteLeadButton = currentUserIsKiara()
-    ? `<button class="lead-card-delete" type="button" data-delete-lead="${lead.id}" aria-label="Delete lead" title="Delete lead"><i class="bi bi-trash3"></i></button>`
+  const manageLeadButton = currentUserIsKiara()
+    ? `<button class="lead-card-edit" type="button" data-edit-lead-status="${lead.id}" aria-label="Edit lead status" title="Edit lead"><i class="bi bi-pencil-square"></i></button>`
     : '';
 
   return `
@@ -1212,7 +1210,7 @@ function leadCard(lead) {
         </span>
         <i class="bi bi-chevron-right"></i>
       </button>
-      ${deleteLeadButton}
+      ${manageLeadButton}
     </div>`;
 }
 
@@ -1276,6 +1274,9 @@ function openLead(id) {
 function renderCurrentLead() {
   const lead = currentLead();
   if (!lead) return;
+
+  const editLeadButton = $('#editLeadButton');
+  if (editLeadButton) editLeadButton.hidden = !currentUserIsKiara();
 
   const soldLead = lead.status === 'sold';
   const kiaraCanSeeSoldPhone = soldLead && currentUserIsKiara();
@@ -1660,6 +1661,8 @@ async function deleteLeadPermanently(leadId) {
       const { error } = await supabaseClient.from(table).delete().eq('id', leadId);
       if (error) throw error;
     }
+    const { error: privatePhoneError } = await supabaseClient.from('sold_private_phones').delete().eq('lead_id', leadId);
+    if (privatePhoneError) console.warn('Could not delete private sold phone:', privatePhoneError);
   }
 
   state.leads = state.leads.filter(item => item.id !== leadId);
@@ -1697,18 +1700,40 @@ $('#confirmLeadDeleteButton')?.addEventListener('click', async () => {
   }
 });
 
+
+$$('[data-lead-status-option]').forEach(button => {
+  button.addEventListener('click', async () => {
+    const id = editingLeadStatusId;
+    if (!id) return;
+    try {
+      await setLeadPipelineStatus(id, button.dataset.leadStatusOption);
+    } catch (error) {
+      console.error('Could not update lead status:', error);
+      showSyncStatus('Status update failed');
+      toast('Could not update lead status');
+    }
+  });
+});
+
+$('#deleteLeadFromEditButton')?.addEventListener('click', () => {
+  const id = editingLeadStatusId;
+  if (!id) return;
+  closeModal('leadStatusEditModal');
+  openLeadDeleteConfirmation(id);
+});
+
 // Navigation / lists
 $('#backButton').addEventListener('click', () => { renderLists(); clearDetailPageState(); showScreen('leads'); });
 $('#leadSearch').addEventListener('input', renderLists);
 $('#addLeadBottomButton').addEventListener('click', openNewLeadModal);
 document.getElementById('desktopHeaderAddLeadButton')?.addEventListener('click', openNewLeadModal);
-$('#editLeadButton')?.addEventListener('click', openEditLeadModal);
+$('#editLeadButton')?.addEventListener('click', () => openEditLeadModal());
 document.addEventListener('click', event => {
-  const deleteLeadButton = event.target.closest('[data-delete-lead]');
-  if (deleteLeadButton) {
+  const editLeadStatusButton = event.target.closest('[data-edit-lead-status]');
+  if (editLeadStatusButton) {
     event.preventDefault();
     event.stopPropagation();
-    openLeadDeleteConfirmation(deleteLeadButton.dataset.deleteLead);
+    openEditLeadModal(editLeadStatusButton.dataset.editLeadStatus);
     return;
   }
 
@@ -2513,21 +2538,56 @@ function openNewLeadModal() {
   setTimeout(() => $('#newCompany').focus(), 50);
 }
 
-function openEditLeadModal() {
-  const lead = currentLead();
-  if (!lead) return;
-  editingLeadId = lead.id;
-  setLeadModalMode('edit');
-  $('#newName').value = lead.name || '';
-  $('#newCompany').value = lead.company || '';
-  $('#newPhone').value = formatPhoneNumber(lead.phone || '');
-  $('#newEmail').value = lead.email || '';
-  $('#newSite').value = lead.site || '';
-  $('#newAge').value = lead.age || '';
-  $('#newIssue').value = lead.issue || '';
-  openModal('newLeadModal');
-  setTimeout(() => $('#newCompany').focus(), 50);
+function openEditLeadModal(leadId = currentLeadId) {
+  if (!currentUserIsKiara()) return toast('Only Kiara can edit lead status');
+  const lead = state.leads.find(item => item.id === leadId);
+  if (!lead) return toast('Lead not found');
+
+  editingLeadStatusId = lead.id;
+  const label = lead.company || lead.name || 'Lead';
+  $('#leadStatusEditName').textContent = label;
+  $$('[data-lead-status-option]').forEach(button => {
+    button.classList.toggle('selected', button.dataset.leadStatusOption === lead.status);
+  });
+  openModal('leadStatusEditModal');
 }
+
+async function setLeadPipelineStatus(leadId, nextStatus) {
+  if (!currentUserIsKiara()) return toast('Only Kiara can edit lead status');
+  if (!['new', 'followup', 'sold'].includes(nextStatus)) return;
+  const lead = state.leads.find(item => item.id === leadId);
+  if (!lead) return toast('Lead not found');
+  const previousStatus = lead.status || 'new';
+  if (previousStatus === nextStatus) {
+    closeModal('leadStatusEditModal');
+    return;
+  }
+
+  lead.status = nextStatus;
+  lead.updatedAt = new Date().toISOString();
+  if (nextStatus === 'sold') {
+    lead.soldBy = currentUserName || 'Kiara';
+    lead.soldAt = new Date().toISOString();
+    addLeadHistory(lead, 'sold', lead.soldBy, lead.soldAt);
+  } else if (previousStatus === 'sold') {
+    lead.soldBy = '';
+    lead.soldAt = '';
+  }
+
+  saveState(lead.id);
+  renderLists();
+  if (currentLeadId === lead.id) renderCurrentLead();
+
+  await syncLeadNow(lead);
+  if (previousStatus === 'sold' && nextStatus !== 'sold') {
+    try { await supabaseClient.from('sold_private_phones').delete().eq('lead_id', lead.id); } catch (error) { console.warn('Could not clean sold private phone:', error); }
+  }
+  closeModal('leadStatusEditModal');
+  const labels = { new: 'New Lead', followup: 'Follow-up', sold: 'Sold' };
+  showSyncStatus(`Moved to ${labels[nextStatus]}`);
+  toast(`Moved to ${labels[nextStatus]}`);
+}
+
 
 function makeLead(raw = {}) {
   const text = value => value == null ? '' : String(value).trim();
