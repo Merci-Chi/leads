@@ -3604,7 +3604,6 @@ document.addEventListener('keydown', event => {
       appShell && !appShell.hidden
     );
     const shouldShow =
-      window.matchMedia('(max-width: 959px)').matches &&
       onLeadBoard &&
       currentScrollTop() >= SHOW_AFTER_PX;
 
