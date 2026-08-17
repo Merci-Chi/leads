@@ -4505,7 +4505,6 @@ html, body { overscroll-behavior-y: contain; }
     z-index: 90;
     width: 42px;
     height: 42px;
-    display: grid;
     place-items: center;
     border: 1px solid #31577a;
     border-radius: 12px;
@@ -4515,9 +4514,22 @@ html, body { overscroll-behavior-y: contain; }
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-8px) scale(.94);
+    transition: opacity .16s ease, transform .16s ease, visibility .16s ease;
   }
 
-  .mobile-scroll-top:active {
+  .mobile-scroll-top.visible {
+    display: grid;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  .mobile-scroll-top.visible:active {
     transform: scale(.96);
   }
 

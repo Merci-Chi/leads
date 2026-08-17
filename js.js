@@ -3561,7 +3561,73 @@ document.addEventListener('keydown', event => {
 })();
 
 
-// Mobile-only top-right scroll-to-top control.
-document.getElementById('mobileScrollTopButton')?.addEventListener('click', () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-});
+// Mobile-only scroll-to-top control. Only show it after the user has
+// scrolled down the lead board a bit, and hide it on detail/modals/login.
+(() => {
+  const button = document.getElementById('mobileScrollTopButton');
+  if (!button) return;
+
+  const SHOW_AFTER_PX = 260;
+
+  function currentScrollTop() {
+    const scroller = document.scrollingElement || document.documentElement;
+    return Math.max(
+      window.scrollY || 0,
+      scroller?.scrollTop || 0,
+      document.body?.scrollTop || 0
+    );
+  }
+
+  function updateScrollTopButton() {
+    const leadsScreen = document.getElementById('leadsScreen');
+    const appShell = document.getElementById('appShell');
+    const onLeadBoard = Boolean(
+      leadsScreen?.classList.contains('active') &&
+      appShell && !appShell.hidden
+    );
+    const shouldShow =
+      window.matchMedia('(max-width: 959px)').matches &&
+      onLeadBoard &&
+      currentScrollTop() >= SHOW_AFTER_PX;
+
+    button.classList.toggle('visible', shouldShow);
+    button.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+    button.tabIndex = shouldShow ? 0 : -1;
+  }
+
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    const scroller = document.scrollingElement || document.documentElement;
+
+    try {
+      scroller.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (_) {
+      scroller.scrollTop = 0;
+    }
+
+    // Safari can occasionally ignore scrollTo on documentElement, so also
+    // issue the window scroll and a direct fallback.
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { window.scrollTo(0, 0); }
+    setTimeout(() => {
+      if (currentScrollTop() > 8) {
+        scroller.scrollTop = 0;
+        if (document.body) document.body.scrollTop = 0;
+        window.scrollTo(0, 0);
+      }
+      updateScrollTopButton();
+    }, 450);
+  });
+
+  window.addEventListener('scroll', updateScrollTopButton, { passive: true });
+  window.addEventListener('resize', updateScrollTopButton);
+  document.addEventListener('visibilitychange', updateScrollTopButton);
+
+  // Screen changes are class/hidden mutations, not always scroll events.
+  const observer = new MutationObserver(updateScrollTopButton);
+  ['leadsScreen', 'detailScreen', 'appShell', 'authGate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el, { attributes: true, attributeFilter: ['class', 'hidden'] });
+  });
+
+  updateScrollTopButton();
+})();
