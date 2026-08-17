@@ -17,7 +17,7 @@
 <link href="icons/favicon-64.png" rel="icon" sizes="64x64" type="image/png"/>
 <link href="https://cdn.jsdelivr.net" rel="preconnect"/>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
-<link href="css.css?v=20260817-0408" rel="stylesheet"/>
+<link href="css.css?v=20260817-0430" rel="stylesheet"/>
 </head>
 <body>
 <section aria-label="Sign in" class="auth-gate" id="authGate">
@@ -201,12 +201,6 @@
 <button aria-label="Negative mood" class="mood-button" data-field="mood" data-value="Negative" type="button"><i class="bi bi-emoji-frown"></i></button>
 </div>
 </div>
-</article><article class="card history-card">
-<button aria-expanded="true" class="history-toggle-button" id="historyToggleButton" type="button">
-<span class="history-toggle-left"><span class="heading-icon"><i class="bi bi-clock-history"></i></span><span>History</span></span>
-<i class="bi bi-chevron-down history-toggle-chevron"></i>
-</button>
-<div class="history-list" id="leadHistoryList"></div>
 </article></div><div class="panel-column"><article class="card form-card lead-notes-card">
 <div class="card-heading"><span class="heading-icon"><i class="bi bi-journal-text"></i></span><h2>Lead Info</h2></div>
 <section aria-labelledby="quickTagsTitle" class="quick-tags-section">
@@ -245,75 +239,33 @@
 <div class="followup-card-head">
 <span class="followup-card-icon"><i class="bi bi-chat-square-text"></i></span>
 <div>
-<h3>Call Outcome</h3>
-<p>What happened on this call?</p>
+<h3>Last Call Outcome</h3>
+<p>The most recent result from this lead.</p>
 </div>
 </div>
-<label class="followup-control">
-<span class="sr-only">Outcome</span>
-<select class="custom-dropdown followup-select" data-save="outcome" id="outcomeField">
-<option value="">No outcome selected</option>
-<option>Left Voicemail</option>
-<option>Spoke — Follow Up</option>
-<option>Interested</option>
-<option>Not Interested</option>
-<option>Wrong Number</option>
-<option>No Answer</option>
-</select>
-</label>
+<div class="call-outcome-tags" id="followupOutcomeTags" aria-label="Last call outcome">
+<button class="followup-outcome-tag" data-call-outcome="Interested" type="button">Interested</button>
+<button class="followup-outcome-tag" data-call-outcome="Call Back" type="button">Call Back</button>
+<button class="followup-outcome-tag" data-call-outcome="Needs More Info" type="button">Needs More Info</button>
+<button class="followup-outcome-tag" data-call-outcome="Skeptical" type="button">Skeptical</button>
+<button class="followup-outcome-tag" data-call-outcome="No Answer" type="button">No Answer</button>
+<button class="followup-outcome-tag" data-call-outcome="Not Interested" type="button">Not Interested</button>
+<button class="followup-outcome-tag danger" data-call-outcome="Wrong Number" type="button">Wrong Number</button>
+<button class="followup-outcome-tag conversion" data-call-outcome="Conversion" type="button"><i class="bi bi-trophy-fill"></i> Conversion</button>
+</div>
 </article><article class="card followup-card contact-preference-card">
 <div class="followup-card-head">
 <span class="followup-card-icon"><i class="bi bi-person-lines-fill"></i></span>
 <div>
 <h3>Contact Preference</h3>
-<p>How and when do they want to be contacted?</p>
+<p>Preferred way to contact them.</p>
 </div>
 </div>
-<div class="followup-card-body compact-stack">
-<label class="followup-labeled-control">
-<span>Preferred method</span>
-<select aria-label="Preferred contact method" class="custom-dropdown followup-select" data-save="preferredContact" id="preferredContact">
-<option value="">None selected</option>
-<option value="Call">Call</option>
-<option value="Text">Text</option>
-<option value="Email">Email</option>
-<option value="Zoom">Zoom</option>
-</select>
-</label>
-<div class="preference-divider"></div>
-<div class="preferred-schedule-block">
-<div class="inline-label-row">
-<span>Preferred date / time</span>
-<small>Optional</small>
-</div>
-<button class="add-schedule-button" id="addPreferredButton" type="button"><i class="bi bi-plus-lg"></i> Add Preferred Date / Time</button>
-<div class="schedule-editor" hidden="" id="preferredEditor">
-<div class="schedule-editor-head">
-<span><i class="bi bi-calendar3"></i> Preferred contact</span>
-<button class="clear-schedule" id="clearPreferredButton" type="button">Remove</button>
-</div>
-<div class="schedule-subtitle">DATE</div>
-<div aria-label="Preferred contact date" class="date-dropdowns">
-<label><span>Month</span><select aria-label="Preferred month" class="custom-dropdown" id="preferredMonth"></select></label>
-<label><span>Day</span><select aria-label="Preferred day" class="custom-dropdown" id="preferredDay"></select></label>
-<label><span>Year</span><select aria-label="Preferred year" class="custom-dropdown" id="preferredYear"></select></label>
-</div>
-<div class="schedule-subtitle time-title">TIME <span>optional</span></div>
-<div aria-label="Preferred contact time" class="time-control">
-<button aria-expanded="false" class="time-display-button" id="preferredTimeButton" type="button">
-<i class="bi bi-clock"></i><span id="preferredTimeDisplay">00:00 AM</span><i class="bi bi-chevron-down time-chevron"></i>
-</button>
-<div class="time-picker-popover" hidden="" id="preferredTimePicker">
-<div class="time-picker-row">
-<select aria-label="Preferred hour" class="custom-dropdown time-part" id="preferredHour"><option value="">00</option></select>
-<span class="time-separator">:</span>
-<select aria-label="Preferred minutes" class="custom-dropdown time-part" id="preferredMinute"><option value="">00</option></select>
-<select aria-label="Preferred AM or PM" class="custom-dropdown time-part period-part" id="preferredPeriod"><option value="">AM</option><option value="AM">AM</option><option value="PM">PM</option></select>
-</div>
-</div>
-</div>
-</div>
-</div>
+<div class="contact-method-icons" aria-label="Preferred contact method">
+<button aria-label="Phone call" title="Phone call" class="contact-method-icon" data-field="preferredContact" data-value="Call" type="button"><i class="bi bi-telephone-fill"></i></button>
+<button aria-label="Email" title="Email" class="contact-method-icon" data-field="preferredContact" data-value="Email" type="button"><i class="bi bi-envelope-fill"></i></button>
+<button aria-label="Text message" title="Text message" class="contact-method-icon" data-field="preferredContact" data-value="Text" type="button"><i class="bi bi-chat-dots-fill"></i></button>
+<button aria-label="Zoom" title="Zoom" class="contact-method-icon" data-field="preferredContact" data-value="Zoom" type="button"><i class="bi bi-camera-video-fill"></i></button>
 </div>
 </article></div><div class="panel-column followup-preferences-column"><article class="card followup-card availability-card">
 <div class="followup-card-head">
@@ -442,6 +394,15 @@
 </div>
 </div>
 </article></section>
+
+<article class="card history-card kiara-only-history" id="kiaraHistoryCard" hidden>
+  <button aria-expanded="true" class="history-toggle-button" id="historyToggleButton" type="button">
+    <span class="history-toggle-left"><span class="heading-icon"><i class="bi bi-clock-history"></i></span><span>History</span></span>
+    <i class="bi bi-chevron-down history-toggle-chevron"></i>
+  </button>
+  <div class="history-list" id="leadHistoryList"></div>
+</article>
+
 </section>
 </main>
 <!-- CUSTOM SOURCE MODAL -->
@@ -598,17 +559,16 @@
 </div>
 </div>
 <div class="mini-question" id="postStatusQuestion">
-<span class="mini-question-label">Status tag</span>
+<span class="mini-question-label">Call outcome</span>
 <div class="post-call-tags">
-<button class="mini-tag hot" data-post-tag="Hot Lead" type="button">🔥 Hot Lead</button>
 <button class="mini-tag" data-post-tag="Interested" type="button">Interested</button>
 <button class="mini-tag" data-post-tag="Call Back" type="button">Call Back</button>
 <button class="mini-tag" data-post-tag="Needs More Info" type="button">Needs More Info</button>
 <button class="mini-tag" data-post-tag="Skeptical" type="button">Skeptical</button>
-<button class="mini-tag danger" data-post-tag="Wrong Number" type="button">Wrong Number</button>
-<button class="mini-tag sold" data-post-tag="Sold" type="button"><i class="bi bi-trophy"></i> Sold</button>
-<button class="mini-tag" data-post-tag="Not Interested" type="button">Not Interested</button>
 <button class="mini-tag" data-post-tag="No Answer" type="button">No Answer</button>
+<button class="mini-tag" data-post-tag="Not Interested" type="button">Not Interested</button>
+<button class="mini-tag danger" data-post-tag="Wrong Number" type="button">Wrong Number</button>
+<button class="mini-tag sold" data-post-tag="Conversion" type="button"><i class="bi bi-trophy"></i> Conversion</button>
 </div>
 </div>
 <div class="modal-actions call-flow-actions">
@@ -778,7 +738,7 @@
 </div>
 <div aria-live="polite" class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js.js?v=20260817-0421"></script>
+<script src="js.js?v=20260817-0430"></script>
 <script>
     window.addEventListener('load', async () => {
       try {

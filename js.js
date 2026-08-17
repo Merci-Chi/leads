@@ -352,6 +352,8 @@ function getUserDisplayName(session = supabaseSession) {
 
 function updateSignedInUserUi() {
   currentUserName = getUserDisplayName();
+  const historyCard = document.getElementById('kiaraHistoryCard');
+  if (historyCard) historyCard.hidden = !currentUserIsKiara();
   const el = document.getElementById('signedInUserName');
   if (el) el.textContent = currentUserName;
   const accountName = document.getElementById('accountUserName');
@@ -479,6 +481,11 @@ function updateHistoryVisibility() {
 }
 
 function renderLeadHistory() {
+  const historyCard = document.getElementById('kiaraHistoryCard');
+  const isKiara = currentUserIsKiara();
+  if (historyCard) historyCard.hidden = !isKiara;
+  if (!isKiara) return;
+
   updateHistoryVisibility();
   const lead = currentLead();
   const list = document.getElementById('leadHistoryList');
@@ -1226,7 +1233,7 @@ function leadCard(lead) {
     : '';
 
   return `
-    <div class="lead-item-wrap">
+    <div class="lead-item-wrap${manageLeadButton ? ' kiara-manageable' : ''}${cornerTags ? ' has-priority-tags' : ''}">
       <button class="lead-item${isHot ? ' hot-lead-card' : ''}${isWrongNumber ? ' wrong-number-card' : ''}" type="button" data-open-lead="${lead.id}">
         ${cornerTags ? `<span class="lead-priority-tags">${cornerTags}</span>` : ''}
         <span class="lead-avatar">${escapeHTML(initial)}</span>
@@ -1350,10 +1357,7 @@ function renderCurrentLead() {
   $('#leadAge').textContent = lead.age || '—';
   $('#leadIssue').textContent = lead.issue || '—';
 
-  $('#outcomeField').value = lead.outcome || '';
-  $('#preferredContact').value = lead.preferredContact || '';
   renderScheduleEditor('callback', lead.callbackDate || '', lead.callbackTime || '');
-  renderScheduleEditor('preferred', lead.preferredDate || '', lead.preferredTime || '');
   const specificControl = $('#specificTimeControl');
   if (specificControl) specificControl.hidden = lead.timePreference !== 'Specific Time';
   loadSpecificTime(lead.specificTime || '');
@@ -1367,6 +1371,11 @@ function renderCurrentLead() {
   });
   $$('[data-multi="days"]').forEach(button => {
     button.classList.toggle('selected', (lead.days || []).includes(button.dataset.value));
+  });
+
+  const displayedOutcome = normalizeCallOutcome(lead.outcome || lead.tag || '');
+  $$('[data-call-outcome]').forEach(button => {
+    button.classList.toggle('selected', button.dataset.callOutcome === displayedOutcome);
   });
 
   // New lead requirement: no status or mood starts highlighted until the user picks one.
@@ -1643,13 +1652,10 @@ function bindScheduleEditor(prefix) {
 }
 
 initializeScheduleDropdown('callback');
-initializeScheduleDropdown('preferred');
 bindScheduleEditor('callback');
-bindScheduleEditor('preferred');
 
 document.addEventListener('click', () => {
   closeTimePicker('callback');
-  closeTimePicker('preferred');
   const picker = $('#specificTimePicker');
   if (picker) picker.hidden = true;
   $('#specificTimeButton')?.setAttribute('aria-expanded', 'false');
@@ -1779,6 +1785,56 @@ document.querySelectorAll('[data-close="newLeadModal"]').forEach(button => butto
   editingLeadId = null;
   setLeadModalMode('add');
 }));
+
+function normalizeCallOutcome(value) {
+  const raw = String(value || '').trim();
+  const map = {
+    'Spoke — Follow Up': 'Call Back',
+    'Spoke - Follow Up': 'Call Back',
+    'Left Voicemail': 'Call Back',
+    'Sold': 'Conversion'
+  };
+  return map[raw] || raw;
+}
+
+async function setFollowupCallOutcome(value) {
+  const lead = currentLead();
+  if (!lead) return;
+
+  if (value === 'Conversion') {
+    beginSoldFlow();
+    return;
+  }
+
+  lead.outcome = value;
+  lead.tag = value;
+  lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
+
+  // These are call-result tags: keep only the latest one from this set.
+  const outcomeSet = new Set([
+    'interested', 'call back', 'needs more info', 'skeptical',
+    'no answer', 'not interested', 'wrong number', 'conversion', 'sold'
+  ]);
+  lead.tags = lead.tags.filter(tag => !outcomeSet.has(String(tag || '').trim().toLowerCase()));
+  lead.tags.push(value);
+
+  $$('[data-call-outcome]').forEach(button => {
+    button.classList.toggle('selected', button.dataset.callOutcome === value);
+  });
+
+  saveState(lead.id);
+  renderLists();
+  try {
+    await syncLeadNow(lead);
+  } catch (error) {
+    console.error('Could not sync call outcome:', error);
+    queueLeadSync(lead.id);
+  }
+}
+
+$$('[data-call-outcome]').forEach(button => {
+  button.addEventListener('click', () => setFollowupCallOutcome(button.dataset.callOutcome || ''));
+});
 
 // Tabs
 $$('.tab').forEach(tab => tab.addEventListener('click', () => setTab(tab.dataset.tab)));
@@ -2060,21 +2116,21 @@ async function saveVisiblePostCallAnswers() {
   if (!$('#postMoodQuestion').hidden && postCallMood) lead.mood = postCallMood;
 
   if (!$('#postStatusQuestion').hidden && postCallTag) {
-    if (postCallTag === 'Sold') {
+    if (postCallTag === 'Conversion') {
       closeModal('postCallModal');
       beginSoldFlow();
       return 'sold-flow';
     }
 
+    const outcomeSet = new Set([
+      'interested', 'call back', 'needs more info', 'skeptical',
+      'no answer', 'not interested', 'wrong number', 'conversion', 'sold'
+    ]);
     lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
-    const key = postCallTag.toLowerCase();
-    lead.tags = lead.tags.filter(tag => String(tag || '').trim().toLowerCase() !== key);
+    lead.tags = lead.tags.filter(tag => !outcomeSet.has(String(tag || '').trim().toLowerCase()));
     lead.tags.push(postCallTag);
     lead.tag = postCallTag;
-
-    if (postCallTag === 'Wrong Number') lead.outcome = 'Wrong Number';
-    if (postCallTag === 'No Answer') lead.outcome = 'No Answer';
-    if (postCallTag === 'Interested' || postCallTag === 'Hot Lead') lead.outcome = 'Interested';
+    lead.outcome = postCallTag;
   }
 
 
@@ -2109,18 +2165,6 @@ $('#savePostCallButton')?.addEventListener('click', async () => {
 });
 
 
-$('#outcomeField')?.addEventListener('change', async () => {
-  const lead = currentLead();
-  if (!lead) return;
-  if ($('#outcomeField').value === 'Wrong Number') {
-    lead.tags = Array.isArray(lead.tags) ? lead.tags : [];
-    if (!leadHasTag(lead, 'Wrong Number')) lead.tags.push('Wrong Number');
-    lead.tag = 'Wrong Number';
-    saveState(lead.id);
-    renderLists();
-    try { await syncLeadNow(lead); } catch (error) { console.error('Could not sync Wrong Number tag:', error); }
-  }
-});
 
 // History is expanded by default; the user can still collapse it with the History button.
 $('#historyToggleButton')?.addEventListener('click', () => {
@@ -2585,7 +2629,10 @@ function openEditLeadModal(leadId = currentLeadId) {
 async function setLeadPipelineStatus(leadId, nextStatus) {
   if (!currentUserIsKiara()) return toast('Only Kiara can edit lead status');
   if (!['new', 'followup', 'sold'].includes(nextStatus)) return;
-  const lead = state.leads.find(item => item.id === leadId);
+  if (!supabaseSession) return toast('You must be signed in to change lead status');
+
+  const leadIndex = state.leads.findIndex(item => item.id === leadId);
+  const lead = leadIndex >= 0 ? state.leads[leadIndex] : null;
   if (!lead) return toast('Lead not found');
 
   const previousStatus = lead.status || 'new';
@@ -2594,71 +2641,86 @@ async function setLeadPipelineStatus(leadId, nextStatus) {
     return;
   }
 
-  const previousSoldBy = lead.soldBy || '';
-  const previousSoldAt = lead.soldAt || '';
-  const previousHistory = Array.isArray(lead.history) ? [...lead.history] : [];
   const sourceTable = previousStatus === 'sold' ? 'sold_leads' : (previousStatus === 'followup' ? 'follow_ups' : 'new_leads');
   const targetTable = nextStatus === 'sold' ? 'sold_leads' : (nextStatus === 'followup' ? 'follow_ups' : 'new_leads');
 
-  lead.status = nextStatus;
-  lead.updatedAt = new Date().toISOString();
+  // Build the destination record without changing the visible lead first.
+  // The UI only changes after Supabase confirms the destination row exists.
+  const movedLead = {
+    ...lead,
+    history: Array.isArray(lead.history) ? lead.history.map(item => ({ ...item })) : [],
+    status: nextStatus,
+    updatedAt: new Date().toISOString()
+  };
+
   if (nextStatus === 'sold') {
-    lead.soldBy = currentUserName || 'Kiara';
-    lead.soldAt = new Date().toISOString();
-    addLeadHistory(lead, 'sold', lead.soldBy, lead.soldAt);
+    movedLead.soldBy = currentUserName || 'Kiara';
+    movedLead.soldAt = new Date().toISOString();
+    addLeadHistory(movedLead, 'sold', movedLead.soldBy, movedLead.soldAt);
   } else if (previousStatus === 'sold') {
-    lead.soldBy = '';
-    lead.soldAt = '';
+    movedLead.soldBy = '';
+    movedLead.soldAt = '';
   }
 
-  // Do not queue the normal autosync here. A status move must be one ordered
-  // database operation: save target first, then remove the old table row.
   pendingSyncIds.delete(lead.id);
   clearTimeout(syncTimer);
 
-  renderLists();
-  if (currentLeadId === lead.id) renderCurrentLead();
+  const statusButtons = $$('[data-lead-status-option]');
+  statusButtons.forEach(button => { button.disabled = true; });
 
   try {
-    const row = nextStatus === 'sold' ? soldPublicRow(lead) : leadToSupabaseRow(lead);
-    const { error: saveError } = await supabaseClient.from(targetTable).upsert(row, { onConflict: 'id' });
+    const row = nextStatus === 'sold' ? soldPublicRow(movedLead) : leadToSupabaseRow(movedLead);
+
+    // Destination save is the actual status change. Do this first.
+    const { data: savedRows, error: saveError } = await supabaseClient
+      .from(targetTable)
+      .upsert(row, { onConflict: 'id' })
+      .select('id,updated_at');
+
     if (saveError) throw saveError;
+    if (!Array.isArray(savedRows) || !savedRows.some(saved => saved.id === lead.id)) {
+      throw new Error('Supabase did not confirm the destination lead');
+    }
 
     if (nextStatus === 'sold') {
-      await storeSoldPhoneSecurely(lead);
+      await storeSoldPhoneSecurely(movedLead);
     }
 
-    if (sourceTable !== targetTable) {
-      const { error: deleteError } = await supabaseClient.from(sourceTable).delete().eq('id', lead.id);
-      if (deleteError) throw deleteError;
-    }
+    // Now commit the status locally.
+    state.leads[leadIndex] = movedLead;
 
-    // Clean up any duplicate left by an older failed move. These are best-effort
-    // because the actual source row above is the one required for this move.
+    // Removing stale copies is cleanup. A cleanup/RLS failure must NOT undo a
+    // status change that Supabase already saved successfully in the target.
     for (const table of ['new_leads', 'follow_ups', 'sold_leads']) {
-      if (table === targetTable || table === sourceTable) continue;
-      const { error } = await supabaseClient.from(table).delete().eq('id', lead.id);
-      if (error) console.warn(`Could not clean duplicate lead from ${table}:`, error);
+      if (table === targetTable) continue;
+      const { error: cleanupError } = await supabaseClient.from(table).delete().eq('id', lead.id);
+      if (cleanupError) console.warn(`Status saved, but stale copy could not be removed from ${table}:`, cleanupError);
     }
 
     if (previousStatus === 'sold' && nextStatus !== 'sold') {
-      const { error } = await supabaseClient.from('sold_private_phones').delete().eq('lead_id', lead.id);
-      if (error) console.warn('Could not clean sold private phone:', error);
+      const { error: phoneCleanupError } = await supabaseClient
+        .from('sold_private_phones')
+        .delete()
+        .eq('lead_id', lead.id);
+      if (phoneCleanupError) console.warn('Status saved, but old sold phone record could not be removed:', phoneCleanupError);
     }
 
+    renderLists();
+    if (currentLeadId === lead.id) renderCurrentLead();
     closeModal('leadStatusEditModal');
+
     const labels = { new: 'New Lead', followup: 'Follow-up', sold: 'Sold' };
     toast(`Moved to ${labels[nextStatus]}`);
   } catch (error) {
-    // Never leave the UI showing a status that failed to save.
-    lead.status = previousStatus;
-    lead.soldBy = previousSoldBy;
-    lead.soldAt = previousSoldAt;
-    lead.history = previousHistory;
-    lead.updatedAt = new Date().toISOString();
+    console.error('Could not switch lead status:', error);
+    // Since local state was not changed before destination confirmation,
+    // a failed save cannot leave a fake status on screen.
     renderLists();
     if (currentLeadId === lead.id) renderCurrentLead();
+    toast('Could not switch lead status');
     throw error;
+  } finally {
+    statusButtons.forEach(button => { button.disabled = false; });
   }
 }
 
