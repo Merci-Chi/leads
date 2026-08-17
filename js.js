@@ -1058,7 +1058,10 @@ function renderQuickInfoTags() {
   };
 
   const groupHtml = LEAD_TAG_GROUPS.map(group => {
-    const chips = group.tags.map(label => renderChip(label, group.key)).join('');
+    const visibleTags = currentUserIsKiara()
+      ? group.tags
+      : group.tags.filter(label => normalizeLeadType(label) !== 'Hot Lead');
+    const chips = visibleTags.map(label => renderChip(label, group.key)).join('');
     return `
       <section class="lead-tag-group lead-tag-group-${escapeHTML(group.key)}">
         <div class="lead-tag-group-heading">
@@ -1097,6 +1100,11 @@ async function toggleQuickInfoTag(label) {
 
   const cleanLabel = String(label || '').trim();
   const normalized = normalizeLeadType(cleanLabel);
+
+  if (normalized === 'Hot Lead' && !currentUserIsKiara()) {
+    toast('Only Kiara can use the Hot Lead tag');
+    return;
+  }
 
   // Sold is consequential: never add it directly from Quick Info.
   if (normalized === 'Sold' && !leadHasTag(lead, 'Sold')) {
@@ -1268,7 +1276,9 @@ function leadCard(lead) {
 
 function renderLists() {
   const query = ($('#leadSearch').value || '').trim().toLowerCase();
-  const matches = lead => !query || [lead.name, lead.company, lead.phone, lead.email, lead.tag, getLeadType(lead), hasPossibleSpanishTag(lead) ? 'Spanish?' : '', ...(Array.isArray(lead.sourceTags) ? lead.sourceTags : [])].some(v => String(v || '').toLowerCase().includes(query));
+  const kiara = currentUserIsKiara();
+  const canSeeLead = lead => kiara || !leadHasTag(lead, 'Hot Lead');
+  const matches = lead => canSeeLead(lead) && (!query || [lead.name, lead.company, lead.phone, lead.email, lead.tag, getLeadType(lead), hasPossibleSpanishTag(lead) ? 'Spanish?' : '', ...(Array.isArray(lead.sourceTags) ? lead.sourceTags : [])].some(v => String(v || '').toLowerCase().includes(query)));
   const sortPriority = (a, b, fallback) => {
     const priorityDiff = leadPriority(b) - leadPriority(a);
     return priorityDiff || fallback(a, b);
@@ -1288,9 +1298,9 @@ function renderLists() {
   $('#followLeadList').innerHTML = follow.length ? follow.map(leadCard).join('') : '<div class="empty-state">No follow-ups yet.</div>';
   $('#soldLeadList').innerHTML = sold.length ? sold.map(leadCard).join('') : '<div class="empty-state sold-empty-state">No sold leads yet.</div>';
 
-  const newCount = state.leads.filter(l => l.status === 'new').length;
-  const followCount = state.leads.filter(l => l.status === 'followup').length;
-  const soldCount = state.leads.filter(l => l.status === 'sold').length;
+  const newCount = state.leads.filter(l => l.status === 'new' && canSeeLead(l)).length;
+  const followCount = state.leads.filter(l => l.status === 'followup' && canSeeLead(l)).length;
+  const soldCount = state.leads.filter(l => l.status === 'sold' && canSeeLead(l)).length;
   $('#newCount').textContent = newCount;
   $('#followCount').textContent = followCount;
   $('#soldCount').textContent = soldCount;
@@ -1314,6 +1324,14 @@ function renderLists() {
 }
 
 function openLead(id) {
+  const requestedLead = state.leads.find(lead => lead.id === id);
+  if (!requestedLead) return;
+  if (leadHasTag(requestedLead, 'Hot Lead') && !currentUserIsKiara()) {
+    toast('This lead is private');
+    renderLists();
+    showScreen('leads');
+    return;
+  }
   currentLeadId = id;
   sourceTagsExpanded = false;
   historyExpanded = true;
